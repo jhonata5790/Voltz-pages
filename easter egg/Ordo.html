@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquivo Confidencial - Ordem Paranormal</title>
+    <style>
+        /* --- RESET E VARIÁVEIS --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --sangue: #cc0000;
+            --morte: #333333;
+            --conhecimento: #d4af37;
+            --energia: #ff00ff;
+            --medo: #ffffff;
+            --fundo-modal: rgba(10, 10, 10, 0.95);
+        }
+
+        body {
+            background-color: #050505;
+            color: #dcdcdc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at center, #111 0%, #000 100%);
+            perspective: 1000px;
+            cursor: none; /* Esconde o cursor padrão */
+        }
+
+        /* --- PRELOADER / TELA DE INÍCIO --- */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #000; color: #fff; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10000;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+        #preloader.escondido { opacity: 0; visibility: hidden; }
+        #btn-iniciar {
+            margin-top: 2rem; padding: 10px 20px; font-size: 1.2rem;
+            background: transparent; color: #0ff; border: 1px solid #0ff;
+            cursor: none; transition: 0.3s; text-transform: uppercase; letter-spacing: 2px;
+        }
+        #btn-iniciar:hover { background: #0ff; color: #000; box-shadow: 0 0 15px #0ff; }
+
+        /* --- CURSOR PARANORMAL --- */
+        #cursor-paranormal {
+            position: fixed; width: 10px; height: 10px; background-color: white;
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%); mix-blend-mode: difference;
+        }
+        #cursor-rastro {
+            position: fixed; width: 40px; height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
+            pointer-events: none; z-index: 9998; transform: translate(-50%, -50%);
+            transition: top 0.15s ease-out, left 0.15s ease-out, width 0.2s, height 0.2s;
+        }
+        .hover-ativo #cursor-rastro {
+            width: 80px; height: 80px; border-color: rgba(255, 0, 0, 0.5);
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        /* --- MODAL CONFIDENCIAL --- */
+        #modal-documento {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--fundo-modal); z-index: 9000; display: flex;
+            justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: 0.4s;
+            backdrop-filter: blur(10px);
+        }
+        #modal-documento.ativo { opacity: 1; visibility: visible; }
+        .modal-conteudo {
+            background: #111; border: 1px solid #333; padding: 3rem;
+            max-width: 600px; width: 90%; position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8); border-left: 5px solid #fff;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #fechar-modal {
+            position: absolute; top: 10px; right: 20px; background: none;
+            border: none; color: #fff; font-size: 1.5rem; cursor: none;
+        }
+        .carimbo-confidencial {
+            color: #cc0000; border: 2px solid #cc0000; display: inline-block;
+            padding: 5px 10px; transform: rotate(-5deg); margin-bottom: 20px;
+            font-weight: bold; letter-spacing: 2px;
+        }
+
+        /* --- CANVAS DE PARTÍCULAS --- */
+        #canvas-cinzas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; opacity: 0.4; }
+
+        /* --- ESTRUTURA GERAL E CARDS --- */
+        header { text-align: center; padding: 10rem 2rem 5rem; position: relative; z-index: 1; }
+        h1 { font-size: 4rem; color: #fff; letter-spacing: 8px; text-transform: uppercase; text-shadow: 0 0 30px rgba(255, 255, 255, 0.4); }
+        header p { font-size: 1.2rem; color: #888; margin-top: 10px; }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; position: relative; z-index: 1; }
+        
+        .elemento-card {
+            background: rgba(15, 15, 15, 0.85); margin-bottom: 4rem; padding: 3rem;
+            border-radius: 12px; position: relative; transform-style: preserve-3d;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.05);
+            opacity: 0; transform: translateY(100px) scale(0.95);
+            transition: opacity 0.8s ease, transform 0.8s ease, box-shadow 0.3s ease;
+        }
+        .elemento-card.show { opacity: 1; transform: translateY(0) scale(1); }
+        .elemento-card h2 { font-size: 3rem; margin-bottom: 1rem; text-transform: uppercase; transform: translateZ(30px); }
+        .elemento-card p { font-size: 1.2rem; position: relative; z-index: 2; transform: translateZ(10px); pointer-events: none;}
+        .instrucao-clique { display: block; margin-top: 20px; font-size: 0.9rem; color: #666; font-style: italic; }
+
+        /* --- SANGUE --- */
+        #sangue { border-bottom: 4px solid var(--sangue); }
+        #sangue h2 { color: var(--sangue); animation: pulsoSangue 1.5s infinite; }
+        @keyframes pulsoSangue { 0%, 100% { text-shadow: 0 0 10px var(--sangue); } 50% { text-shadow: 0 0 30px var(--sangue); } }
+
+        /* --- MORTE --- */
+        #morte { border-bottom: 4px solid var(--morte); overflow: hidden; }
+        #morte h2 { color: #888; text-shadow: 0 0 10px #000; }
+        .espiral { display: inline-block; animation: girar 4s linear infinite; }
+        @keyframes girar { 100% { transform: rotate(360deg); } }
+
+        /* --- CONHECIMENTO --- */
+        #conhecimento { border-bottom: 4px solid var(--conhecimento); font-family: 'Courier New', Courier, monospace; }
+        #conhecimento h2 { color: var(--conhecimento); text-shadow: 0 0 15px rgba(212, 175, 55, 0.6); }
+
+        /* --- ENERGIA --- */
+        #energia { border-bottom: 4px solid var(--energia); }
+        #energia h2 { color: var(--energia); text-shadow: 2px 2px #00ffff, -2px -2px #ff00ff;}
+
+        /* --- MEDO --- */
+        #medo { border: 1px solid rgba(255, 255, 255, 0.4); }
+        #medo:hover { filter: invert(1); }
+        #medo h2 { color: #fff; letter-spacing: 15px; font-weight: 300; }
+    </style>
+</head>
+<body>
+
+    <audio id="audio-sangue" loop src="sangue.mp3"></audio>
+    <audio id="audio-morte" loop src="morte.mp3"></audio>
+    <audio id="audio-conhecimento" loop src="conhecimento.mp3"></audio>
+    <audio id="audio-energia" loop src="energia.mp3"></audio>
+    <audio id="audio-medo" loop src="medo.mp3"></audio>
+
+    <div id="preloader">
+        <h2 style="margin-bottom: 10px;">TERMINAL DA ORDEM</h2>
+        <p>Acesso restrito. Autorização necessária.</p>
+        <button id="btn-iniciar">Estabelecer Conexão</button>
+    </div>
+
+    <div id="cursor-paranormal"></div>
+    <div id="cursor-rastro"></div>
+
+    <div id="modal-documento">
+        <div class="modal-conteudo">
+            <button id="fechar-modal">X</button>
+            <div class="carimbo-confidencial">CONFIDENCIAL</div>
+            <h2 id="modal-titulo">Título</h2>
+            <hr style="border-color: #333; margin: 15px 0;">
+            <p id="modal-texto">Texto do documento...</p>
+        </div>
+    </div>
+
+    <canvas id="canvas-cinzas"></canvas>
+
+    <header>
+        <h1>As Entidades</h1>
+        <p>A membrana está enfraquecendo. Role e clique para investigar.</p>
+    </header>
+
+    <div class="container">
+        <section id="sangue" class="elemento-card" data-id="sangue">
+            <h2>Sangue</h2>
+            <p>O elemento da emoção, da dor, da fome e da brutalidade.</p>
+            <span class="instrucao-clique">[Clique para abrir o arquivo]</span>
+        </section>
+
+        <section id="morte" class="elemento-card" data-id="morte">
+            <h2>Mort<span class="espiral">e</span></h2>
+            <p>O elemento do tempo, do lodo, das espirais e do fim inevitável.</p>
+            <span class="instrucao-clique">[Clique para abrir o arquivo]</span>
+        </section>
+
+        <section id="conhecimento" class="elemento-card" data-id="conhecimento">
+            <h2 id="texto-conhecimento">Conhecimento</h2>
+            <p class="decode-text">A razão, as regras, o equilíbrio e a mente.</p>
+            <span class="instrucao-clique">[Clique para abrir o arquivo]</span>
+        </section>
+
+        <section id="energia" class="elemento-card" data-id="energia">
+            <h2>Energia</h2>
+            <p>O caos, a transformação constante, a tecnologia e o intangível.</p>
+            <span class="instrucao-clique">[Clique para abrir o arquivo]</span>
+        </section>
+
+        <section id="medo" class="elemento-card" data-id="medo">
+            <h2>MEDO</h2>
+            <p>O elemento original. A quebra das regras da realidade.</p>
+            <span class="instrucao-clique">[Clique para abrir o arquivo]</span>
+        </section>
+    </div>
+
+    <script>
+        // 1. INICIALIZAÇÃO (LIBERA ÁUDIO)
+        document.getElementById('btn-iniciar').addEventListener('click', () => {
+            document.getElementById('preloader').classList.add('escondido');
+        });
+
+        // 2. CURSOR PARANORMAL
+        const cursor = document.getElementById('cursor-paranormal');
+        const rastro = document.getElementById('cursor-rastro');
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px';
+            rastro.style.left = e.clientX + 'px'; rastro.style.top = e.clientY + 'px';
+        });
+
+        // 3. DADOS DOS ARQUIVOS CONFIDENCIAIS
+        const bancoDeDados = {
+            sangue: { titulo: "Relatório: Sangue", cor: "#cc0000", texto: "Relatos indicam carnificina. Cultistas buscam sacrifícios para alimentar a entidade de Sangue. Não tente argumentar com criaturas deste elemento; elas respondem apenas à dor e instintos primitivos." },
+            morte: { titulo: "Relatório: Morte", cor: "#888888", texto: "Anomalia temporal detectada. Agentes relataram perda de memória e envelhecimento precoce na área. O lodo escuro consome a matéria. O tempo não é seu aliado aqui." },
+            conhecimento: { titulo: "Relatório: Conhecimento", cor: "#d4af37", texto: "Símbolos encontrados nas paredes. A sanidade dos investigadores despencou ao tentar decifrá-los. O Conhecimento enlouquece aqueles que compreendem a verdade impossível." },
+            energia: { titulo: "Relatório: Energia", cor: "#ff00ff", texto: "Picos de radiação e anomalias elétricas. Equipamentos falham constantemente. As criaturas são caóticas, imprevisíveis e podem alterar as leis da física local." },
+            medo: { titulo: "DOCUMENTO CORROMPIDO", cor: "#ffffff", texto: "E R R O. O Medo não pode ser compreendido. A membrana rasgou. Corra. Corra. Corra. Corra. Corra." }
+        };
+
+        // 4. INTERAÇÕES COM OS CARDS (SCROLL, HOVER ÁUDIO E CLICK MODAL)
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('show'); });
+        }, { threshold: 0.1 });
+
+        const modal = document.getElementById('modal-documento');
+        const modalTitulo = document.getElementById('modal-titulo');
+        const modalTexto = document.getElementById('modal-texto');
+
+        document.querySelectorAll('.elemento-card').forEach(card => {
+            observer.observe(card);
+            const elementoId = card.getAttribute('data-id');
+            const audioElement = document.getElementById(`audio-${elementoId}`);
+
+            // Tilt 3D
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const rotateX = (((e.clientY - rect.top) - rect.height / 2) / (rect.height / 2)) * -10;
+                const rotateY = (((e.clientX - rect.left) - rect.width / 2) / (rect.width / 2)) * 10;
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            });
+
+            // Hover: Áudio e Rastro
+            card.addEventListener('mouseenter', () => {
+                document.body.classList.add('hover-ativo');
+                if(audioElement) audioElement.play().catch(e => console.log("Áudio ausente ou bloqueado."));
+            });
+
+            // Leave: Para Áudio e Reseta 3D
+            card.addEventListener('mouseleave', () => {
+                document.body.classList.remove('hover-ativo');
+                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                if(audioElement) { audioElement.pause(); audioElement.currentTime = 0; }
+            });
+
+            // Click: Abre Modal
+            card.addEventListener('click', () => {
+                const info = bancoDeDados[elementoId];
+                modalTitulo.innerText = info.titulo;
+                modalTitulo.style.color = info.cor;
+                modalTexto.innerText = info.texto;
+                modal.classList.add('ativo');
+                document.querySelector('.modal-conteudo').style.borderLeftColor = info.cor;
+            });
+        });
+
+        // Fechar Modal
+        document.getElementById('fechar-modal').addEventListener('click', () => modal.classList.remove('ativo'));
+        
+        // Efeito Matrix no Conhecimento
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        document.getElementById("conhecimento").addEventListener('mouseover', event => {
+            let iteration = 0; const target = document.getElementById("texto-conhecimento");
+            const interval = setInterval(() => {
+                target.innerText = target.innerText.split("").map((l, i) => i < iteration ? "CONHECIMENTO"[i] : letters[Math.floor(Math.random() * 26)]).join("");
+                if(iteration >= "CONHECIMENTO".length) clearInterval(interval);
+                iteration += 1 / 3;
+            }, 30);
+        });
+
+        // 5. CANVAS (CINZAS DA MORTE)
+        const canvas = document.getElementById('canvas-cinzas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+        for (let i = 0; i < 100; i++) particles.push({ x: Math.random() * canvas.width, y: canvas.height + Math.random() * 100, size: Math.random() * 3 + 1, speedY: Math.random() * -1.5 - 0.5, speedX: Math.random() * 1 - 0.5, opacity: Math.random() * 0.5 + 0.1 });
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.y += p.speedY; p.x += p.speedX;
+                if (p.y < -10) { p.y = canvas.height + 10; p.x = Math.random() * canvas.width; }
+                ctx.fillStyle = `rgba(200, 200, 200, ${p.opacity})`;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>

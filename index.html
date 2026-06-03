@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Voltz Education — Login</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .auth-page {
+      min-height: calc(100vh - 76px);
+      padding: 42px 5%;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .auth-hero h1 {
+      font-size: clamp(2.7rem, 7vw, 5.6rem);
+      line-height: 0.9;
+      letter-spacing: -4px;
+      margin-bottom: 18px;
+    }
+
+    .auth-hero h1 span {
+      color: var(--cyan);
+      text-shadow: 0 0 28px rgba(0, 234, 255, 0.4);
+    }
+
+    .auth-hero p {
+      max-width: 720px;
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 1.04rem;
+    }
+
+    .auth-card {
+      width: 100%;
+      border-radius: 30px;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(0, 234, 255, 0.16), transparent 35%),
+        linear-gradient(135deg, rgba(9, 14, 36, 0.92), rgba(16, 12, 48, 0.92));
+      border: 1px solid rgba(0, 234, 255, 0.28);
+      box-shadow: 0 0 42px rgba(0, 234, 255, 0.14);
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .auth-tab {
+      border: 1px solid rgba(0, 234, 255, 0.22);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .auth-tab.active {
+      color: #02040d;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      box-shadow: 0 0 22px rgba(0, 234, 255, 0.2);
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .auth-form label {
+      display: grid;
+      gap: 7px;
+      color: var(--cyan);
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .auth-form input,
+    .auth-form select {
+      width: 100%;
+      border: 1px solid rgba(0, 234, 255, 0.22);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--white);
+      border-radius: 15px;
+      padding: 13px 14px;
+      outline: none;
+    }
+
+    .auth-form input:focus,
+    .auth-form select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 18px rgba(0, 234, 255, 0.12);
+    }
+
+    .auth-form select option {
+      color: #050713;
+    }
+
+    .auth-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .auth-message {
+      min-height: 24px;
+      color: var(--text);
+      line-height: 1.4;
+      font-size: 0.92rem;
+      margin-top: 10px;
+    }
+
+    .auth-message.error {
+      color: #ff7aa2;
+    }
+
+    .auth-message.success {
+      color: #47ffb3;
+    }
+
+    .auth-info {
+      margin-top: 18px;
+      padding: 15px;
+      border-radius: 18px;
+      background: rgba(0, 234, 255, 0.08);
+      border: 1px solid rgba(0, 234, 255, 0.18);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 0.92rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .auth-page {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="background-grid"></div>
+  <div class="glow glow-blue"></div>
+  <div class="glow glow-purple"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+
+      <div>
+        <strong>VOLTZ</strong>
+        <span>EDUCATION</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="#login">Entrar</a>
+      <a href="#sistema">Sistema</a>
+    </nav>
+  </header>
+
+  <main class="auth-page" id="login">
+    <section class="auth-hero">
+      <p class="protocol">FOCUS PROTOCOL ATIVADO</p>
+
+      <h1>
+        Entre em
+        <span>Neo Voltz</span>
+      </h1>
+
+      <p>
+        Crie sua conta, escolha sua escolaridade e entre em um RPG educacional
+        onde estudar vira missão, perguntas viram energia e sua evolução fica
+        salva no banco de dados.
+      </p>
+
+      <div class="quick-stats" style="margin-top: 24px;">
+        <div>
+          <strong>DB</strong>
+          <span>Supabase</span>
+        </div>
+
+        <div>
+          <strong>2D</strong>
+          <span>Mundo aberto</span>
+        </div>
+
+        <div>
+          <strong>XP</strong>
+          <span>Progressão</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="auth-card">
+      <div class="auth-tabs">
+        <button id="registerTab" class="auth-tab active" type="button">
+          Criar conta
+        </button>
+
+        <button id="loginTab" class="auth-tab" type="button">
+          Entrar
+        </button>
+      </div>
+
+      <form id="registerForm" class="auth-form">
+        <label>
+          Nome do aluno
+          <input id="registerName" type="text" placeholder="Ex: Jhonata" required />
+        </label>
+
+        <label>
+          E-mail
+          <input id="registerEmail" type="email" placeholder="seuemail@gmail.com" required />
+        </label>
+
+        <label>
+          Senha
+          <input id="registerPassword" type="password" placeholder="Mínimo 6 caracteres" minlength="6" required />
+        </label>
+
+        <label>
+          Escolaridade
+          <select id="registerSchoolLevel" required>
+            <option value="">Selecione</option>
+            <option value="fundamental">Ensino Fundamental</option>
+            <option value="medio">Ensino Médio</option>
+          </select>
+        </label>
+
+        <div class="auth-actions">
+          <button class="btn primary" type="submit">
+            Criar conta e entrar
+          </button>
+        </div>
+      </form>
+
+      <form id="loginForm" class="auth-form hidden">
+        <label>
+          E-mail
+          <input id="loginEmail" type="email" placeholder="seuemail@gmail.com" required />
+        </label>
+
+        <label>
+          Senha
+          <input id="loginPassword" type="password" placeholder="Sua senha" required />
+        </label>
+
+        <div class="auth-actions">
+          <button class="btn primary" type="submit">
+            Entrar em Neo Voltz
+          </button>
+        </div>
+      </form>
+
+      <p id="authMessage" class="auth-message"></p>
+
+      <div class="auth-info" id="sistema">
+        <strong>Como funciona:</strong><br>
+        O perfil salva nome, escolaridade, XP, moedas, combo e rank. Depois o jogo carrega as matérias certas para Ensino Fundamental ou Ensino Médio.
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { supabase } from "./supabase.js";
+
+    const registerTab = document.getElementById("registerTab");
+    const loginTab = document.getElementById("loginTab");
+    const registerForm = document.getElementById("registerForm");
+    const loginForm = document.getElementById("loginForm");
+    const authMessage = document.getElementById("authMessage");
+
+    function setMessage(text, type = "") {
+      authMessage.textContent = text;
+      authMessage.className = "auth-message";
+
+      if (type) {
+        authMessage.classList.add(type);
+      }
+    }
+
+    function setMode(mode) {
+      const isRegister = mode === "register";
+
+      registerTab.classList.toggle("active", isRegister);
+      loginTab.classList.toggle("active", !isRegister);
+
+      registerForm.classList.toggle("hidden", !isRegister);
+      loginForm.classList.toggle("hidden", isRegister);
+
+      setMessage("");
+    }
+
+    registerTab.addEventListener("click", () => {
+      setMode("register");
+    });
+
+    loginTab.addEventListener("click", () => {
+      setMode("login");
+    });
+
+    async function redirectIfAlreadyLogged() {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      if (data.session) {
+        window.location.href = "game.html";
+      }
+    }
+
+    registerForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const nome = document.getElementById("registerName").value.trim();
+      const email = document.getElementById("registerEmail").value.trim();
+      const password = document.getElementById("registerPassword").value;
+      const escolaridade = document.getElementById("registerSchoolLevel").value;
+
+      if (!nome || !email || !password || !escolaridade) {
+        setMessage("Preencha todos os campos.", "error");
+        return;
+      }
+
+      setMessage("Criando conta...", "");
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            nome,
+            escolaridade
+          }
+        }
+      });
+
+      if (error) {
+        setMessage(error.message, "error");
+        return;
+      }
+
+      if (!data.user) {
+        setMessage("Conta criada. Verifique seu e-mail antes de entrar.", "success");
+        return;
+      }
+
+      setMessage("Conta criada! Entrando em Neo Voltz...", "success");
+
+      setTimeout(() => {
+        window.location.href = "game.html";
+      }, 900);
+    });
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      if (!email || !password) {
+        setMessage("Preencha e-mail e senha.", "error");
+        return;
+      }
+
+      setMessage("Entrando...", "");
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        setMessage(error.message, "error");
+        return;
+      }
+
+      if (!data.user) {
+        setMessage("Não foi possível carregar o usuário.", "error");
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        setMessage("Login feito, mas o perfil do aluno não foi encontrado.", "error");
+        return;
+      }
+
+      setMessage("Login concluído! Entrando em Neo Voltz...", "success");
+
+      setTimeout(() => {
+        window.location.href = "game.html";
+      }, 700);
+    });
+
+    redirectIfAlreadyLogged();
+  </script>
+</body>
+</html>
