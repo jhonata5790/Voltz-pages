@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Voltz Education — Vila Central / Mapa Base Final</title>
+
+  <style>
+    :root {
+      --bg: #050713;
+      --blue: #00eaff;
+      --cyan: #78f7ff;
+      --purple: #9257ff;
+      --white: #f5fbff;
+      --text: #cbd7ff;
+      --danger: #ff4d7d;
+      --warning: #ffd166;
+      --dark: #02040d;
+      --grass-a: #0c2330;
+      --grass-b: #10183a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0, 234, 255, 0.18), transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(146, 87, 255, 0.2), transparent 32%),
+        linear-gradient(135deg, #050713, #0b1028 45%, #100c30);
+      color: var(--white);
+    }
+
+    .topbar {
+      height: 72px;
+      padding: 14px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(5, 7, 19, 0.86);
+      border-bottom: 1px solid rgba(0, 234, 255, 0.2);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      box-shadow: 0 0 18px rgba(0, 234, 255, 0.42);
+      font-size: 1.4rem;
+    }
+
+    .brand strong {
+      display: block;
+      letter-spacing: 1px;
+    }
+
+    .brand span {
+      display: block;
+      color: var(--cyan);
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+    }
+
+    .hud {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: var(--text);
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .hud-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(0, 234, 255, 0.18);
+    }
+
+    .game-wrapper {
+      height: calc(100vh - 72px);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .game-viewport {
+      position: relative;
+      width: min(1180px, 100%);
+      height: min(680px, 100%);
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 234, 255, 0.34);
+      background:
+        radial-gradient(circle at center, rgba(0, 234, 255, 0.12), transparent 38%),
+        linear-gradient(135deg, rgba(7, 11, 28, 0.98), rgba(18, 12, 49, 0.98));
+      box-shadow:
+        0 0 45px rgba(0, 234, 255, 0.16),
+        inset 0 0 70px rgba(146, 87, 255, 0.08);
+    }
+
+    .world {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2500px;
+      height: 1600px;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      background:
+        radial-gradient(circle at 50% 49%, rgba(0, 234, 255, 0.1), transparent 23%),
+        radial-gradient(circle at 20% 72%, rgba(146, 87, 255, 0.11), transparent 28%),
+        linear-gradient(135deg, var(--grass-a), var(--grass-b));
+    }
+
+    .world::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 2px solid rgba(0, 234, 255, 0.12);
+      box-shadow: inset 0 0 80px rgba(0, 234, 255, 0.08);
+      pointer-events: none;
+      z-index: 80;
+    }
+
+    .map-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(rgba(0, 234, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 234, 255, 0.045) 1px, transparent 1px),
+        radial-gradient(circle at 18px 18px, rgba(255, 255, 255, 0.035) 0 2px, transparent 3px);
+      background-size: 48px 48px, 48px 48px, 96px 96px;
+    }
+
+    .map-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(0, 234, 255, 0.14), transparent 22%),
+        radial-gradient(circle at 20% 80%, rgba(146, 87, 255, 0.18), transparent 28%),
+        radial-gradient(circle at 85% 25%, rgba(0, 234, 255, 0.11), transparent 24%);
+      pointer-events: none;
+    }
+
+    .ground-path {
+      position: absolute;
+      z-index: 3;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(120, 247, 255, 0.09), rgba(146, 87, 255, 0.06)),
+        rgba(0, 234, 255, 0.055);
+      border: 1px solid rgba(0, 234, 255, 0.1);
+      box-shadow: 0 0 24px rgba(0, 234, 255, 0.08);
+      pointer-events: none;
+    }
+
+    .ground-path.main-horizontal {
+      left: 300px;
+      top: 730px;
+      width: 1900px;
+      height: 140px;
+    }
+
+    .ground-path.main-vertical {
+      left: 1180px;
+      top: 220px;
+      width: 140px;
+      height: 1160px;
+    }
+
+    .ground-path.branch-north {
+      left: 1085px;
+      top: 335px;
+      width: 330px;
+      height: 92px;
+      opacity: 0.74;
+    }
+
+    .ground-path.branch-south {
+      left: 1075px;
+      top: 1160px;
+      width: 350px;
+      height: 92px;
+      opacity: 0.70;
+    }
+
+    .ground-path.branch-west-top {
+      left: 700px;
+      top: 575px;
+      width: 500px;
+      height: 86px;
+      transform: rotate(-18deg);
+      transform-origin: center;
+      opacity: 0.62;
+    }
+
+    .ground-path.branch-east-top {
+      left: 1300px;
+      top: 575px;
+      width: 520px;
+      height: 86px;
+      transform: rotate(18deg);
+      transform-origin: center;
+      opacity: 0.62;
+    }
+
+    .ground-path.branch-west-bottom {
+      left: 700px;
+      top: 940px;
+      width: 500px;
+      height: 86px;
+      transform: rotate(18deg);
+      transform-origin: center;
+      opacity: 0.58;
+    }
+
+    .ground-path.branch-east-bottom {
+      left: 1300px;
+      top: 940px;
+      width: 520px;
+      height: 86px;
+      transform: rotate(-18deg);
+      transform-origin: center;
+      opacity: 0.58;
+    }
+
+    .zone-marker {
+      position: absolute;
+      z-index: 6;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(5, 7, 19, 0.62);
+      border: 1px solid rgba(120, 247, 255, 0.18);
+      color: rgba(203, 215, 255, 0.88);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      pointer-events: none;
+      box-shadow: 0 0 18px rgba(0, 234, 255, 0.08);
+    }
+
+    .center-plaza {
+      position: absolute;
+      left: 1250px;
+      top: 800px;
+      width: 250px;
+      height: 250px;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--cyan);
+      font-weight: 900;
+      letter-spacing: 1px;
+      background:
+        repeating-conic-gradient(from 10deg, rgba(0, 234, 255, 0.08) 0 14deg, rgba(146, 87, 255, 0.09) 14deg 28deg),
+        radial-gradient(circle, rgba(0, 234, 255, 0.26), rgba(146, 87, 255, 0.13) 58%, rgba(5, 7, 19, 0.68));
+      border: 2px solid rgba(0, 234, 255, 0.28);
+      box-shadow: 0 0 30px rgba(0, 234, 255, 0.16);
+      pointer-events: none;
+    }
+
+    .map-layer-common {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #decorLayer { z-index: 5; }
+    #depthLayer { z-index: 12; }
+    #buildingBaseLayer,
+    #treeBaseLayer,
+    #roofLayer,
+    #canopyLayer {
+      display: none;
+    }
+    #colliderLayer { z-index: 50; }
+    #player { z-index: 1400; }
+
+    .decor-object,
+    .building-base,
+    .building-roof,
+    .map-tree-base,
+    .tree-canopy {
+      position: absolute;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .depth-object {
+      position: absolute;
+      pointer-events: none;
+      user-select: none;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .depth-building .building-base {
+      left: 0;
+      top: calc(var(--roof-h) - 22px);
+      width: 100%;
+      height: calc(100% - var(--roof-h) + 42px);
+    }
+
+    .depth-building .building-roof {
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: var(--roof-h);
+    }
+
+    .depth-tree .map-tree-base,
+    .depth-tree .tree-canopy,
+    .depth-decor .decor-object {
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .decor-crystal {
+      clip-path: polygon(50% 0%, 90% 32%, 76% 100%, 24% 100%, 10% 32%);
+      background: linear-gradient(135deg, rgba(120, 247, 255, 0.78), rgba(146, 87, 255, 0.78));
+      border: 2px solid rgba(245, 251, 255, 0.36);
+      box-shadow:
+        0 0 22px rgba(0, 234, 255, 0.34),
+        0 0 42px rgba(146, 87, 255, 0.18);
+      animation: crystalFloat 2.8s ease-in-out infinite;
+    }
+
+    .decor-water {
+      border-radius: 48% 52% 46% 54%;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(245, 251, 255, 0.28), transparent 18%),
+        linear-gradient(135deg, rgba(0, 234, 255, 0.32), rgba(146, 87, 255, 0.22));
+      border: 2px solid rgba(120, 247, 255, 0.24);
+      box-shadow:
+        0 0 26px rgba(0, 234, 255, 0.18),
+        inset 0 0 35px rgba(0, 0, 0, 0.26);
+    }
+
+    .decor-wall {
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(245, 251, 255, 0.11), rgba(0, 234, 255, 0.06)),
+        rgba(5, 7, 19, 0.78);
+      border: 1px solid rgba(120, 247, 255, 0.18);
+      box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.3);
+    }
+
+    .building-base {
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, rgba(0, 234, 255, 0.08), rgba(146, 87, 255, 0.07)),
+        rgba(5, 7, 19, 0.64);
+      border: 1px solid rgba(0, 234, 255, 0.16);
+      box-shadow:
+        0 16px 32px rgba(0, 0, 0, 0.22),
+        inset 0 0 26px rgba(0, 0, 0, 0.3);
+    }
+
+    .building-base::after {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      bottom: 16px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(120, 247, 255, 0.12);
+      border: 1px solid rgba(120, 247, 255, 0.12);
+    }
+
+    .building-roof {
+      border-radius: 28px 28px 18px 18px;
+      background:
+        linear-gradient(135deg, rgba(0, 234, 255, 0.22), rgba(146, 87, 255, 0.18)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 8px, transparent 8px 18px),
+        rgba(5, 7, 19, 0.86);
+      border: 2px solid rgba(120, 247, 255, 0.25);
+      box-shadow:
+        0 0 32px rgba(0, 234, 255, 0.12),
+        inset 0 0 30px rgba(0, 0, 0, 0.34);
+      transition: opacity 0.18s linear, filter 0.18s linear;
+    }
+
+    .building-roof::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(120, 247, 255, 0.18);
+    }
+
+    .building-roof::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 38%;
+      height: 34%;
+      transform: translate(-50%, -50%);
+      border-radius: 18px;
+      background: rgba(245, 251, 255, 0.06);
+      border: 1px solid rgba(245, 251, 255, 0.1);
+    }
+
+    .building-roof.player-hidden {
+      opacity: 0.82;
+      filter: brightness(1.12) saturate(1.15);
+    }
+
+    .building-label {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(5, 7, 19, 0.78);
+      border: 1px solid rgba(0, 234, 255, 0.2);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 900;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+    }
+
+    .building-door {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 58px;
+      height: 46px;
+      transform: translateX(-50%);
+      border-radius: 14px 14px 4px 4px;
+      background:
+        radial-gradient(circle at 50% 24%, rgba(255, 209, 102, 0.28), transparent 32%),
+        rgba(5, 7, 19, 0.82);
+      border: 1px solid rgba(255, 209, 102, 0.24);
+      box-shadow: 0 0 18px rgba(255, 209, 102, 0.12);
+    }
+
+    .tree-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: -18px;
+      width: 58%;
+      height: 26px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.26);
+      filter: blur(7px);
+    }
+
+    .tree-trunk {
+      position: absolute;
+      left: 50%;
+      bottom: -18px;
+      width: 22%;
+      min-width: 20px;
+      height: 44%;
+      min-height: 36px;
+      transform: translateX(-50%);
+      border-radius: 12px 12px 10px 10px;
+      background:
+        linear-gradient(90deg, rgba(255, 209, 102, 0.12), transparent 42%, rgba(245, 251, 255, 0.11)),
+        linear-gradient(180deg, rgba(255, 209, 102, 0.42), rgba(146, 87, 255, 0.32));
+      border: 1px solid rgba(255, 209, 102, 0.18);
+      box-shadow:
+        0 0 12px rgba(255, 209, 102, 0.08),
+        inset 0 0 14px rgba(0, 0, 0, 0.28);
+    }
+
+    .tree-trunk::before,
+    .tree-trunk::after {
+      content: "";
+      position: absolute;
+      top: 12%;
+      width: 2px;
+      height: 70%;
+      border-radius: 99px;
+      background: rgba(5, 7, 19, 0.22);
+    }
+
+    .tree-trunk::before { left: 34%; }
+    .tree-trunk::after { right: 28%; }
+
+    .tree-canopy {
+      border-radius: 50% 50% 44% 44%;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(245, 251, 255, 0.22), transparent 13%),
+        radial-gradient(circle at 30% 38%, rgba(120, 247, 255, 0.45), transparent 25%),
+        radial-gradient(circle at 68% 35%, rgba(146, 87, 255, 0.34), transparent 28%),
+        radial-gradient(circle at 50% 66%, rgba(0, 234, 255, 0.20), rgba(146, 87, 255, 0.18) 62%, rgba(5, 7, 19, 0.92));
+      border: 2px solid rgba(120, 247, 255, 0.2);
+      box-shadow:
+        0 0 24px rgba(0, 234, 255, 0.16),
+        inset 0 0 26px rgba(245, 251, 255, 0.04);
+      opacity: 0.96;
+      transition: opacity 0.18s linear, filter 0.18s linear;
+    }
+
+    .tree-canopy::before,
+    .tree-canopy::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(0, 234, 255, 0.12);
+      border: 1px solid rgba(120, 247, 255, 0.1);
+    }
+
+    .tree-canopy::before {
+      left: 10%;
+      top: 34%;
+      width: 38%;
+      height: 42%;
+    }
+
+    .tree-canopy::after {
+      right: 8%;
+      top: 30%;
+      width: 42%;
+      height: 46%;
+      background: rgba(146, 87, 255, 0.12);
+    }
+
+    .tree-canopy.player-under {
+      opacity: 0.54;
+      filter: saturate(1.1) brightness(1.12);
+    }
+
+
+    .depth-npc {
+      width: 82px;
+      height: 112px;
+      transform: translate(-50%, -100%);
+    }
+
+    .npc-shell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      filter:
+        drop-shadow(0 0 12px rgba(0, 234, 255, 0.42))
+        drop-shadow(0 0 20px rgba(146, 87, 255, 0.18));
+    }
+
+    .npc-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      animation: npcIdle 2.6s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
+    .npc-label {
+      position: absolute;
+      left: 50%;
+      bottom: -18px;
+      transform: translateX(-50%);
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(5, 7, 19, 0.82);
+      border: 1px solid rgba(120, 247, 255, 0.22);
+      color: rgba(245, 251, 255, 0.92);
+      font-size: 0.66rem;
+      font-weight: 900;
+      white-space: nowrap;
+      letter-spacing: 0.2px;
+      box-shadow: 0 0 14px rgba(0, 234, 255, 0.08);
+    }
+
+    .npc-interaction-ring {
+      position: absolute;
+      left: 50%;
+      bottom: 1px;
+      width: 86px;
+      height: 34px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      border: 1px dashed rgba(255, 209, 102, 0.48);
+      background: rgba(255, 209, 102, 0.055);
+      opacity: 0;
+      transition: opacity 0.14s linear;
+      pointer-events: none;
+    }
+
+    .depth-npc.nearby .npc-interaction-ring {
+      opacity: 1;
+      animation: npcRingPulse 1s ease-in-out infinite;
+    }
+
+    .npc-collider-debug {
+      border-color: rgba(120, 247, 255, 0.78);
+      background: rgba(120, 247, 255, 0.11);
+    }
+
+    .dialogue-box {
+      position: absolute;
+      left: 50%;
+      bottom: 76px;
+      z-index: 90;
+      width: min(780px, calc(100% - 34px));
+      transform: translateX(-50%) translateY(18px);
+      padding: 18px 20px;
+      border-radius: 22px;
+      background:
+        linear-gradient(135deg, rgba(5, 7, 19, 0.94), rgba(14, 14, 44, 0.94));
+      border: 1px solid rgba(0, 234, 255, 0.34);
+      box-shadow:
+        0 0 36px rgba(0, 234, 255, 0.18),
+        inset 0 0 28px rgba(146, 87, 255, 0.08);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.16s linear, transform 0.16s linear;
+      backdrop-filter: blur(16px);
+    }
+
+    .dialogue-box.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .dialogue-name {
+      color: var(--cyan);
+      font-size: 0.86rem;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .dialogue-text {
+      color: var(--white);
+      line-height: 1.55;
+      font-size: 1rem;
+    }
+
+    .dialogue-footer {
+      margin-top: 12px;
+      color: rgba(203, 215, 255, 0.78);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    @keyframes npcIdle {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-4px) scale(1.015); }
+    }
+
+    @keyframes npcRingPulse {
+      0%, 100% { opacity: 0.42; transform: translateX(-50%) scale(0.94); }
+      50% { opacity: 0.95; transform: translateX(-50%) scale(1.08); }
+    }
+
+    .collider-debug {
+      position: absolute;
+      border: 2px dashed rgba(255, 77, 125, 0.62);
+      background: rgba(255, 77, 125, 0.11);
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.68rem;
+      font-weight: 900;
+      display: none;
+      place-items: center;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .world.show-colliders .collider-debug {
+      display: grid;
+    }
+
+    .player-hitbox-debug {
+      position: absolute;
+      z-index: 51;
+      display: none;
+      place-items: center;
+      border: 2px solid rgba(255, 209, 102, 0.95);
+      background: rgba(255, 209, 102, 0.18);
+      color: rgba(255, 255, 255, 0.94);
+      font-size: 0.62rem;
+      font-weight: 900;
+      text-align: center;
+      border-radius: 999px;
+      pointer-events: none;
+      box-shadow: 0 0 14px rgba(255, 209, 102, 0.34);
+    }
+
+    .world.show-colliders .player-hitbox-debug {
+      display: grid;
+    }
+
+    .player {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 72px;
+      height: 92px;
+      transform: translate(-50%, -50%);
+      transform-origin: center center;
+      --player-flip: 1;
+      --player-tilt: 0deg;
+      filter:
+        drop-shadow(0 0 16px rgba(0, 234, 255, 0.7))
+        drop-shadow(0 0 28px rgba(146, 87, 255, 0.38));
+      transition: filter 0.12s linear;
+    }
+
+    .player.moving {
+      filter:
+        drop-shadow(0 0 22px rgba(0, 234, 255, 0.95))
+        drop-shadow(0 0 35px rgba(146, 87, 255, 0.55));
+    }
+
+    .player-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      transform-origin: center center;
+      transform: scaleX(var(--player-flip)) rotate(var(--player-tilt));
+      transition: transform 0.08s linear;
+    }
+
+    .player-core {
+      animation: corePulse 1.4s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .player-aura {
+      animation: auraPulse 2s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .player-body {
+      animation: playerIdle 2.4s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
+    .player.moving .player-body {
+      animation: playerWalk 0.42s ease-in-out infinite;
+    }
+
+    .player-eye {
+      animation: eyeBlink 3.4s infinite;
+      transform-origin: center;
+    }
+
+    .player-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 58px;
+      height: 16px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.35);
+      filter: blur(4px);
+      z-index: -1;
+    }
+
+    .face-front,
+    .face-back,
+    .face-side,
+    .direction-mark-front,
+    .direction-mark-back,
+    .direction-mark-side {
+      opacity: 0;
+      transition: opacity 0.08s linear;
+    }
+
+    .player[data-direction="baixo"] .face-front,
+    .player[data-direction="baixo-direita"] .face-front,
+    .player[data-direction="baixo-esquerda"] .face-front,
+    .player[data-direction="baixo"] .direction-mark-front,
+    .player[data-direction="baixo-direita"] .direction-mark-front,
+    .player[data-direction="baixo-esquerda"] .direction-mark-front {
+      opacity: 1;
+    }
+
+    .player[data-direction="cima"] .face-back,
+    .player[data-direction="cima-direita"] .face-back,
+    .player[data-direction="cima-esquerda"] .face-back,
+    .player[data-direction="cima"] .direction-mark-back,
+    .player[data-direction="cima-direita"] .direction-mark-back,
+    .player[data-direction="cima-esquerda"] .direction-mark-back {
+      opacity: 1;
+    }
+
+    .player[data-direction="direita"] .face-side,
+    .player[data-direction="esquerda"] .face-side,
+    .player[data-direction="direita"] .direction-mark-side,
+    .player[data-direction="esquerda"] .direction-mark-side {
+      opacity: 1;
+    }
+
+    .player[data-direction="baixo-direita"] .player-svg,
+    .player[data-direction="baixo-esquerda"] .player-svg {
+      --player-tilt: 4deg;
+    }
+
+    .player[data-direction="cima-direita"] .player-svg,
+    .player[data-direction="cima-esquerda"] .player-svg {
+      --player-tilt: -4deg;
+    }
+
+    .player-locator {
+      position: absolute;
+      z-index: 70;
+      width: 86px;
+      height: 86px;
+      transform: translate(-50%, -50%) scale(0.85);
+      border-radius: 50%;
+      border: 2px solid rgba(255, 209, 102, 0.92);
+      box-shadow:
+        0 0 0 9999px rgba(5, 7, 19, 0.07),
+        0 0 24px rgba(255, 209, 102, 0.42),
+        inset 0 0 22px rgba(0, 234, 255, 0.16);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.14s linear, transform 0.14s linear;
+    }
+
+    .player-locator.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      animation: locatorPulse 1s ease-in-out infinite;
+    }
+
+    .player-locator::before,
+    .player-locator::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+    }
+
+    .player-locator::before {
+      width: 42px;
+      height: 42px;
+      border: 1px dashed rgba(120, 247, 255, 0.9);
+    }
+
+    .player-locator::after {
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 209, 102, 0.96);
+      box-shadow: 0 0 12px rgba(255, 209, 102, 0.8);
+    }
+
+    .debug-panel {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      z-index: 72;
+      max-width: 390px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(5, 7, 19, 0.82);
+      border: 1px solid rgba(0, 234, 255, 0.22);
+      color: var(--text);
+      line-height: 1.45;
+      backdrop-filter: blur(12px);
+    }
+
+    .debug-panel strong {
+      color: var(--cyan);
+    }
+
+    .interaction-text {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      z-index: 72;
+      transform: translateX(-50%);
+      min-width: 260px;
+      max-width: 90%;
+      padding: 12px 18px;
+      border-radius: 999px;
+      text-align: center;
+      color: var(--text);
+      background: rgba(5, 7, 19, 0.84);
+      border: 1px solid rgba(0, 234, 255, 0.28);
+      box-shadow: 0 0 25px rgba(0, 234, 255, 0.12);
+    }
+
+    @keyframes crystalFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes locatorPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0.26), 0 0 24px rgba(255, 209, 102, 0.42), inset 0 0 22px rgba(0, 234, 255, 0.16); }
+      50% { box-shadow: 0 0 0 12px rgba(255, 209, 102, 0), 0 0 34px rgba(255, 209, 102, 0.56), inset 0 0 26px rgba(0, 234, 255, 0.22); }
+    }
+
+    @keyframes playerIdle {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-3px) scale(1.02); }
+    }
+
+    @keyframes playerWalk {
+      0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+      25% { transform: translateY(-3px) rotate(-2deg) scale(1.02); }
+      50% { transform: translateY(0) rotate(0deg) scale(1); }
+      75% { transform: translateY(-3px) rotate(2deg) scale(1.02); }
+    }
+
+    @keyframes corePulse {
+      0%, 100% { opacity: 0.82; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    @keyframes auraPulse {
+      0%, 100% { opacity: 0.18; transform: scale(0.96); }
+      50% { opacity: 0.36; transform: scale(1.08); }
+    }
+
+    @keyframes eyeBlink {
+      0%, 90%, 100% { transform: scaleY(1); }
+      94% { transform: scaleY(0.12); }
+    }
+
+    @media (max-width: 760px) {
+      body { overflow: auto; }
+
+      .topbar {
+        height: auto;
+        min-height: 72px;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .game-wrapper {
+        height: calc(100vh - 112px);
+        padding: 10px;
+      }
+
+      .game-viewport {
+        height: 100%;
+        border-radius: 20px;
+      }
+
+      .debug-panel { display: none; }
+
+      .player {
+        width: 60px;
+        height: 80px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+
+      <div>
+        <strong>VOLTZ EDUCATION</strong>
+        <span>VILA CENTRAL — MAPA BASE</span>
+      </div>
+    </div>
+
+    <div class="hud">
+      <div class="hud-pill">WASD / Setas: mover</div>
+      <div class="hud-pill">Shift: correr</div>
+      <div class="hud-pill">Câmera suave</div>
+      <div class="hud-pill">C: colisores</div>
+      <div class="hud-pill">E: interagir</div>
+      <div class="hud-pill">Mapa-base final</div>
+      <div class="hud-pill">Profundidade por Y</div>
+    </div>
+  </header>
+
+  <main class="game-wrapper">
+    <section id="gameViewport" class="game-viewport">
+      <div id="world" class="world">
+        <div class="map-layer"></div>
+        <div class="map-glow"></div>
+
+        <div class="ground-path main-horizontal"></div>
+        <div class="ground-path main-vertical"></div>
+        <div class="ground-path branch-north"></div>
+        <div class="ground-path branch-south"></div>
+        <div class="ground-path branch-west-top"></div>
+        <div class="ground-path branch-east-top"></div>
+        <div class="ground-path branch-west-bottom"></div>
+        <div class="ground-path branch-east-bottom"></div>
+
+        <div class="zone-marker" style="left: 1088px; top: 92px;">Zona Mística</div>
+        <div class="zone-marker" style="left: 456px; top: 318px;">Estudo</div>
+        <div class="zone-marker" style="left: 1778px; top: 318px;">Treino</div>
+        <div class="zone-marker" style="left: 485px; top: 1248px;">Comércio</div>
+        <div class="zone-marker" style="left: 1745px; top: 1248px;">Ranking</div>
+
+        <div class="center-plaza">
+          PRAÇA<br>
+          VOLTZ
+        </div>
+
+        <div id="decorLayer" class="map-layer-common"></div>
+        <div id="buildingBaseLayer" class="map-layer-common"></div>
+        <div id="treeBaseLayer" class="map-layer-common"></div>
+        <div id="depthLayer" class="map-layer-common"></div>
+        <div id="colliderLayer" class="map-layer-common"></div>
+        <div id="playerHitboxDebug" class="player-hitbox-debug">PÉS</div>
+
+        <div id="player" class="player" data-direction="baixo">
+          <div class="player-shadow"></div>
+
+          <svg class="player-svg" viewBox="0 0 120 150" role="img" aria-label="Jogador Voltz">
+            <defs>
+              <linearGradient id="playerBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#78f7ff"/>
+                <stop offset="55%" stop-color="#9257ff"/>
+                <stop offset="100%" stop-color="#00eaff"/>
+              </linearGradient>
+
+              <radialGradient id="playerCoreGradient" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="45%" stop-color="#78f7ff"/>
+                <stop offset="100%" stop-color="#9257ff"/>
+              </radialGradient>
+            </defs>
+
+            <ellipse class="player-aura" cx="60" cy="82" rx="48" ry="58" fill="#00eaff"/>
+
+            <g class="player-body">
+              <path
+                d="M32 118 C24 80, 28 42, 60 30 C92 42, 96 80, 88 118 C78 136, 42 136, 32 118Z"
+                fill="url(#playerBodyGradient)"
+                stroke="#f5fbff"
+                stroke-width="4"
+                stroke-linejoin="round"
+              />
+
+              <path
+                d="M43 31 L52 10 L60 29 L68 10 L77 31"
+                fill="none"
+                stroke="#ffd166"
+                stroke-width="6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+
+              <circle class="player-core" cx="60" cy="82" r="22" fill="url(#playerCoreGradient)" stroke="#ffffff" stroke-width="4"/>
+
+              <g class="face-front">
+                <ellipse class="player-eye" cx="47" cy="62" rx="7" ry="10" fill="#02040d"/>
+                <ellipse class="player-eye" cx="73" cy="62" rx="7" ry="10" fill="#02040d"/>
+                <circle cx="49" cy="59" r="2.5" fill="#78f7ff"/>
+                <circle cx="75" cy="59" r="2.5" fill="#78f7ff"/>
+                <path d="M48 105 C55 111, 65 111, 72 105" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
+              </g>
+
+              <g class="face-back">
+                <path d="M40 61 C50 53, 70 53, 80 61" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
+                <path d="M45 102 C54 96, 66 96, 75 102" fill="none" stroke="#78f7ff" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="60" cy="66" r="8" fill="#050713" stroke="#78f7ff" stroke-width="3"/>
+              </g>
+
+              <g class="face-side">
+                <ellipse class="player-eye" cx="72" cy="63" rx="8" ry="10" fill="#02040d"/>
+                <circle cx="75" cy="60" r="2.5" fill="#78f7ff"/>
+                <path d="M62 104 C70 109, 78 108, 84 102" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
+                <path d="M82 72 C95 76, 98 88, 88 96" fill="none" stroke="#78f7ff" stroke-width="5" stroke-linecap="round"/>
+              </g>
+
+              <g class="direction-mark-front">
+                <path d="M31 88 C18 92, 15 106, 22 116" fill="none" stroke="#78f7ff" stroke-width="6" stroke-linecap="round"/>
+                <path d="M89 88 C102 92, 105 106, 98 116" fill="none" stroke="#78f7ff" stroke-width="6" stroke-linecap="round"/>
+              </g>
+
+              <g class="direction-mark-back">
+                <path d="M30 92 C17 88, 14 75, 23 67" fill="none" stroke="#9257ff" stroke-width="6" stroke-linecap="round"/>
+                <path d="M90 92 C103 88, 106 75, 97 67" fill="none" stroke="#9257ff" stroke-width="6" stroke-linecap="round"/>
+              </g>
+
+              <g class="direction-mark-side">
+                <path d="M34 91 C22 98, 22 113, 34 120" fill="none" stroke="#78f7ff" stroke-width="6" stroke-linecap="round"/>
+                <path d="M88 87 C101 89, 106 102, 99 113" fill="none" stroke="#ffd166" stroke-width="6" stroke-linecap="round"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <div id="roofLayer" class="map-layer-common"></div>
+        <div id="canopyLayer" class="map-layer-common"></div>
+      </div>
+
+      <div id="playerLocator" class="player-locator" aria-hidden="true"></div>
+
+      <div class="debug-panel">
+        <strong>Debug do Jogador</strong><br>
+        X: <span id="debugX">0</span><br>
+        Y: <span id="debugY">0</span><br>
+        Velocidade: <span id="debugSpeed">0</span><br>
+        Direção: <span id="debugDirection">baixo</span><br>
+        Câmera X: <span id="debugCameraX">0</span><br>
+        Câmera Y: <span id="debugCameraY">0</span><br>
+        Colisão: <span id="debugCollision">livre</span><br>
+        Oculto por: <span id="debugOcclusion">nada</span>
+      </div>
+
+      <div id="interactionText" class="interaction-text">
+        Mapa-base final da Vila Central: caminhos limpos, zonas organizadas, colisão nos pés e profundidade por Y.
+      </div>
+
+      <div id="dialogueBox" class="dialogue-box" aria-live="polite">
+        <div id="dialogueName" class="dialogue-name">NPC</div>
+        <div id="dialogueText" class="dialogue-text">...</div>
+        <div class="dialogue-footer">Pressione E ou Esc para fechar.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const viewport = document.getElementById("gameViewport");
+    const world = document.getElementById("world");
+    const player = document.getElementById("player");
+    const playerSvg = player.querySelector(".player-svg");
+    const playerLocator = document.getElementById("playerLocator");
+    const playerHitboxDebug = document.getElementById("playerHitboxDebug");
+
+    const debugX = document.getElementById("debugX");
+    const debugY = document.getElementById("debugY");
+    const debugSpeed = document.getElementById("debugSpeed");
+    const debugDirection = document.getElementById("debugDirection");
+    const debugCameraX = document.getElementById("debugCameraX");
+    const debugCameraY = document.getElementById("debugCameraY");
+    const debugCollision = document.getElementById("debugCollision");
+    const debugOcclusion = document.getElementById("debugOcclusion");
+    const interactionText = document.getElementById("interactionText");
+    const dialogueBox = document.getElementById("dialogueBox");
+    const dialogueName = document.getElementById("dialogueName");
+    const dialogueText = document.getElementById("dialogueText");
+
+    const decorLayer = document.getElementById("decorLayer");
+    const buildingBaseLayer = document.getElementById("buildingBaseLayer");
+    const roofLayer = document.getElementById("roofLayer");
+    const colliderLayer = document.getElementById("colliderLayer");
+    const treeBaseLayer = document.getElementById("treeBaseLayer");
+    const canopyLayer = document.getElementById("canopyLayer");
+    const depthLayer = document.getElementById("depthLayer");
+
+    const keys = {
+      up: false,
+      down: false,
+      left: false,
+      right: false,
+      run: false,
+      debugColliders: false
+    };
+
+    const worldState = {
+      width: 2500,
+      height: 1600
+    };
+
+    const cameraState = {
+      x: 0,
+      y: 0,
+      smoothing: 0.14
+    };
+
+    const playerState = {
+      x: 0,
+      y: 0,
+      width: 72,
+      height: 92,
+      baseSpeed: 3.4,
+      runSpeed: 5.2,
+      direction: "baixo",
+      moving: false
+    };
+
+    const buildings = [
+      { id: "portal", label: "Portal dos Reinos", x: 980, y: 115, w: 540, h: 290, roofH: 138, collider: { x: 0, y: 0, w: 0, h: 0 } },
+      { id: "biblioteca", label: "Biblioteca de Dicas", x: 410, y: 360, w: 400, h: 280, roofH: 144, collider: { x: 0, y: 0, w: 0, h: 0 } },
+      { id: "arena", label: "Arena de Treino", x: 1690, y: 360, w: 430, h: 300, roofH: 152, collider: { x: 0, y: 0, w: 0, h: 0 } },
+      { id: "loja", label: "Loja Voltz", x: 430, y: 965, w: 400, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } },
+      { id: "ranking", label: "Central de Ranking", x: 1690, y: 965, w: 430, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } },
+      { id: "terminal", label: "Terminal do Aluno", x: 1025, y: 1250, w: 450, h: 270, roofH: 140, collider: { x: 0, y: 0, w: 0, h: 0 } }
+    ];
+
+    const decorObjects = [
+      { id: "cristal-portal-esq", label: "Cristal", type: "crystal", x: 910, y: 275, w: 72, h: 104, solid: true },
+      { id: "cristal-portal-dir", label: "Cristal", type: "crystal", x: 1520, y: 275, w: 72, h: 104, solid: true },
+      { id: "cristal-praca-esq", label: "Cristal", type: "crystal", x: 1030, y: 575, w: 58, h: 86, solid: true },
+      { id: "cristal-praca-dir", label: "Cristal", type: "crystal", x: 1415, y: 575, w: 58, h: 86, solid: true },
+      { id: "banco-norte-esq", label: "Banco", type: "wall", x: 960, y: 610, w: 140, h: 34, solid: true },
+      { id: "banco-norte-dir", label: "Banco", type: "wall", x: 1400, y: 610, w: 140, h: 34, solid: true },
+      { id: "banco-sul-esq", label: "Banco", type: "wall", x: 960, y: 960, w: 140, h: 34, solid: true },
+      { id: "banco-sul-dir", label: "Banco", type: "wall", x: 1400, y: 960, w: 140, h: 34, solid: true },
+      { id: "muro-noroeste", label: "Muro", type: "wall", x: 195, y: 330, w: 120, h: 58, solid: true },
+      { id: "muro-nordeste", label: "Muro", type: "wall", x: 2185, y: 330, w: 120, h: 58, solid: true },
+      { id: "muro-sudoeste", label: "Muro", type: "wall", x: 195, y: 1200, w: 120, h: 58, solid: true },
+      { id: "muro-sudeste", label: "Muro", type: "wall", x: 2185, y: 1200, w: 120, h: 58, solid: true }
+    ];
+
+    const treeObjects = [
+      { id: "arvore-01", label: "Tronco 1", x: 105, y: 90, w: 138, h: 126 },
+      { id: "arvore-02", label: "Tronco 2", x: 270, y: 135, w: 116, h: 108 },
+      { id: "arvore-03", label: "Tronco 3", x: 760, y: 125, w: 118, h: 110 },
+      { id: "arvore-04", label: "Tronco 4", x: 1650, y: 120, w: 118, h: 110 },
+      { id: "arvore-05", label: "Tronco 5", x: 2150, y: 115, w: 138, h: 126 },
+      { id: "arvore-06", label: "Tronco 6", x: 2315, y: 190, w: 116, h: 108 },
+      { id: "arvore-07", label: "Tronco 7", x: 95, y: 560, w: 130, h: 120 },
+      { id: "arvore-08", label: "Tronco 8", x: 245, y: 660, w: 112, h: 104 },
+      { id: "arvore-09", label: "Tronco 9", x: 2220, y: 560, w: 130, h: 120 },
+      { id: "arvore-10", label: "Tronco 10", x: 2370, y: 680, w: 112, h: 104 },
+      { id: "arvore-11", label: "Tronco 11", x: 125, y: 1390, w: 136, h: 126 },
+      { id: "arvore-12", label: "Tronco 12", x: 310, y: 1325, w: 116, h: 108 },
+      { id: "arvore-13", label: "Tronco 13", x: 770, y: 1430, w: 118, h: 110 },
+      { id: "arvore-14", label: "Tronco 14", x: 1605, y: 1430, w: 118, h: 110 },
+      { id: "arvore-15", label: "Tronco 15", x: 2170, y: 1320, w: 136, h: 126 },
+      { id: "arvore-16", label: "Tronco 16", x: 2325, y: 1400, w: 116, h: 108 },
+      { id: "arvore-17", label: "Tronco 17", x: 640, y: 675, w: 108, h: 100 },
+      { id: "arvore-18", label: "Tronco 18", x: 1760, y: 675, w: 108, h: 100 }
+    ];
+
+
+
+    const npcObjects = [
+      {
+        id: "npc-guia-portal",
+        name: "Guia dos Reinos",
+        role: "Portal",
+        x: 1250,
+        y: 505,
+        colorA: "#78f7ff",
+        colorB: "#9257ff",
+        aura: "#00eaff",
+        dialogue: "Bem-vindo à Vila Central. Quando o Portal dos Reinos abrir, é daqui que você vai escolher a matéria e entrar no desafio."
+      },
+      {
+        id: "npc-professora-sintaxe",
+        name: "Professora Sintaxe",
+        role: "Estudo",
+        x: 870,
+        y: 675,
+        colorA: "#ffd166",
+        colorB: "#78f7ff",
+        aura: "#ffd166",
+        dialogue: "Antes de lutar contra uma questão, entenda a ideia por trás dela. Uma boa dica antes da pergunta pode salvar seus pontos de vida."
+      },
+      {
+        id: "npc-treinador-spark",
+        name: "Treinador Spark",
+        role: "Arena",
+        x: 1640,
+        y: 690,
+        colorA: "#ff4d7d",
+        colorB: "#9257ff",
+        aura: "#ff4d7d",
+        dialogue: "Na Arena, cada resposta vira ataque. Acertou, causa dano. Errou, aprende com a justificativa e volta mais forte."
+      },
+      {
+        id: "npc-vendedora-voltz",
+        name: "Vendedora Voltz",
+        role: "Loja",
+        x: 875,
+        y: 1195,
+        colorA: "#00eaff",
+        colorB: "#ffd166",
+        aura: "#ffd166",
+        dialogue: "Moedas não servem só para brilhar. Depois, você vai poder comprar dicas, recuperação e bônus para continuar a jornada."
+      },
+      {
+        id: "npc-arquivista-ranking",
+        name: "Arquivista Rank",
+        role: "Ranking",
+        x: 1645,
+        y: 1195,
+        colorA: "#9257ff",
+        colorB: "#78f7ff",
+        aura: "#9257ff",
+        dialogue: "O ranking não mede só quem sabe mais. Ele mostra constância, evolução e coragem de tentar de novo."
+      },
+      {
+        id: "npc-mentor-terminal",
+        name: "Mentor do Aluno",
+        role: "Perfil",
+        x: 1505,
+        y: 1355,
+        colorA: "#78f7ff",
+        colorB: "#00eaff",
+        aura: "#78f7ff",
+        dialogue: "Seu perfil vai guardar XP, moedas, progresso por reino e tudo que você conquistar dentro do Reino do Conhecimento."
+      }
+    ];
+
+    let nearbyNpc = null;
+    let dialogueOpen = false;
+
+    let colliders = [];
+    let occluders = [];
+    let lastCollisionLabel = "livre";
+    let currentOcclusionLabel = "nada";
+
+    function setupPlayer() {
+      updateWorldSizeFromCss();
+      updatePlayerSizeFromCss();
+      buildCollisionAndOcclusionData();
+
+      playerState.x = 1250;
+      playerState.y = 1120;
+
+      renderDepthLayer();
+      renderColliderDebugLayer();
+      updatePlayerPosition();
+      snapCameraToPlayer();
+      updateOcclusionVisibility();
+      updateNearbyNpc();
+      updateDebug();
+    }
+
+    function updateWorldSizeFromCss() {
+      worldState.width = world.offsetWidth || 2500;
+      worldState.height = world.offsetHeight || 1600;
+    }
+
+    function updatePlayerSizeFromCss() {
+      const rect = player.getBoundingClientRect();
+      playerState.width = rect.width || 72;
+      playerState.height = rect.height || 92;
+    }
+
+    function getCurrentSpeed() {
+      return keys.run ? playerState.runSpeed : playerState.baseSpeed;
+    }
+
+    function buildCollisionAndOcclusionData() {
+      const buildingColliders = buildings.flatMap(getBuildingPhysicalColliders);
+      const decorColliders = decorObjects
+        .filter((decor) => decor.solid)
+        .map(getDecorPhysicalCollider);
+
+      const treeColliders = treeObjects.map(getTreeTrunkCollider);
+      const npcColliders = npcObjects.map(getNpcCollider);
+
+      colliders = [
+        ...buildingColliders,
+        ...decorColliders,
+        ...treeColliders,
+        ...npcColliders
+      ];
+
+      const roofOccluders = buildings.map((building) => ({
+        id: `${building.id}-teto`,
+        label: `${building.label} / teto`,
+        x: building.x,
+        y: building.y,
+        w: building.w,
+        h: building.h,
+        sortY: getBuildingSortY(building),
+        kind: "roof"
+      }));
+
+      const canopyOccluders = treeObjects.map((tree) => ({
+        id: `${tree.id}-copa`,
+        label: `${tree.label.replace("Tronco", "Copa")}`,
+        x: tree.x,
+        y: tree.y,
+        w: tree.w,
+        h: tree.h,
+        sortY: getTreeSortY(tree),
+        kind: "canopy"
+      }));
+
+      occluders = [...roofOccluders, ...canopyOccluders];
+    }
+
+    function getBuildingSortY(building) {
+      return Math.round(building.y + building.h - 8);
+    }
+
+    function getTreeSortY(tree) {
+      return Math.round(tree.y + tree.h + 18);
+    }
+
+    function getDecorSortY(decor) {
+      if (decor.type === "water") {
+        return Math.round(decor.y + decor.h * 0.58);
+      }
+
+      return Math.round(decor.y + decor.h);
+    }
+
+
+    function getNpcSortY(npc) {
+      return Math.round(npc.y + 8);
+    }
+
+    function getNpcCollider(npc) {
+      return {
+        id: `${npc.id}-pes`,
+        label: `${npc.name} / NPC`,
+        x: npc.x - 16,
+        y: npc.y - 8,
+        w: 32,
+        h: 18,
+        debugClass: "npc-collider-debug"
+      };
+    }
+
+    function getNpcDistance(npc) {
+      const footPoint = getPlayerFootPoint();
+      const dx = footPoint.x - npc.x;
+      const dy = footPoint.y - npc.y;
+      return Math.hypot(dx, dy);
+    }
+
+    function getNearestNpcInRange() {
+      const interactionRange = 92;
+      return npcObjects
+        .map((npc) => ({ npc, distance: getNpcDistance(npc) }))
+        .filter((entry) => entry.distance <= interactionRange)
+        .sort((a, b) => a.distance - b.distance)[0]?.npc || null;
+    }
+
+    function updateNearbyNpc() {
+      nearbyNpc = getNearestNpcInRange();
+
+      document.querySelectorAll("[data-npc-id]").forEach((element) => {
+        element.classList.toggle("nearby", nearbyNpc && element.dataset.npcId === nearbyNpc.id);
+      });
+    }
+
+    function openNpcDialogue(npc) {
+      dialogueOpen = true;
+      keys.up = false;
+      keys.down = false;
+      keys.left = false;
+      keys.right = false;
+      keys.run = false;
+      playerState.moving = false;
+      updatePlayerAnimation();
+
+      dialogueName.textContent = `${npc.name} — ${npc.role}`;
+      dialogueText.textContent = npc.dialogue;
+      dialogueBox.classList.add("visible");
+      interactionText.textContent = `Conversando com ${npc.name}.`;
+    }
+
+    function closeDialogue() {
+      dialogueOpen = false;
+      dialogueBox.classList.remove("visible");
+      updateHint();
+    }
+
+    function interactWithNearbyNpc() {
+      if (dialogueOpen) {
+        closeDialogue();
+        return;
+      }
+
+      updateNearbyNpc();
+
+      if (nearbyNpc) {
+        openNpcDialogue(nearbyNpc);
+      }
+    }
+
+    function npcSvg(npc) {
+      return `
+        <svg class="npc-svg" viewBox="0 0 120 150" role="img" aria-label="${npc.name}">
+          <ellipse cx="60" cy="128" rx="30" ry="10" fill="rgba(0,0,0,0.34)"></ellipse>
+          <ellipse cx="60" cy="78" rx="44" ry="52" fill="${npc.aura}" opacity="0.16"></ellipse>
+          <path
+            d="M36 119 C30 82, 34 48, 60 36 C86 48, 90 82, 84 119 C74 132, 46 132, 36 119Z"
+            fill="${npc.colorB}"
+            stroke="rgba(245,251,255,0.78)"
+            stroke-width="4"
+            stroke-linejoin="round"
+          ></path>
+          <path
+            d="M40 92 C48 82, 72 82, 80 92 L77 118 C69 126, 51 126, 43 118Z"
+            fill="${npc.colorA}"
+            opacity="0.88"
+          ></path>
+          <circle cx="60" cy="57" r="23" fill="${npc.colorA}" stroke="rgba(245,251,255,0.82)" stroke-width="4"></circle>
+          <path d="M43 41 C51 22, 70 22, 78 41" fill="none" stroke="${npc.colorB}" stroke-width="8" stroke-linecap="round"></path>
+          <ellipse cx="51" cy="58" rx="5" ry="7" fill="#02040d"></ellipse>
+          <ellipse cx="69" cy="58" rx="5" ry="7" fill="#02040d"></ellipse>
+          <circle cx="53" cy="55" r="1.8" fill="#78f7ff"></circle>
+          <circle cx="71" cy="55" r="1.8" fill="#78f7ff"></circle>
+          <path d="M52 72 C57 77, 64 77, 69 72" fill="none" stroke="#02040d" stroke-width="4" stroke-linecap="round"></path>
+          <path d="M36 88 C24 94, 25 108, 36 113" fill="none" stroke="${npc.colorA}" stroke-width="6" stroke-linecap="round"></path>
+          <path d="M84 88 C96 94, 95 108, 84 113" fill="none" stroke="${npc.colorA}" stroke-width="6" stroke-linecap="round"></path>
+          <path d="M50 128 L44 143" stroke="${npc.colorB}" stroke-width="7" stroke-linecap="round"></path>
+          <path d="M70 128 L76 143" stroke="${npc.colorB}" stroke-width="7" stroke-linecap="round"></path>
+        </svg>
+      `;
+    }
+
+    function renderDepthLayer() {
+      decorLayer.innerHTML = "";
+      buildingBaseLayer.innerHTML = "";
+      roofLayer.innerHTML = "";
+      treeBaseLayer.innerHTML = "";
+      canopyLayer.innerHTML = "";
+
+      const decorHtml = decorObjects.map((decor) => {
+        const className = decor.type === "water"
+          ? "decor-water"
+          : decor.type === "crystal"
+            ? "decor-crystal"
+            : "decor-wall";
+
+        const sortY = getDecorSortY(decor);
+
+        return `
+          <div
+            class="depth-object depth-decor"
+            data-sort-y="${sortY}"
+            style="left: ${decor.x}px; top: ${decor.y}px; width: ${decor.w}px; height: ${decor.h}px; z-index: ${sortY};"
+            aria-hidden="true"
+          >
+            <div class="decor-object ${className}"></div>
+          </div>
+        `;
+      }).join("");
+
+      const buildingHtml = buildings.map((building) => {
+        const sortY = getBuildingSortY(building);
+
+        return `
+          <div
+            class="depth-object depth-building"
+            data-sort-y="${sortY}"
+            style="left: ${building.x}px; top: ${building.y}px; width: ${building.w}px; height: ${building.h}px; z-index: ${sortY}; --roof-h: ${building.roofH}px;"
+            aria-hidden="true"
+          >
+            <div class="building-base">
+              <div class="building-door"></div>
+              <span class="building-label">${building.label}</span>
+            </div>
+
+            <div class="building-roof" data-occluder-id="${building.id}-teto"></div>
+          </div>
+        `;
+      }).join("");
+
+      const treeHtml = treeObjects.map((tree) => {
+        const sortY = getTreeSortY(tree);
+
+        return `
+          <div
+            class="depth-object depth-tree"
+            data-sort-y="${sortY}"
+            style="left: ${tree.x}px; top: ${tree.y}px; width: ${tree.w}px; height: ${tree.h}px; z-index: ${sortY};"
+            aria-hidden="true"
+          >
+            <div class="map-tree-base">
+              <div class="tree-shadow"></div>
+              <div class="tree-trunk"></div>
+            </div>
+
+            <div class="tree-canopy" data-occluder-id="${tree.id}-copa"></div>
+          </div>
+        `;
+      }).join("");
+
+      const npcHtml = npcObjects.map((npc) => {
+        const sortY = getNpcSortY(npc);
+
+        return `
+          <div
+            class="depth-object depth-npc"
+            data-npc-id="${npc.id}"
+            data-sort-y="${sortY}"
+            style="left: ${npc.x}px; top: ${npc.y}px; z-index: ${sortY};"
+          >
+            <div class="npc-shell">
+              <div class="npc-interaction-ring"></div>
+              ${npcSvg(npc)}
+              <span class="npc-label">${npc.name}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      depthLayer.innerHTML = `${decorHtml}${buildingHtml}${treeHtml}${npcHtml}`;
+      depthLayer.appendChild(player);
+    }
+
+    function renderDecorLayer() {
+      decorLayer.innerHTML = decorObjects.map((decor) => {
+        const className = decor.type === "water"
+          ? "decor-water"
+          : decor.type === "crystal"
+            ? "decor-crystal"
+            : "decor-wall";
+
+        return `
+          <div
+            class="decor-object ${className}"
+            style="left: ${decor.x}px; top: ${decor.y}px; width: ${decor.w}px; height: ${decor.h}px;"
+            aria-hidden="true"
+          ></div>
+        `;
+      }).join("");
+    }
+
+    function renderBuildingLayers() {
+      buildingBaseLayer.innerHTML = buildings.map((building) => `
+        <div
+          class="building-base"
+          style="left: ${building.x}px; top: ${building.y + building.roofH - 22}px; width: ${building.w}px; height: ${building.h - building.roofH + 42}px;"
+          aria-hidden="true"
+        >
+          <div class="building-door"></div>
+          <span class="building-label">${building.label}</span>
+        </div>
+      `).join("");
+
+      roofLayer.innerHTML = buildings.map((building) => `
+        <div
+          class="building-roof"
+          data-occluder-id="${building.id}-teto"
+          style="left: ${building.x}px; top: ${building.y}px; width: ${building.w}px; height: ${building.roofH}px;"
+          aria-hidden="true"
+        ></div>
+      `).join("");
+    }
+
+    function getBuildingPhysicalColliders(building) {
+      /*
+        Colisão de prédio em top-down:
+        - teto continua sendo apenas visual/oclusão, sem colisão.
+        - colisão começa na base do prédio, onde parede/fundação toca o chão.
+        - a porta fica como um pequeno vão visual na frente, mas o corpo do prédio
+          continua sólido para o jogador não atravessar a construção inteira.
+      */
+      const baseX = building.x;
+      const baseY = building.y + building.roofH - 22;
+      const baseW = building.w;
+      const baseH = building.h - building.roofH + 42;
+
+      const paddingX = Math.max(18, baseW * 0.05);
+      const sideW = Math.max(38, baseW * 0.12);
+      const backH = Math.max(38, baseH * 0.24);
+      const frontH = Math.max(42, baseH * 0.28);
+      const doorGap = Math.min(104, baseW * 0.26);
+      const doorX = baseX + baseW / 2 - doorGap / 2;
+      const frontY = baseY + baseH - frontH;
+      const innerTopY = baseY + backH;
+      const innerH = Math.max(24, frontY - innerTopY);
+
+      const colliders = [
+        {
+          id: `${building.id}-fundo`,
+          label: `${building.label} / fundo`,
+          x: baseX + paddingX,
+          y: baseY,
+          w: baseW - paddingX * 2,
+          h: backH
+        },
+        {
+          id: `${building.id}-lateral-esq`,
+          label: `${building.label} / lateral E`,
+          x: baseX + paddingX,
+          y: baseY,
+          w: sideW,
+          h: baseH
+        },
+        {
+          id: `${building.id}-lateral-dir`,
+          label: `${building.label} / lateral D`,
+          x: baseX + baseW - paddingX - sideW,
+          y: baseY,
+          w: sideW,
+          h: baseH
+        }
+      ];
+
+      if (innerH > 28) {
+        colliders.push({
+          id: `${building.id}-corpo`,
+          label: `${building.label} / corpo`,
+          x: baseX + paddingX + sideW,
+          y: innerTopY,
+          w: baseW - (paddingX + sideW) * 2,
+          h: innerH
+        });
+      }
+
+      colliders.push(
+        {
+          id: `${building.id}-frente-esq`,
+          label: `${building.label} / frente E`,
+          x: baseX + paddingX,
+          y: frontY,
+          w: Math.max(24, doorX - (baseX + paddingX)),
+          h: frontH
+        },
+        {
+          id: `${building.id}-frente-dir`,
+          label: `${building.label} / frente D`,
+          x: doorX + doorGap,
+          y: frontY,
+          w: Math.max(24, baseX + baseW - paddingX - (doorX + doorGap)),
+          h: frontH
+        }
+      );
+
+      return colliders;
+    }
+
+    function getDecorPhysicalCollider(decor) {
+      if (decor.type === "water") {
+        return {
+          id: decor.id,
+          label: `${decor.label} / núcleo`,
+          x: decor.x + decor.w * 0.35,
+          y: decor.y + decor.h * 0.38,
+          w: decor.w * 0.30,
+          h: decor.h * 0.24
+        };
+      }
+
+      if (decor.type === "crystal") {
+        return {
+          id: decor.id,
+          label: `${decor.label} / base`,
+          x: decor.x + decor.w * 0.30,
+          y: decor.y + decor.h * 0.62,
+          w: decor.w * 0.40,
+          h: decor.h * 0.30
+        };
+      }
+
+      return {
+        id: decor.id,
+        label: decor.label,
+        x: decor.x,
+        y: decor.y + decor.h * 0.15,
+        w: decor.w,
+        h: decor.h * 0.70
+      };
+    }
+
+    function getTreeTrunkCollider(tree) {
+      const trunkWidth = Math.max(20, tree.w * 0.20);
+      const trunkHeight = Math.max(26, tree.h * 0.28);
+
+      return {
+        id: `${tree.id}-tronco`,
+        label: tree.label,
+        x: tree.x + tree.w / 2 - trunkWidth / 2,
+        y: tree.y + tree.h - 10,
+        w: trunkWidth,
+        h: trunkHeight
+      };
+    }
+
+    function renderTreeLayers() {
+      treeBaseLayer.innerHTML = treeObjects.map((tree) => `
+        <div
+          class="map-tree-base"
+          style="left: ${tree.x}px; top: ${tree.y}px; width: ${tree.w}px; height: ${tree.h}px;"
+          aria-hidden="true"
+        >
+          <div class="tree-shadow"></div>
+          <div class="tree-trunk"></div>
+        </div>
+      `).join("");
+
+      canopyLayer.innerHTML = treeObjects.map((tree) => `
+        <div
+          class="tree-canopy"
+          data-occluder-id="${tree.id}-copa"
+          style="left: ${tree.x}px; top: ${tree.y}px; width: ${tree.w}px; height: ${tree.h}px;"
+          aria-hidden="true"
+        ></div>
+      `).join("");
+    }
+
+    function renderColliderDebugLayer() {
+      colliderLayer.innerHTML = colliders.map((collider) => `
+        <div
+          class="collider-debug ${collider.debugClass || ""}"
+          style="left: ${collider.x}px; top: ${collider.y}px; width: ${collider.w}px; height: ${collider.h}px;"
+        >${collider.label}</div>
+      `).join("");
+    }
+
+    function updateMovement() {
+      if (dialogueOpen) {
+        playerState.moving = false;
+        updatePlayerAnimation();
+        updateCamera();
+        updateDebug();
+        return;
+      }
+
+      let dx = 0;
+      let dy = 0;
+
+      if (keys.up) dy -= 1;
+      if (keys.down) dy += 1;
+      if (keys.left) dx -= 1;
+      if (keys.right) dx += 1;
+
+      const moving = dx !== 0 || dy !== 0;
+      playerState.moving = moving;
+
+      if (moving) {
+        const length = Math.sqrt(dx * dx + dy * dy);
+        dx /= length;
+        dy /= length;
+
+        const speed = getCurrentSpeed();
+        movePlayerWithCollision(dx * speed, dy * speed);
+        updateDirection(dx, dy);
+      } else {
+        lastCollisionLabel = "livre";
+      }
+
+      clampPlayer();
+      updatePlayerPosition();
+      updatePlayerAnimation();
+      updateCamera();
+      updateOcclusionVisibility();
+      updateNearbyNpc();
+      updateDebug();
+      updateHint();
+    }
+
+    function getPlayerHitboxAt(x, y) {
+      const hitboxWidth = Math.max(20, playerState.width * 0.34);
+      const hitboxHeight = Math.max(12, playerState.height * 0.16);
+
+      return {
+        x: x - hitboxWidth / 2,
+        y: y + playerState.height * 0.24,
+        w: hitboxWidth,
+        h: hitboxHeight
+      };
+    }
+
+    function getPlayerVisualBox() {
+      return {
+        x: playerState.x - playerState.width * 0.38,
+        y: playerState.y - playerState.height * 0.68,
+        w: playerState.width * 0.76,
+        h: playerState.height * 0.94
+      };
+    }
+
+    function rectanglesOverlap(a, b) {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+      );
+    }
+
+    function pointInsideRectangle(point, rect) {
+      return (
+        point.x >= rect.x &&
+        point.x <= rect.x + rect.w &&
+        point.y >= rect.y &&
+        point.y <= rect.y + rect.h
+      );
+    }
+
+    function getPlayerFootPoint() {
+      return {
+        x: playerState.x,
+        y: playerState.y + playerState.height * 0.31
+      };
+    }
+
+    function getCollisionAt(x, y) {
+      const playerBox = getPlayerHitboxAt(x, y);
+      return colliders.find((collider) => rectanglesOverlap(playerBox, collider)) || null;
+    }
+
+    function movePlayerWithCollision(moveX, moveY) {
+      lastCollisionLabel = "livre";
+
+      if (moveX !== 0) {
+        const nextX = playerState.x + moveX;
+        const hitX = getCollisionAt(nextX, playerState.y);
+
+        if (!hitX) {
+          playerState.x = nextX;
+        } else {
+          lastCollisionLabel = hitX.label;
+        }
+      }
+
+      if (moveY !== 0) {
+        const nextY = playerState.y + moveY;
+        const hitY = getCollisionAt(playerState.x, nextY);
+
+        if (!hitY) {
+          playerState.y = nextY;
+        } else {
+          lastCollisionLabel = hitY.label;
+        }
+      }
+    }
+
+    function updateOcclusionVisibility() {
+      const footPoint = getPlayerFootPoint();
+      const visualBox = getPlayerVisualBox();
+
+      const activeOccluder = occluders
+        .filter((occluder) => {
+          const objectIsInFront = footPoint.y < occluder.sortY;
+          const playerTouchesVisual = rectanglesOverlap(visualBox, occluder);
+          return objectIsInFront && playerTouchesVisual;
+        })
+        .sort((a, b) => b.sortY - a.sortY)[0] || null;
+
+      currentOcclusionLabel = activeOccluder ? activeOccluder.label : "nada";
+
+      document.querySelectorAll("[data-occluder-id]").forEach((element) => {
+        const occluderId = element.dataset.occluderId;
+        const isActive = activeOccluder && activeOccluder.id === occluderId;
+
+        element.classList.toggle("player-under", Boolean(isActive && activeOccluder.kind === "canopy"));
+        element.classList.toggle("player-hidden", Boolean(isActive && activeOccluder.kind === "roof"));
+      });
+
+      updatePlayerDepth();
+      updatePlayerLocator(Boolean(activeOccluder));
+    }
+
+    function updatePlayerDepth() {
+      const footPoint = getPlayerFootPoint();
+      player.style.zIndex = `${Math.round(footPoint.y)}`;
+    }
+
+    function updatePlayerLocator(visible) {
+      const screenX = playerState.x - cameraState.x;
+      const screenY = playerState.y - cameraState.y - playerState.height * 0.08;
+
+      playerLocator.style.left = `${screenX}px`;
+      playerLocator.style.top = `${screenY}px`;
+      playerLocator.classList.toggle("visible", visible);
+    }
+
+    function toggleColliderDebug() {
+      keys.debugColliders = !keys.debugColliders;
+      world.classList.toggle("show-colliders", keys.debugColliders);
+
+      interactionText.textContent = keys.debugColliders
+        ? "Colisores visíveis: rosa = físico, amarelo = pés. A profundidade visual usa o Y dos pés."
+        : "Colisores ocultos. Movimento normal.";
+    }
+
+    function updateDirection(dx, dy) {
+      const horizontal = dx > 0.35 ? "direita" : dx < -0.35 ? "esquerda" : "";
+      const vertical = dy > 0.35 ? "baixo" : dy < -0.35 ? "cima" : "";
+
+      if (vertical && horizontal) {
+        playerState.direction = `${vertical}-${horizontal}`;
+        return;
+      }
+
+      if (horizontal) {
+        playerState.direction = horizontal;
+        return;
+      }
+
+      if (vertical) {
+        playerState.direction = vertical;
+      }
+    }
+
+    function clampPlayer() {
+      const halfWidth = playerState.width / 2;
+      const halfHeight = playerState.height / 2;
+
+      const minX = halfWidth;
+      const maxX = worldState.width - halfWidth;
+      const minY = halfHeight;
+      const maxY = worldState.height - halfHeight;
+
+      playerState.x = Math.max(minX, Math.min(maxX, playerState.x));
+      playerState.y = Math.max(minY, Math.min(maxY, playerState.y));
+    }
+
+    function updatePlayerPosition() {
+      player.style.left = `${playerState.x}px`;
+      player.style.top = `${playerState.y}px`;
+      player.style.transform = "translate(-50%, -50%)";
+
+      const isLeftDirection = playerState.direction.includes("esquerda");
+      const flip = isLeftDirection ? -1 : 1;
+
+      player.style.setProperty("--player-flip", flip);
+      player.dataset.direction = playerState.direction;
+
+      if (playerSvg) {
+        playerSvg.setAttribute("aria-label", `Jogador Voltz olhando para ${playerState.direction}`);
+      }
+
+      updatePlayerHitboxDebug();
+    }
+
+    function updatePlayerHitboxDebug() {
+      const hitbox = getPlayerHitboxAt(playerState.x, playerState.y);
+
+      playerHitboxDebug.style.left = `${hitbox.x}px`;
+      playerHitboxDebug.style.top = `${hitbox.y}px`;
+      playerHitboxDebug.style.width = `${hitbox.w}px`;
+      playerHitboxDebug.style.height = `${hitbox.h}px`;
+    }
+
+    function getCameraTarget() {
+      const rect = viewport.getBoundingClientRect();
+
+      const maxCameraX = Math.max(0, worldState.width - rect.width);
+      const maxCameraY = Math.max(0, worldState.height - rect.height);
+
+      const targetX = playerState.x - rect.width / 2;
+      const targetY = playerState.y - rect.height / 2;
+
+      return {
+        x: Math.max(0, Math.min(maxCameraX, targetX)),
+        y: Math.max(0, Math.min(maxCameraY, targetY))
+      };
+    }
+
+    function snapCameraToPlayer() {
+      const target = getCameraTarget();
+      cameraState.x = target.x;
+      cameraState.y = target.y;
+      applyCameraTransform();
+    }
+
+    function updateCamera() {
+      const target = getCameraTarget();
+      cameraState.x += (target.x - cameraState.x) * cameraState.smoothing;
+      cameraState.y += (target.y - cameraState.y) * cameraState.smoothing;
+      applyCameraTransform();
+    }
+
+    function applyCameraTransform() {
+      world.style.transform = `translate3d(${-cameraState.x}px, ${-cameraState.y}px, 0)`;
+    }
+
+    function updatePlayerAnimation() {
+      if (playerState.moving) {
+        player.classList.add("moving");
+      } else {
+        player.classList.remove("moving");
+      }
+    }
+
+    function updateDebug() {
+      debugX.textContent = Math.round(playerState.x);
+      debugY.textContent = Math.round(playerState.y);
+      debugSpeed.textContent = getCurrentSpeed().toFixed(1);
+      debugDirection.textContent = playerState.direction;
+      debugCameraX.textContent = Math.round(cameraState.x);
+      debugCameraY.textContent = Math.round(cameraState.y);
+      debugCollision.textContent = lastCollisionLabel;
+      debugOcclusion.textContent = currentOcclusionLabel;
+    }
+
+    function updateHint() {
+      if (lastCollisionLabel !== "livre") {
+        interactionText.textContent = `Bloqueado por: ${lastCollisionLabel}. Aperte C para ver colisores.`;
+        return;
+      }
+
+      if (currentOcclusionLabel !== "nada") {
+        interactionText.textContent = `Você está atrás/debaixo de: ${currentOcclusionLabel}. O círculo mostra sua posição.`;
+        return;
+      }
+
+      if (nearbyNpc) {
+        interactionText.textContent = `Pressione E para conversar com ${nearbyNpc.name}.`;
+        return;
+      }
+
+      if (playerState.moving) {
+        interactionText.textContent = keys.run
+          ? `Correndo para ${playerState.direction}. Profundidade por Y ativa; pés decidem frente/atrás.`
+          : `Andando para ${playerState.direction}. Câmera suave, hitbox nos pés e ordem visual dinâmica.`;
+      } else {
+        interactionText.textContent = "Mapa-base final da Vila Central: caminhos limpos, zonas organizadas, colisão nos pés e profundidade por Y.";
+      }
+    }
+
+    function gameLoop() {
+      updateMovement();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener("keydown", (event) => {
+      const key = event.key.toLowerCase();
+
+      if (key === "w" || key === "arrowup") keys.up = true;
+      if (key === "s" || key === "arrowdown") keys.down = true;
+      if (key === "a" || key === "arrowleft") keys.left = true;
+      if (key === "d" || key === "arrowright") keys.right = true;
+      if (key === "shift") keys.run = true;
+
+      if (key === "c" && !event.repeat) {
+        toggleColliderDebug();
+      }
+
+      if ((key === "e" || key === "enter") && !event.repeat) {
+        interactWithNearbyNpc();
+      }
+
+      if (key === "escape" && dialogueOpen) {
+        closeDialogue();
+      }
+    });
+
+    document.addEventListener("keyup", (event) => {
+      const key = event.key.toLowerCase();
+
+      if (key === "w" || key === "arrowup") keys.up = false;
+      if (key === "s" || key === "arrowdown") keys.down = false;
+      if (key === "a" || key === "arrowleft") keys.left = false;
+      if (key === "d" || key === "arrowright") keys.right = false;
+      if (key === "shift") keys.run = false;
+    });
+
+    window.addEventListener("resize", () => {
+      updateWorldSizeFromCss();
+      updatePlayerSizeFromCss();
+      buildCollisionAndOcclusionData();
+      clampPlayer();
+      renderDepthLayer();
+      renderColliderDebugLayer();
+      updatePlayerPosition();
+      snapCameraToPlayer();
+      updateOcclusionVisibility();
+      updateDebug();
+    });
+
+    setupPlayer();
+    gameLoop();
+  </script>
+</body>
+</html>

@@ -457,6 +457,140 @@
       gap: 14px;
     }
 
+    .battle-arena-visual {
+      position: relative;
+      min-height: 310px;
+      border-radius: 26px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at center, rgba(0, 234, 255, 0.16), transparent 36%),
+        radial-gradient(circle at 50% 90%, rgba(146, 87, 255, 0.22), transparent 42%),
+        linear-gradient(180deg, rgba(3, 8, 24, 0.96), rgba(12, 8, 34, 0.96));
+      border: 1px solid rgba(0, 234, 255, 0.24);
+      box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.38);
+    }
+
+    .battle-arena-visual::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(0, 234, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 234, 255, 0.05) 1px, transparent 1px);
+      background-size: 36px 36px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .battle-arena-visual.player-hit {
+      animation: playerHitFlash 0.45s ease;
+    }
+
+    .battle-arena-visual.player-timeout {
+      animation: playerTimeoutFlash 0.55s ease;
+    }
+
+    .battle-arena-visual.player-success {
+      animation: playerSuccessFlash 0.45s ease;
+    }
+
+    .enemy-svg-wrap {
+      position: relative;
+      z-index: 2;
+      width: min(310px, 78%);
+      display: grid;
+      place-items: center;
+      filter:
+        drop-shadow(0 0 18px rgba(0, 234, 255, 0.44))
+        drop-shadow(0 0 28px rgba(146, 87, 255, 0.34));
+      animation: enemyIdle 2.6s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
+    .enemy-svg-wrap.enemy-boss {
+      width: min(430px, 90%);
+      filter:
+        drop-shadow(0 0 24px rgba(255, 77, 125, 0.45))
+        drop-shadow(0 0 42px rgba(146, 87, 255, 0.55));
+    }
+
+    .enemy-svg-wrap.enemy-mini-boss {
+      width: min(370px, 84%);
+    }
+
+    .enemy-svg-wrap.enemy-damaged {
+      animation: enemyDamaged 0.45s ease;
+    }
+
+    .enemy-svg-wrap.enemy-attacking {
+      animation: enemyAttack 0.5s ease;
+    }
+
+    .enemy-nameplate {
+      position: absolute;
+      left: 50%;
+      bottom: 16px;
+      z-index: 3;
+      transform: translateX(-50%);
+      padding: 9px 16px;
+      border-radius: 999px;
+      background: rgba(5, 7, 19, 0.82);
+      border: 1px solid rgba(0, 234, 255, 0.28);
+      color: var(--cyan);
+      font-weight: bold;
+      box-shadow: 0 0 18px rgba(0, 234, 255, 0.16);
+    }
+
+    .damage-float {
+      position: absolute;
+      z-index: 5;
+      left: 50%;
+      top: 36%;
+      transform: translate(-50%, -50%);
+      color: var(--danger);
+      font-size: 2.2rem;
+      font-weight: 900;
+      text-shadow:
+        0 0 12px rgba(255, 77, 125, 0.8),
+        0 0 24px rgba(255, 77, 125, 0.5);
+      pointer-events: none;
+      animation: damageFloat 0.8s ease forwards;
+    }
+
+    .damage-float.good {
+      color: var(--cyan);
+      text-shadow:
+        0 0 12px rgba(0, 234, 255, 0.8),
+        0 0 24px rgba(0, 234, 255, 0.5);
+    }
+
+    .voltz-enemy-svg {
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    .svg-core {
+      animation: corePulse 1.5s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .svg-aura {
+      animation: auraPulse 2s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .svg-eye {
+      animation: eyeBlink 3.4s infinite;
+      transform-origin: center;
+    }
+
+    .svg-orbit {
+      animation: orbitFloat 2.4s ease-in-out infinite;
+    }
+
     .battle-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -572,6 +706,162 @@
       background: rgba(255, 255, 255, 0.04);
     }
 
+    @keyframes enemyIdle {
+      0%, 100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-9px) scale(1.015);
+      }
+    }
+
+    @keyframes enemyDamaged {
+      0% {
+        transform: translateX(0) scale(1);
+        filter: brightness(1);
+      }
+
+      18% {
+        transform: translateX(-16px) scale(0.98);
+        filter: brightness(0) drop-shadow(0 0 22px rgba(255, 77, 125, 0.9));
+      }
+
+      38% {
+        transform: translateX(14px) scale(1.03);
+        filter: brightness(2.4) drop-shadow(0 0 26px rgba(255, 77, 125, 0.9));
+      }
+
+      62% {
+        transform: translateX(-8px) scale(0.99);
+        filter: brightness(0.35);
+      }
+
+      100% {
+        transform: translateX(0) scale(1);
+        filter: brightness(1);
+      }
+    }
+
+    @keyframes enemyAttack {
+      0%, 100% {
+        transform: translateY(0) scale(1);
+      }
+
+      35% {
+        transform: translateY(-10px) scale(1.05);
+      }
+
+      60% {
+        transform: translateY(20px) scale(1.12);
+      }
+    }
+
+    @keyframes playerHitFlash {
+      0%, 100% {
+        box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.38);
+      }
+
+      25% {
+        box-shadow:
+          inset 0 0 120px rgba(255, 0, 64, 0.78),
+          0 0 32px rgba(255, 77, 125, 0.42);
+        transform: translateX(-5px);
+      }
+
+      50% {
+        transform: translateX(5px);
+      }
+
+      75% {
+        transform: translateX(-3px);
+      }
+    }
+
+    @keyframes playerTimeoutFlash {
+      0%, 100% {
+        box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.38);
+      }
+
+      35% {
+        box-shadow:
+          inset 0 0 120px rgba(255, 209, 102, 0.55),
+          0 0 32px rgba(255, 77, 125, 0.38);
+      }
+    }
+
+    @keyframes playerSuccessFlash {
+      0%, 100% {
+        box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.38);
+      }
+
+      40% {
+        box-shadow:
+          inset 0 0 120px rgba(0, 234, 255, 0.42),
+          0 0 32px rgba(0, 234, 255, 0.35);
+      }
+    }
+
+    @keyframes damageFloat {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 0) scale(0.7);
+      }
+
+      20% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -70px) scale(1.25);
+      }
+    }
+
+    @keyframes corePulse {
+      0%, 100% {
+        opacity: 0.78;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes auraPulse {
+      0%, 100% {
+        opacity: 0.18;
+        transform: scale(0.96);
+      }
+
+      50% {
+        opacity: 0.38;
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes eyeBlink {
+      0%, 90%, 100% {
+        transform: scaleY(1);
+      }
+
+      94% {
+        transform: scaleY(0.1);
+      }
+    }
+
+    @keyframes orbitFloat {
+      0%, 100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
     @keyframes voltzFloat {
       0%, 100% {
         transform: translateY(0);
@@ -622,6 +912,10 @@
 
       .game-screen {
         min-height: 620px;
+      }
+
+      .battle-arena-visual {
+        min-height: 250px;
       }
 
       .list-item {
@@ -814,6 +1108,8 @@
       playerBattle.hp = Math.max(0, playerBattle.hp - damage);
       playerBattle.combo = 0;
 
+      triggerPlayerDamageEffect(damage, "timeout");
+
       setVoltinho(
         "voltinho_preocupado.png",
         `Tempo esgotado! Você tomou ${damage} de dano. A pergunta mudou para manter o combate dinâmico.`
@@ -824,7 +1120,9 @@
       await saveProfileProgress();
 
       if (playerBattle.hp <= 0) {
-        showDefeatScreen();
+        setTimeout(() => {
+          showDefeatScreen();
+        }, 650);
         return;
       }
 
@@ -1221,6 +1519,8 @@
     function renderRealm() {
       if (!currentRealm) return;
 
+      stopQuestionTimer();
+
       const progress = getProgressForRealm(currentRealm.slug);
       const enemiesDefeated = Number(progress?.enemies_defeated || 0);
       const ngPlus = Number(progress?.ng_plus || 0);
@@ -1244,7 +1544,7 @@
 
         return `
           <div class="enemy-card ${locked ? "locked" : ""}" onclick="${locked ? "" : `startEnemyBattle(${enemy.id})`}">
-            <div class="card-icon">${enemy.tipo === "boss" ? "👑" : enemy.tipo === "mini_boss" ? "🛡️" : "👾"}</div>
+            <div class="card-icon">${enemy.tipo === "boss" ? "👑" : enemy.tipo === "mini_boss" ? "🛡️" : enemy.tipo === "elite" ? "⚠️" : "👾"}</div>
             <h3>${escapeHtml(enemy.nome)}</h3>
             <p>${escapeHtml(enemy.descricao)}</p>
 
@@ -1433,6 +1733,200 @@
       return questionPool[randomIndex];
     }
 
+    function getEnemyVisualKind(enemy) {
+      const type = enemy?.tipo || "comum";
+
+      if (type === "boss") return "boss";
+      if (type === "mini_boss" || type === "elite") return "mini_boss";
+      return "common";
+    }
+
+    function getEnemyEmoji(enemy) {
+      const name = String(enemy?.nome || "").toLowerCase();
+
+      if (name.includes("adjetivo")) return "✨";
+      if (name.includes("conjunção") || name.includes("conjuncao")) return "🔗";
+      if (name.includes("concordância") || name.includes("concordancia")) return "⚠️";
+      if (name.includes("sintaxe")) return "🛡️";
+      if (name.includes("gramática") || name.includes("gramatica")) return "👑";
+
+      if (enemy?.tipo === "boss") return "👑";
+      if (enemy?.tipo === "mini_boss" || enemy?.tipo === "elite") return "🛡️";
+
+      return "👾";
+    }
+
+    function enemySvgHTML(enemy) {
+      const kind = getEnemyVisualKind(enemy);
+      const emoji = getEnemyEmoji(enemy);
+
+      if (kind === "boss") {
+        return `
+          <div id="enemyVisual" class="enemy-svg-wrap enemy-boss">
+            <svg class="voltz-enemy-svg" viewBox="0 0 360 300" role="img" aria-label="${escapeHtml(enemy.nome)}">
+              <defs>
+                <linearGradient id="bossBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ff4d7d"/>
+                  <stop offset="55%" stop-color="#9257ff"/>
+                  <stop offset="100%" stop-color="#00eaff"/>
+                </linearGradient>
+
+                <radialGradient id="bossCoreGradient" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="45%" stop-color="#78f7ff"/>
+                  <stop offset="100%" stop-color="#9257ff"/>
+                </radialGradient>
+              </defs>
+
+              <ellipse class="svg-aura" cx="180" cy="170" rx="145" ry="105" fill="#9257ff"/>
+              <path d="M78 238 C92 130, 102 72, 180 54 C258 72, 268 130, 282 238 C244 210, 215 206, 180 242 C145 206, 116 210, 78 238Z"
+                fill="url(#bossBodyGradient)" stroke="#f5fbff" stroke-width="4"/>
+
+              <path d="M118 96 L142 38 L162 88 L180 24 L198 88 L218 38 L242 96"
+                fill="none" stroke="#ffd166" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+
+              <circle class="svg-core" cx="180" cy="156" r="42" fill="url(#bossCoreGradient)" stroke="#ffffff" stroke-width="5"/>
+
+              <ellipse class="svg-eye" cx="143" cy="130" rx="17" ry="23" fill="#02040d"/>
+              <ellipse class="svg-eye" cx="217" cy="130" rx="17" ry="23" fill="#02040d"/>
+              <circle cx="148" cy="124" r="5" fill="#78f7ff"/>
+              <circle cx="222" cy="124" r="5" fill="#78f7ff"/>
+
+              <path d="M132 198 C160 218, 200 218, 228 198" fill="none" stroke="#02040d" stroke-width="7" stroke-linecap="round"/>
+
+              <g class="svg-orbit">
+                <rect x="54" y="132" width="48" height="24" rx="8" fill="#050713" stroke="#78f7ff" stroke-width="3"/>
+                <rect x="258" y="132" width="48" height="24" rx="8" fill="#050713" stroke="#78f7ff" stroke-width="3"/>
+                <text x="78" y="150" text-anchor="middle" font-size="18" fill="#78f7ff" font-weight="900">A</text>
+                <text x="282" y="150" text-anchor="middle" font-size="18" fill="#78f7ff" font-weight="900">Z</text>
+              </g>
+
+              <text x="180" y="288" text-anchor="middle" font-size="34">${emoji}</text>
+            </svg>
+          </div>
+        `;
+      }
+
+      if (kind === "mini_boss") {
+        return `
+          <div id="enemyVisual" class="enemy-svg-wrap enemy-mini-boss">
+            <svg class="voltz-enemy-svg" viewBox="0 0 320 260" role="img" aria-label="${escapeHtml(enemy.nome)}">
+              <defs>
+                <linearGradient id="miniBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00eaff"/>
+                  <stop offset="60%" stop-color="#9257ff"/>
+                  <stop offset="100%" stop-color="#ff4d7d"/>
+                </linearGradient>
+              </defs>
+
+              <ellipse class="svg-aura" cx="160" cy="150" rx="118" ry="82" fill="#00eaff"/>
+              <path d="M88 218 L74 112 L126 58 L194 58 L246 112 L232 218 Z"
+                fill="url(#miniBodyGradient)" stroke="#f5fbff" stroke-width="4" stroke-linejoin="round"/>
+
+              <path d="M104 112 L160 78 L216 112 L160 144 Z"
+                fill="rgba(2,4,13,0.55)" stroke="#78f7ff" stroke-width="4"/>
+
+              <circle class="svg-core" cx="160" cy="154" r="32" fill="#78f7ff" stroke="#ffffff" stroke-width="5"/>
+
+              <ellipse class="svg-eye" cx="126" cy="126" rx="13" ry="18" fill="#02040d"/>
+              <ellipse class="svg-eye" cx="194" cy="126" rx="13" ry="18" fill="#02040d"/>
+
+              <path d="M118 192 H202" stroke="#02040d" stroke-width="7" stroke-linecap="round"/>
+
+              <g class="svg-orbit">
+                <circle cx="66" cy="150" r="18" fill="#050713" stroke="#78f7ff" stroke-width="3"/>
+                <circle cx="254" cy="150" r="18" fill="#050713" stroke="#78f7ff" stroke-width="3"/>
+              </g>
+
+              <text x="160" y="250" text-anchor="middle" font-size="30">${emoji}</text>
+            </svg>
+          </div>
+        `;
+      }
+
+      return `
+        <div id="enemyVisual" class="enemy-svg-wrap">
+          <svg class="voltz-enemy-svg" viewBox="0 0 260 220" role="img" aria-label="${escapeHtml(enemy.nome)}">
+            <defs>
+              <linearGradient id="commonBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#78f7ff"/>
+                <stop offset="55%" stop-color="#9257ff"/>
+                <stop offset="100%" stop-color="#00eaff"/>
+              </linearGradient>
+            </defs>
+
+            <ellipse class="svg-aura" cx="130" cy="132" rx="94" ry="64" fill="#00eaff"/>
+            <path d="M60 160 C52 95, 88 50, 130 50 C172 50, 208 95, 200 160 C190 204, 70 204, 60 160Z"
+              fill="url(#commonBodyGradient)" stroke="#f5fbff" stroke-width="4"/>
+
+            <circle class="svg-core" cx="130" cy="128" r="28" fill="#050713" stroke="#78f7ff" stroke-width="5"/>
+
+            <ellipse class="svg-eye" cx="102" cy="105" rx="11" ry="16" fill="#02040d"/>
+            <ellipse class="svg-eye" cx="158" cy="105" rx="11" ry="16" fill="#02040d"/>
+            <circle cx="106" cy="100" r="4" fill="#78f7ff"/>
+            <circle cx="162" cy="100" r="4" fill="#78f7ff"/>
+
+            <path d="M105 164 C120 175, 140 175, 155 164" fill="none" stroke="#02040d" stroke-width="6" stroke-linecap="round"/>
+
+            <g class="svg-orbit">
+              <text x="55" y="92" font-size="24" fill="#78f7ff" font-weight="900">?</text>
+              <text x="196" y="92" font-size="24" fill="#78f7ff" font-weight="900">!</text>
+            </g>
+
+            <text x="130" y="214" text-anchor="middle" font-size="28">${emoji}</text>
+          </svg>
+        </div>
+      `;
+    }
+
+    function triggerEnemyDamageEffect(amount) {
+      const enemyVisual = document.getElementById("enemyVisual");
+      const arena = document.getElementById("battleArenaVisual");
+
+      if (enemyVisual) {
+        enemyVisual.classList.remove("enemy-damaged");
+        void enemyVisual.offsetWidth;
+        enemyVisual.classList.add("enemy-damaged");
+      }
+
+      if (arena) {
+        arena.classList.remove("player-success");
+        void arena.offsetWidth;
+        arena.classList.add("player-success");
+
+        const float = document.createElement("div");
+        float.className = "damage-float good";
+        float.textContent = `-${amount}`;
+        arena.appendChild(float);
+
+        setTimeout(() => float.remove(), 820);
+      }
+    }
+
+    function triggerPlayerDamageEffect(amount, mode = "hit") {
+      const arena = document.getElementById("battleArenaVisual");
+      const enemyVisual = document.getElementById("enemyVisual");
+
+      if (enemyVisual) {
+        enemyVisual.classList.remove("enemy-attacking");
+        void enemyVisual.offsetWidth;
+        enemyVisual.classList.add("enemy-attacking");
+      }
+
+      if (arena) {
+        arena.classList.remove("player-hit", "player-timeout");
+        void arena.offsetWidth;
+        arena.classList.add(mode === "timeout" ? "player-timeout" : "player-hit");
+
+        const float = document.createElement("div");
+        float.className = "damage-float";
+        float.textContent = `-${amount} HP`;
+        arena.appendChild(float);
+
+        setTimeout(() => float.remove(), 820);
+      }
+    }
+
     function renderBattle() {
       stopQuestionTimer();
 
@@ -1454,6 +1948,11 @@
         )}
 
         <div class="battle-screen">
+          <div id="battleArenaVisual" class="battle-arena-visual">
+            ${enemySvgHTML(selectedEnemy)}
+            <div class="enemy-nameplate">${escapeHtml(selectedEnemy.nome)}</div>
+          </div>
+
           <div class="timer-box">
             <div class="timer-top">
               <span>Tempo para responder</span>
@@ -1538,6 +2037,8 @@
         playerBattle.xp += Number(q.xp_recompensa || selectedEnemy.xp_recompensa || 80);
         playerBattle.coins += Number(q.moedas_recompensa || selectedEnemy.moedas_recompensa || 20);
 
+        triggerEnemyDamageEffect(damage);
+
         setVoltinho(
           "voltinho_feliz.png",
           `Acertou! Você causou ${damage} de dano. ${q.justificativa || ""}`
@@ -1548,6 +2049,8 @@
         playerBattle.hp = Math.max(0, playerBattle.hp - damage);
         playerBattle.combo = 0;
 
+        triggerPlayerDamageEffect(damage, "hit");
+
         setVoltinho(
           "voltinho_preocupado.png",
           `Você errou e tomou ${damage} de dano. ${q.justificativa || ""} Dica: ${q.dica_pos || "Revise com o NPC e tente de novo."}`
@@ -1557,12 +2060,16 @@
       await saveProfileProgress();
 
       if (playerBattle.hp <= 0) {
-        showDefeatScreen();
+        setTimeout(() => {
+          showDefeatScreen();
+        }, 850);
         return;
       }
 
       if (currentEnemyHp <= 0) {
-        await finishEnemyBattle();
+        setTimeout(async () => {
+          await finishEnemyBattle();
+        }, 850);
         return;
       }
 
@@ -1672,16 +2179,23 @@
 
       playerBattle.hp = Math.max(0, playerBattle.hp - 5);
       playerBattle.combo = 0;
+
+      triggerPlayerDamageEffect(5, "timeout");
+
       currentQuestion = getRandomQuestion();
 
       setVoltinho("voltinho_pensando.png", "Pergunta trocada. Você perdeu 5 de energia por recuar.");
 
       if (playerBattle.hp <= 0) {
-        showDefeatScreen();
+        setTimeout(() => {
+          showDefeatScreen();
+        }, 650);
         return;
       }
 
-      renderBattle();
+      setTimeout(() => {
+        renderBattle();
+      }, 650);
     };
 
     window.startNewGamePlus = async function startNewGamePlus() {
