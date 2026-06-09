@@ -149,10 +149,12 @@ const viewport = document.getElementById("gameViewport");
         colorB: "#78f7ff",
         aura: "#ffd166",
         portrait: "assets/images/npcs/professora-sintaxe.png",
+        resetsMathProgress: true,
         dialogue: [
           "Antes de enfrentar uma questão, respire e leia com atenção. Muitas respostas se escondem no próprio enunciado.",
           "Aqui na Biblioteca, as dicas aparecem antes e depois das perguntas para transformar erro em aprendizado.",
-          "Conhecimento não é decorar tudo. É entender o caminho até a resposta."
+          "Conhecimento não é decorar tudo. É entender o caminho até a resposta.",
+          "Se você já limpou o Reino da Matemática e quiser tentar de novo, fale comigo até o fim. Eu reinicio os desafios para você."
         ]
       },
       {
@@ -245,6 +247,13 @@ const viewport = document.getElementById("gameViewport");
         colorB: "#ffd166",
         aura: "rgba(0,234,255,0.22)",
         description: "Criatura numérica que mistura sinais simples para testar cálculo rápido.",
+        maxHp: 100,
+        playerDamageOnWrong: 12,
+        playerDamageOnTimeout: 5,
+        enemyDamageOnCorrect: 25,
+        timeLimit: 35,
+        xpReward: 40,
+        coinReward: 12,
         questions: [
           {
             tip: "Some primeiro as dezenas e depois as unidades.",
@@ -292,6 +301,13 @@ const viewport = document.getElementById("gameViewport");
         colorB: "#78f7ff",
         aura: "rgba(146,87,255,0.24)",
         description: "Entidade de fatores que transforma grupos iguais em desafio.",
+        maxHp: 120,
+        playerDamageOnWrong: 15,
+        playerDamageOnTimeout: 6,
+        enemyDamageOnCorrect: 24,
+        timeLimit: 30,
+        xpReward: 55,
+        coinReward: 16,
         questions: [
           {
             tip: "Lembre da tabuada do 8.",
@@ -376,22 +392,132 @@ const viewport = document.getElementById("gameViewport");
             explanation: "√144 = 12; 12 ÷ 3 = 4."
           }
         ]
+      },
+      "mini-chefe-equacao": {
+        id: "mini-chefe-equacao",
+        name: "Melog",
+        role: "Ameaça Anti-Estudo",
+        icon: "∅",
+        colorA: "#ff4d7d",
+        colorB: "#9257ff",
+        aura: "rgba(255,77,125,0.24)",
+        battleImage: "assets/images/mini-bosses/melog.png",
+        description: "Inimigo do Golem dos Cálculos. Melog odeia estudar, bagunça contas e tenta quebrar a lógica do reino.",
+        maxHp: 180,
+        playerDamageOnWrong: 18,
+        playerDamageOnTimeout: 8,
+        enemyDamageOnCorrect: 30,
+        timeLimit: 28,
+        xpReward: 120,
+        coinReward: 35,
+        questions: [
+          {
+            tip: "Resolva multiplicação antes da soma.",
+            text: "Quanto é 12 + 4 × 5?",
+            options: { A: "32", B: "80", C: "44", D: "60" },
+            answer: "A",
+            explanation: "4 × 5 = 20; 12 + 20 = 32."
+          },
+          {
+            tip: "Faça a divisão primeiro e depois subtraia.",
+            text: "Quanto é 90 − 36 ÷ 6?",
+            options: { A: "9", B: "84", C: "54", D: "86" },
+            answer: "B",
+            explanation: "36 ÷ 6 = 6; 90 − 6 = 84."
+          },
+          {
+            tip: "Potência antes da soma.",
+            text: "Quanto é 5² + 15?",
+            options: { A: "25", B: "30", C: "40", D: "45" },
+            answer: "C",
+            explanation: "5² = 25; 25 + 15 = 40."
+          },
+          {
+            tip: "Raiz primeiro, depois multiplicação.",
+            text: "Quanto é √64 × 3?",
+            options: { A: "18", B: "21", C: "24", D: "30" },
+            answer: "C",
+            explanation: "√64 = 8; 8 × 3 = 24."
+          },
+          {
+            tip: "Resolva por partes: parênteses, potência e divisão.",
+            text: "Quanto é (18 − 6) + 2³ ÷ 2?",
+            options: { A: "14", B: "16", C: "18", D: "20" },
+            answer: "B",
+            explanation: "18 − 6 = 12; 2³ = 8; 8 ÷ 2 = 4; 12 + 4 = 16."
+          }
+        ]
+      },
+      "chefe-golem-calculos": {
+        id: "chefe-golem-calculos",
+        name: "Golem dos Cálculos",
+        role: "Guardião Final da Matemática",
+        icon: "∑",
+        colorA: "#ffd166",
+        colorB: "#9257ff",
+        aura: "rgba(255,209,102,0.28)",
+        battleImage: "assets/images/bosses/golem-dos-calculos.png",
+        description: "Guardião do Reino da Matemática. Ele não odeia o jogador: ele testa se você dominou o caminho dos cálculos.",
+        maxHp: 240,
+        playerDamageOnWrong: 22,
+        playerDamageOnTimeout: 10,
+        enemyDamageOnCorrect: 32,
+        timeLimit: 25,
+        xpReward: 260,
+        coinReward: 80,
+        questions: [
+          {
+            tip: "Resolva potência, multiplicação e soma na ordem correta.",
+            text: "Quanto é 3² + 6 × 4?",
+            options: { A: "33", B: "36", C: "45", D: "60" },
+            answer: "A",
+            explanation: "3² = 9; 6 × 4 = 24; 9 + 24 = 33."
+          },
+          {
+            tip: "Raiz e divisão antes da subtração.",
+            text: "Quanto é 100 − √81 − 24 ÷ 6?",
+            options: { A: "83", B: "87", C: "90", D: "95" },
+            answer: "B",
+            explanation: "√81 = 9 e 24 ÷ 6 = 4; 100 − 9 − 4 = 87."
+          },
+          {
+            tip: "Resolva o parêntese primeiro.",
+            text: "Quanto é (14 + 6) × 3 − 10?",
+            options: { A: "40", B: "50", C: "60", D: "70" },
+            answer: "B",
+            explanation: "14 + 6 = 20; 20 × 3 = 60; 60 − 10 = 50."
+          },
+          {
+            tip: "Calcule as potências e depois divida.",
+            text: "Quanto é 4² + 2⁴ ÷ 4?",
+            options: { A: "18", B: "20", C: "24", D: "32" },
+            answer: "B",
+            explanation: "4² = 16; 2⁴ = 16; 16 ÷ 4 = 4; 16 + 4 = 20."
+          },
+          {
+            tip: "Faça raiz, multiplicação e depois soma/subtração.",
+            text: "Quanto é √144 + 7 × 5 − 20?",
+            options: { A: "17", B: "27", C: "37", D: "47" },
+            answer: "B",
+            explanation: "√144 = 12; 7 × 5 = 35; 12 + 35 − 20 = 27."
+          }
+        ]
       }
     };
 
     function createMathEnemies() {
       return [
-        { id: "soma-01", typeId: "soma-subtracao", x: 790, y: 780, patrol: "horizontal", rangeX: 120, rangeY: 34, speed: 0.0014, phase: 0.1, questionIndex: 0 },
-        { id: "soma-02", typeId: "soma-subtracao", x: 1180, y: 955, patrol: "circle", rangeX: 74, rangeY: 52, speed: 0.0012, phase: 1.6, questionIndex: 1 },
-        { id: "soma-03", typeId: "soma-subtracao", x: 620, y: 1130, patrol: "vertical", rangeX: 38, rangeY: 112, speed: 0.0011, phase: 2.9, questionIndex: 2 },
+        { id: "soma-01", typeId: "soma-subtracao", x: 680, y: 840, patrol: "horizontal", rangeX: 105, rangeY: 30, speed: 0.00125, phase: 0.1, questionIndex: 0 },
+        { id: "soma-02", typeId: "soma-subtracao", x: 820, y: 930, patrol: "circle", rangeX: 68, rangeY: 46, speed: 0.0012, phase: 1.6, questionIndex: 1 },
+        { id: "soma-03", typeId: "soma-subtracao", x: 935, y: 810, patrol: "vertical", rangeX: 28, rangeY: 82, speed: 0.0011, phase: 2.9, questionIndex: 2 },
 
-        { id: "fator-01", typeId: "multiplicacao-divisao", x: 1685, y: 795, patrol: "horizontal", rangeX: 135, rangeY: 38, speed: 0.0011, phase: 0.7, questionIndex: 0 },
-        { id: "fator-02", typeId: "multiplicacao-divisao", x: 1885, y: 1110, patrol: "circle", rangeX: 82, rangeY: 66, speed: 0.0012, phase: 2.1, questionIndex: 1 },
-        { id: "fator-03", typeId: "multiplicacao-divisao", x: 1325, y: 1070, patrol: "vertical", rangeX: 44, rangeY: 125, speed: 0.0013, phase: 3.2, questionIndex: 2 },
+        { id: "fator-01", typeId: "multiplicacao-divisao", x: 1605, y: 835, patrol: "horizontal", rangeX: 110, rangeY: 34, speed: 0.0011, phase: 0.7, questionIndex: 0 },
+        { id: "fator-02", typeId: "multiplicacao-divisao", x: 1760, y: 930, patrol: "circle", rangeX: 70, rangeY: 52, speed: 0.00118, phase: 2.1, questionIndex: 1 },
+        { id: "fator-03", typeId: "multiplicacao-divisao", x: 1880, y: 810, patrol: "vertical", rangeX: 30, rangeY: 90, speed: 0.0012, phase: 3.2, questionIndex: 2 },
 
-        { id: "raiz-01", typeId: "potencia-radiciacao", x: 925, y: 515, patrol: "circle", rangeX: 78, rangeY: 58, speed: 0.0013, phase: 0.4, questionIndex: 0 },
-        { id: "raiz-02", typeId: "potencia-radiciacao", x: 1585, y: 520, patrol: "circle", rangeX: 78, rangeY: 58, speed: 0.0013, phase: 1.9, questionIndex: 1 },
-        { id: "raiz-03", typeId: "potencia-radiciacao", x: 1515, y: 925, patrol: "horizontal", rangeX: 118, rangeY: 42, speed: 0.0010, phase: 2.6, questionIndex: 2 }
+        { id: "raiz-01", typeId: "potencia-radiciacao", x: 1110, y: 560, patrol: "circle", rangeX: 66, rangeY: 50, speed: 0.00124, phase: 0.4, questionIndex: 0 },
+        { id: "raiz-02", typeId: "potencia-radiciacao", x: 1255, y: 645, patrol: "horizontal", rangeX: 95, rangeY: 30, speed: 0.00105, phase: 1.9, questionIndex: 1 },
+        { id: "raiz-03", typeId: "potencia-radiciacao", x: 1395, y: 555, patrol: "circle", rangeX: 66, rangeY: 50, speed: 0.00124, phase: 2.6, questionIndex: 2 }
       ].map((enemy) => ({
         ...enemy,
         originX: enemy.x,
@@ -455,13 +581,202 @@ const viewport = document.getElementById("gameViewport");
 
     const cloneData = (data) => JSON.parse(JSON.stringify(data));
 
+    const mathProgress = {
+      defeatedEnemyIds: [],
+      miniBossDefeated: false,
+      bossDefeated: false
+    };
+
+    function isEnemyDefeated(enemyId) {
+      return mathProgress.defeatedEnemyIds.includes(enemyId);
+    }
+
+    function getMathCommonEnemies() {
+      return createMathEnemies();
+    }
+
+    function getMathCommonEnemyIds() {
+      return getMathCommonEnemies().map((enemy) => enemy.id);
+    }
+
+    function getDefeatedCommonCount() {
+      const commonIds = getMathCommonEnemyIds();
+      return commonIds.filter((id) => isEnemyDefeated(id)).length;
+    }
+
+    function areAllMathCommonsDefeated() {
+      const commonIds = getMathCommonEnemyIds();
+      return commonIds.length > 0 && commonIds.every((id) => isEnemyDefeated(id));
+    }
+
+    function isMathMiniBossUnlocked() {
+      return areAllMathCommonsDefeated() && !mathProgress.miniBossDefeated;
+    }
+
+    function isMathBossUnlocked() {
+      return areAllMathCommonsDefeated() && mathProgress.miniBossDefeated && !mathProgress.bossDefeated;
+    }
+
+    function createMathMiniBoss() {
+      return {
+        id: "mini-chefe-equacao",
+        typeId: "mini-chefe-equacao",
+        x: 1250,
+        y: 760,
+        patrol: "circle",
+        rangeX: 96,
+        rangeY: 62,
+        speed: 0.00102,
+        phase: 0.3,
+        questionIndex: 0,
+        originX: 1250,
+        originY: 760,
+        lastX: 1250,
+        lastY: 760,
+        direction: "baixo",
+        enemyRank: "miniBoss"
+      };
+    }
+
+    function createMathBoss() {
+      return {
+        id: "chefe-golem-calculos",
+        typeId: "chefe-golem-calculos",
+        x: 1250,
+        y: 455,
+        patrol: "vertical",
+        rangeX: 0,
+        rangeY: 48,
+        speed: 0.00088,
+        phase: 1.4,
+        questionIndex: 0,
+        originX: 1250,
+        originY: 560,
+        lastX: 1250,
+        lastY: 560,
+        direction: "baixo",
+        enemyRank: "boss"
+      };
+    }
+
+    function getMathEnemyObjectsByProgress() {
+      const commonEnemies = getMathCommonEnemies().filter((enemy) => !isEnemyDefeated(enemy.id));
+
+      if (isMathBossUnlocked()) {
+        return [...commonEnemies, createMathBoss()];
+      }
+
+      if (isMathMiniBossUnlocked()) {
+        return [...commonEnemies, createMathMiniBoss()];
+      }
+
+      return commonEnemies;
+    }
+
+    function getMathProgressMessage() {
+      const total = getMathCommonEnemyIds().length;
+      const defeated = getDefeatedCommonCount();
+
+      if (mathProgress.bossDefeated) {
+        return "Todos os desafios do Reino da Matemática foram concluídos. Fale com a Professora Sintaxe na Vila Central para reiniciar a jornada.";
+      }
+
+      if (isMathBossUnlocked()) {
+        return "Melog foi derrotado. O Golem dos Cálculos liberou o Santuário Final para testar seu domínio.";
+      }
+
+      if (isMathMiniBossUnlocked()) {
+        return "Ameaça liberada! Melog apareceu na Arena Anti-Estudo para tentar destruir a lógica do reino.";
+      }
+
+      if (mathProgress.miniBossDefeated) {
+        return "Mini-chefe eliminado. O Chefe da Matemática está surgindo no núcleo do reino.";
+      }
+
+      return `Inimigos básicos derrotados: ${defeated}/${total}. Derrote todos para revelar Melog, a ameaça anti-estudo.`;
+    }
+
+    function registerEnemyDefeat(enemySnapshot) {
+      if (!enemySnapshot) return "";
+
+      if (enemySnapshot.enemyRank === "miniBoss" || enemySnapshot.typeId === "mini-chefe-equacao") {
+        mathProgress.miniBossDefeated = true;
+        return "Melog eliminado! O Golem dos Cálculos liberou o teste final.";
+      }
+
+      if (enemySnapshot.enemyRank === "boss" || enemySnapshot.typeId === "chefe-golem-calculos") {
+        mathProgress.bossDefeated = true;
+        return "Guardião superado! O Reino da Matemática foi concluído.";
+      }
+
+      if (!mathProgress.defeatedEnemyIds.includes(enemySnapshot.id)) {
+        mathProgress.defeatedEnemyIds.push(enemySnapshot.id);
+      }
+
+      if (isMathMiniBossUnlocked()) {
+        return "Todos os inimigos básicos foram derrotados. Melog apareceu na Arena Anti-Estudo!";
+      }
+
+      return getMathProgressMessage();
+    }
+
+    function resetMathProgress() {
+      mathProgress.defeatedEnemyIds = [];
+      mathProgress.miniBossDefeated = false;
+      mathProgress.bossDefeated = false;
+
+      if (currentScene && currentScene.id === "reino-matematica") {
+        enemyObjects = getMathEnemyObjectsByProgress();
+        renderSceneObjects();
+        updateNearbyEnemy();
+        if (keys.debugColliders) renderColliderDebugLayer();
+      }
+
+      interactionText.textContent = "Jornada da Matemática reiniciada. Todos os inimigos voltaram ao mapa.";
+    }
+
+    function refreshMathEnemyObjectsAfterProgress() {
+      if (!currentScene || currentScene.id !== "reino-matematica") return;
+
+      enemyObjects = getMathEnemyObjectsByProgress();
+      renderSceneObjects();
+      updateNearbyEnemy();
+      if (keys.debugColliders) renderColliderDebugLayer();
+    }
+
+    function completeEnemyDefeatFromBattle(enemySnapshot) {
+      if (!enemySnapshot) return;
+
+      const liveEnemy = enemyObjects.find((enemy) => enemy.id === enemySnapshot.id);
+      if (liveEnemy) liveEnemy.defeatedPending = true;
+
+      const element = document.querySelector(`[data-enemy-id="${enemySnapshot.id}"]`);
+      const finish = () => {
+        const message = registerEnemyDefeat(enemySnapshot);
+        refreshMathEnemyObjectsAfterProgress();
+        interactionText.textContent = message || getMathProgressMessage();
+      };
+
+      if (!element) {
+        finish();
+        return;
+      }
+
+      element.classList.add("enemy-map-defeated");
+      window.setTimeout(() => {
+        element.classList.add("enemy-map-vanish");
+      }, 520);
+      window.setTimeout(finish, 1280);
+    }
+
     const villageScene = {
       id: "vila-central",
       name: "Vila Central",
       className: "scene-village",
       plazaLabel: "PRAÇA<br>VOLTZ",
-      defaultHint: "Vila Central: fale com o Guardião do Portal para viajar ao Reino da Matemática.",
+      defaultHint: "Vila Central: explore, converse com os NPCs e fale com o Guardião do Portal para viajar.",
       spawn: { x: 1250, y: 1120 },
+      zoneMarkers: [],
       buildings: cloneData(buildings),
       decorObjects: cloneData(decorObjects),
       treeObjects: cloneData(treeObjects),
@@ -474,41 +789,62 @@ const viewport = document.getElementById("gameViewport");
       id: "reino-matematica",
       name: "Reino da Matemática",
       className: "scene-math",
-      plazaLabel: "REINO DA<br>MATEMÁTICA",
-      defaultHint: "Reino da Matemática: encontre inimigos de operações, chegue perto e pressione E para responder perguntas.",
-      spawn: { x: 1250, y: 1275 },
+      plazaLabel: "NÚCLEO<br>NUMÉRICO",
+      defaultHint: "Reino da Matemática: enfrente os inimigos espalhados pelo reino e proteja o conhecimento.",
+      spawn: { x: 1250, y: 1305 },
+      zoneMarkers: [],
       buildings: [
-        { id: "portal-retorno", label: "Portal de Retorno", x: 980, y: 115, w: 540, h: 290, roofH: 138, collider: { x: 0, y: 0, w: 0, h: 0 } },
-        { id: "observatorio-numeros", label: "Observatório dos Números", x: 375, y: 365, w: 455, h: 285, roofH: 145, collider: { x: 0, y: 0, w: 0, h: 0 } },
-        { id: "oficina-calculos", label: "Oficina dos Cálculos", x: 1665, y: 365, w: 455, h: 285, roofH: 145, collider: { x: 0, y: 0, w: 0, h: 0 } },
-        { id: "arquivo-formulas", label: "Arquivo das Fórmulas", x: 430, y: 965, w: 400, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } },
-        { id: "torre-problemas", label: "Torre dos Problemas", x: 1690, y: 965, w: 430, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } }
+        { id: "portico-retorno", label: "Pórtico de Retorno", x: 1015, y: 115, w: 470, h: 260, roofH: 120, solid: false },
+        { id: "arquivo-numeros", label: "Arquivo dos Números", x: 285, y: 330, w: 430, h: 270, roofH: 136 },
+        { id: "forja-fatores", label: "Forja dos Fatores", x: 1785, y: 330, w: 430, h: 270, roofH: 136 },
+        { id: "laboratorio-raizes", label: "Laboratório de Raízes", x: 990, y: 820, w: 520, h: 275, roofH: 140 },
+        { id: "mural-equacoes", label: "Mural de Equações", x: 260, y: 1120, w: 390, h: 235, roofH: 118 },
+        { id: "torre-problemas", label: "Torre dos Problemas", x: 1850, y: 1120, w: 390, h: 235, roofH: 118 }
       ],
       decorObjects: [
-        { id: "numero-portal-esq", label: "Número Cristalizado", type: "crystal", x: 900, y: 280, w: 72, h: 104, solid: true },
-        { id: "numero-portal-dir", label: "Número Cristalizado", type: "crystal", x: 1530, y: 280, w: 72, h: 104, solid: true },
-        { id: "cristal-algebra-esq", label: "Cristal de Álgebra", type: "crystal", x: 1030, y: 575, w: 58, h: 86, solid: true },
-        { id: "cristal-algebra-dir", label: "Cristal de Geometria", type: "crystal", x: 1415, y: 575, w: 58, h: 86, solid: true },
-        { id: "linha-equacao-oeste", label: "Linha de Equação", type: "wall", x: 940, y: 615, w: 165, h: 28, solid: true },
-        { id: "linha-equacao-leste", label: "Linha de Equação", type: "wall", x: 1395, y: 615, w: 165, h: 28, solid: true },
-        { id: "banco-math-sul-esq", label: "Banco Numérico", type: "wall", x: 960, y: 960, w: 140, h: 34, solid: true },
-        { id: "banco-math-sul-dir", label: "Banco Numérico", type: "wall", x: 1400, y: 960, w: 140, h: 34, solid: true },
-        { id: "muro-math-noroeste", label: "Muro dos Dígitos", type: "wall", x: 195, y: 330, w: 120, h: 58, solid: true },
-        { id: "muro-math-nordeste", label: "Muro dos Dígitos", type: "wall", x: 2185, y: 330, w: 120, h: 58, solid: true },
-        { id: "muro-math-sudoeste", label: "Muro dos Dígitos", type: "wall", x: 195, y: 1200, w: 120, h: 58, solid: true },
-        { id: "muro-math-sudeste", label: "Muro dos Dígitos", type: "wall", x: 2185, y: 1200, w: 120, h: 58, solid: true }
+        { id: "arena-soma", label: "Adição e Subtração", type: "math-pad", operation: "soma", x: 555, y: 742, w: 430, h: 250, solid: false, showLabel: false },
+        { id: "arena-fator", label: "Multiplicação e Divisão", type: "math-pad", operation: "fator", x: 1515, y: 742, w: 430, h: 250, solid: false, showLabel: false },
+        { id: "arena-raiz", label: "Potências e Raízes", type: "math-pad", operation: "raiz", x: 1035, y: 455, w: 430, h: 250, solid: false, showLabel: false },
+        { id: "arena-melog", label: "Arena Anti-Estudo", type: "boss-pad", operation: "melog", x: 1040, y: 690, w: 420, h: 220, solid: false, showLabel: false },
+        { id: "santuario-golem", label: "Santuário do Golem", type: "boss-pad", operation: "golem", x: 1030, y: 250, w: 440, h: 230, solid: false, showLabel: false },
+        { id: "portao-melog-visual", label: "Portão do Melog", type: "gate", operation: "melog", x: 1130, y: 910, w: 240, h: 58, solid: false, showLabel: false },
+        { id: "portao-golem-visual", label: "Portão do Golem", type: "gate", operation: "golem", x: 1120, y: 525, w: 260, h: 58, solid: false, showLabel: false },
+
+        { id: "linha-soma-a", label: "+ −", type: "math-symbol", operation: "soma", x: 705, y: 695, w: 110, h: 44, solid: false, showLabel: false },
+        { id: "linha-fator-a", label: "× ÷", type: "math-symbol", operation: "fator", x: 1685, y: 695, w: 110, h: 44, solid: false, showLabel: false },
+        { id: "linha-raiz-a", label: "x² √", type: "math-symbol", operation: "raiz", x: 1195, y: 405, w: 120, h: 44, solid: false, showLabel: false },
+
+        { id: "trilha-numero-oeste", label: "", type: "number-line", x: 690, y: 1038, w: 420, h: 32, solid: false },
+        { id: "trilha-numero-leste", label: "", type: "number-line", x: 1390, y: 1038, w: 420, h: 32, solid: false },
+        { id: "trilha-numero-norte", label: "", type: "number-line", x: 1040, y: 332, w: 420, h: 32, solid: false },
+
+        { id: "numero-portal-esq", label: "Número Cristalizado", type: "crystal", x: 905, y: 278, w: 70, h: 100, solid: true },
+        { id: "numero-portal-dir", label: "Número Cristalizado", type: "crystal", x: 1530, y: 278, w: 70, h: 100, solid: true },
+        { id: "cristal-soma-esq", label: "Cristal de Soma", type: "crystal", x: 455, y: 830, w: 58, h: 86, solid: true },
+        { id: "cristal-soma-dir", label: "Cristal de Subtração", type: "crystal", x: 1030, y: 830, w: 58, h: 86, solid: true },
+        { id: "cristal-fator-esq", label: "Cristal de Multiplicação", type: "crystal", x: 1410, y: 830, w: 58, h: 86, solid: true },
+        { id: "cristal-fator-dir", label: "Cristal de Divisão", type: "crystal", x: 1988, y: 830, w: 58, h: 86, solid: true },
+        { id: "cristal-raiz-esq", label: "Cristal de Potência", type: "crystal", x: 970, y: 580, w: 58, h: 86, solid: true },
+        { id: "cristal-raiz-dir", label: "Cristal de Raiz", type: "crystal", x: 1475, y: 580, w: 58, h: 86, solid: true },
+
+        { id: "muro-math-noroeste", label: "Muro dos Dígitos", type: "wall", x: 170, y: 250, w: 130, h: 54, solid: true },
+        { id: "muro-math-nordeste", label: "Muro dos Dígitos", type: "wall", x: 2200, y: 250, w: 130, h: 54, solid: true },
+        { id: "muro-math-sudoeste", label: "Muro dos Dígitos", type: "wall", x: 170, y: 1380, w: 130, h: 54, solid: true },
+        { id: "muro-math-sudeste", label: "Muro dos Dígitos", type: "wall", x: 2200, y: 1380, w: 130, h: 54, solid: true }
       ],
       treeObjects: [
         { id: "arvore-math-01", label: "Cálculo-Raiz 1", x: 110, y: 110, w: 128, h: 118 },
         { id: "arvore-math-02", label: "Cálculo-Raiz 2", x: 300, y: 150, w: 112, h: 104 },
         { id: "arvore-math-03", label: "Cálculo-Raiz 3", x: 2100, y: 120, w: 130, h: 120 },
         { id: "arvore-math-04", label: "Cálculo-Raiz 4", x: 2290, y: 210, w: 112, h: 104 },
-        { id: "arvore-math-05", label: "Cálculo-Raiz 5", x: 95, y: 620, w: 128, h: 118 },
-        { id: "arvore-math-06", label: "Cálculo-Raiz 6", x: 2260, y: 620, w: 128, h: 118 },
-        { id: "arvore-math-07", label: "Cálculo-Raiz 7", x: 120, y: 1380, w: 128, h: 118 },
-        { id: "arvore-math-08", label: "Cálculo-Raiz 8", x: 310, y: 1325, w: 112, h: 104 },
-        { id: "arvore-math-09", label: "Cálculo-Raiz 9", x: 2170, y: 1320, w: 128, h: 118 },
-        { id: "arvore-math-10", label: "Cálculo-Raiz 10", x: 2325, y: 1400, w: 112, h: 104 }
+        { id: "arvore-math-05", label: "Cálculo-Raiz 5", x: 90, y: 635, w: 128, h: 118 },
+        { id: "arvore-math-06", label: "Cálculo-Raiz 6", x: 2280, y: 635, w: 128, h: 118 },
+        { id: "arvore-math-07", label: "Cálculo-Raiz 7", x: 90, y: 1470, w: 128, h: 118 },
+        { id: "arvore-math-08", label: "Cálculo-Raiz 8", x: 310, y: 1425, w: 112, h: 104 },
+        { id: "arvore-math-09", label: "Cálculo-Raiz 9", x: 2170, y: 1420, w: 128, h: 118 },
+        { id: "arvore-math-10", label: "Cálculo-Raiz 10", x: 2325, y: 1480, w: 112, h: 104 },
+        { id: "arvore-math-11", label: "Cálculo-Raiz 11", x: 790, y: 205, w: 108, h: 104 },
+        { id: "arvore-math-12", label: "Cálculo-Raiz 12", x: 1600, y: 205, w: 108, h: 104 }
       ],
       npcObjects: [
         {
@@ -516,7 +852,7 @@ const viewport = document.getElementById("gameViewport");
           name: "Guardião do Portal",
           role: "Retorno à Vila Central",
           x: 1250,
-          y: 505,
+          y: 405,
           colorA: "#78f7ff",
           colorB: "#9257ff",
           aura: "#00eaff",
@@ -524,25 +860,64 @@ const viewport = document.getElementById("gameViewport");
           returnToVillage: true,
           dialogue: [
             "Este é o Reino da Matemática, o primeiro destino aberto pelo Portal dos Reinos.",
-            "Agora este reino tem inimigos básicos de matemática andando pelo mapa.",
-            "Vou te levar de volta para a Vila Central para continuarmos a jornada."
+            "As três áreas representam operações diferentes: soma/subtração, multiplicação/divisão e potências/raízes.",
+            "Quando quiser voltar, fale comigo de novo e eu reabrirei o caminho para a Vila Central."
           ]
         },
         {
           id: "npc-voltinho-math",
           name: "Voltinho",
           role: "Guia da Matemática",
-          x: 1510,
+          x: 1250,
           y: 1185,
           colorA: "#78f7ff",
           colorB: "#00eaff",
           aura: "#78f7ff",
           portrait: "assets/images/sprites/voltinho_explicando.png",
           dialogue: [
-            "Mapa do Reino da Matemática carregado com sucesso!",
-            "A próxima evolução pode ser colocar inimigos matemáticos aqui, mas hoje a prioridade é mostrar que a viagem entre mapas funciona.",
-            "Chegue perto de um inimigo e pressione E para responder uma pergunta."
+            "Agora o Reino da Matemática está dividido por áreas de treino.",
+            "Os inimigos básicos abrem caminho até Melog, a ameaça que odeia estudar.",
+            "Depois de derrotar Melog, o Golem dos Cálculos aparece como guardião final do reino."
           ]
+        },
+        {
+          id: "terminal-progresso-math",
+          name: "Terminal de Progresso",
+          role: "Status do Reino",
+          x: 1030,
+          y: 1245,
+          visualType: "terminal",
+          colorA: "#78f7ff",
+          colorB: "#9257ff",
+          aura: "#00eaff",
+          portrait: "assets/images/sprites/voltinho_pensando.png",
+          dynamicDialogue: "math-progress"
+        },
+        {
+          id: "portao-melog-math",
+          name: "Portão do Melog",
+          role: "Bloqueio da Ameaça",
+          x: 1250,
+          y: 950,
+          visualType: "gate",
+          colorA: "#ff4d7d",
+          colorB: "#9257ff",
+          aura: "#ff4d7d",
+          portrait: "assets/images/mini-bosses/melog.png",
+          dynamicDialogue: "melog-gate"
+        },
+        {
+          id: "portao-golem-math",
+          name: "Santuário do Golem",
+          role: "Teste Final",
+          x: 1250,
+          y: 560,
+          visualType: "gate",
+          colorA: "#ffd166",
+          colorB: "#00eaff",
+          aura: "#ffd166",
+          portrait: "assets/images/bosses/golem-dos-calculos.png",
+          dynamicDialogue: "golem-gate"
         }
       ],
       portalObjects: [
@@ -550,13 +925,13 @@ const viewport = document.getElementById("gameViewport");
           id: "portal-retorno-math",
           name: "Portal de Retorno",
           x: 1250,
-          y: 360,
+          y: 315,
           interactionRange: 0,
           colorA: "#ffd166",
           colorB: "#00eaff"
         }
       ],
-      enemyObjects: createMathEnemies()
+      enemyObjects: getMathEnemyObjectsByProgress()
     };
 
     let currentScene = villageScene;
@@ -583,7 +958,7 @@ const viewport = document.getElementById("gameViewport");
     function setupPlayer() {
       updateWorldSizeFromCss();
       updatePlayerSizeFromCss();
-      enemyObjects = cloneData(currentScene.enemyObjects || []);
+      enemyObjects = currentScene.id === "reino-matematica" ? getMathEnemyObjectsByProgress() : cloneData(currentScene.enemyObjects || []);
       buildCollisionAndOcclusionData();
 
       applySceneVisualState(currentScene);
@@ -665,9 +1040,19 @@ const viewport = document.getElementById("gameViewport");
       return Math.round(tree.y + tree.h + 18);
     }
 
+    function getDecorVisualClass(decor) {
+      const baseClass = decor.type ? `decor-${decor.type}` : "decor-wall";
+      const operationClass = decor.operation ? `operation-${decor.operation}` : "";
+      return `${baseClass} ${operationClass}`.trim();
+    }
+
     function getDecorSortY(decor) {
       if (decor.type === "water") {
         return Math.round(decor.y + decor.h * 0.58);
+      }
+
+      if (decor.type === "math-pad" || decor.type === "math-symbol" || decor.type === "number-line") {
+        return Math.round(decor.y + decor.h * 0.52);
       }
 
       return Math.round(decor.y + decor.h);
@@ -757,6 +1142,12 @@ const viewport = document.getElementById("gameViewport");
       updateHint();
     }
 
+    function applyZoneMarkers(scene) {
+      document.querySelectorAll(".zone-marker").forEach((marker) => {
+        marker.style.display = "none";
+      });
+    }
+
     function applySceneVisualState(scene) {
       world.classList.remove("scene-village", "scene-math");
       world.classList.add(scene.className);
@@ -770,6 +1161,8 @@ const viewport = document.getElementById("gameViewport");
       if (brandSubtitle) {
         brandSubtitle.textContent = scene.name.toUpperCase();
       }
+
+      applyZoneMarkers(scene);
     }
 
     function changeScene(scene) {
@@ -779,7 +1172,7 @@ const viewport = document.getElementById("gameViewport");
       treeObjects = cloneData(scene.treeObjects);
       npcObjects = cloneData(scene.npcObjects);
       portalObjects = cloneData(scene.portalObjects);
-      enemyObjects = cloneData(scene.enemyObjects || []);
+      enemyObjects = scene.id === "reino-matematica" ? getMathEnemyObjectsByProgress() : cloneData(scene.enemyObjects || []);
 
       nearbyNpc = null;
       nearbyEnemy = null;
@@ -864,6 +1257,7 @@ const viewport = document.getElementById("gameViewport");
     function getNearestEnemyInRange() {
       const interactionRange = 92;
       return enemyObjects
+        .filter((enemy) => !enemy.defeatedPending)
         .map((enemy) => ({ enemy, distance: getEnemyDistance(enemy) }))
         .filter((entry) => entry.distance <= interactionRange)
         .sort((a, b) => a.distance - b.distance)[0]?.enemy || null;
@@ -883,6 +1277,7 @@ const viewport = document.getElementById("gameViewport");
       const now = performance.now();
 
       enemyObjects.forEach((enemy) => {
+        if (enemy.defeatedPending) return;
         enemy.lastX = enemy.x;
         enemy.lastY = enemy.y;
 
@@ -983,92 +1378,14 @@ const viewport = document.getElementById("gameViewport");
       return questions[index];
     }
 
-    function openEnemyEncounter(enemy) {
-      enemyPanelOpen = true;
-      currentEnemy = enemy;
-      enemyQuestionAnswered = false;
-      currentEnemyQuestion = getQuestionForEnemy(enemy);
 
-      keys.up = false;
-      keys.down = false;
-      keys.left = false;
-      keys.right = false;
-      keys.run = false;
-      playerState.moving = false;
-      updatePlayerAnimation();
-
-      renderEnemyQuestion();
-      enemyPanel.classList.add("visible");
-      interactionText.textContent = `Desafio iniciado contra ${getEnemyType(enemy).name}.`;
-    }
-
-    function renderEnemyQuestion() {
-      if (!currentEnemy || !currentEnemyQuestion) return;
-
-      const type = getEnemyType(currentEnemy);
-      const q = currentEnemyQuestion;
-      const questionNumber = (currentEnemy.questionIndex % type.questions.length) + 1;
-
-      enemyPanelKicker.textContent = type.role;
-      enemyPanelTitle.textContent = `${type.name} — pergunta ${questionNumber}/${type.questions.length}`;
-      enemyPanelSubtitle.textContent = type.description;
-      enemyQuestionTip.textContent = `Dica: ${q.tip}`;
-      enemyQuestionText.textContent = q.text;
-      enemyFeedback.textContent = "";
-      enemyFeedback.className = "enemy-feedback";
-      enemyNextButton.classList.remove("visible");
-
-      enemyQuestionOptions.innerHTML = Object.entries(q.options).map(([letter, value]) => `
-        <button class="enemy-option-btn" type="button" onclick="answerEnemyQuestion('${letter}')">
-          <strong>${letter}</strong>
-          <span>${value}</span>
-        </button>
-      `).join("");
-    }
-
-    function answerEnemyQuestion(letter) {
-      if (!enemyPanelOpen || !currentEnemy || !currentEnemyQuestion || enemyQuestionAnswered) return;
-
-      enemyQuestionAnswered = true;
-      const isCorrect = letter === currentEnemyQuestion.answer;
-
-      document.querySelectorAll(".enemy-option-btn").forEach((button) => {
-        button.disabled = true;
-        const buttonLetter = button.querySelector("strong")?.textContent;
-
-        if (buttonLetter === currentEnemyQuestion.answer) {
-          button.classList.add("correct");
-        }
-
-        if (buttonLetter === letter && !isCorrect) {
-          button.classList.add("wrong");
-        }
-      });
-
-      enemyFeedback.className = `enemy-feedback visible ${isCorrect ? "correct" : "wrong"}`;
-      enemyFeedback.textContent = isCorrect
-        ? `Acertou! ${currentEnemyQuestion.explanation}`
-        : `Ainda não. Resposta correta: ${currentEnemyQuestion.answer}. ${currentEnemyQuestion.explanation}`;
-
-      enemyNextButton.classList.add("visible");
-    }
-
-    function nextEnemyQuestion() {
-      if (!currentEnemy) return;
-
-      currentEnemy.questionIndex = (currentEnemy.questionIndex + 1) % getEnemyType(currentEnemy).questions.length;
-      enemyQuestionAnswered = false;
-      currentEnemyQuestion = getQuestionForEnemy(currentEnemy);
-      renderEnemyQuestion();
-    }
-
-    function closeEnemyPanel() {
-      enemyPanelOpen = false;
-      currentEnemy = null;
-      currentEnemyQuestion = null;
-      enemyQuestionAnswered = false;
-      enemyPanel.classList.remove("visible");
-      updateHint();
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     function interactWithNearbyEnemy() {
@@ -1121,11 +1438,114 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function getNpcDialogueLines(npc) {
+      if (npc && npc.dynamicDialogue === "math-progress") {
+        return getMathProgressDialogue();
+      }
+
+      if (npc && npc.dynamicDialogue === "melog-gate") {
+        return getMelogGateDialogue();
+      }
+
+      if (npc && npc.dynamicDialogue === "golem-gate") {
+        return getGolemGateDialogue();
+      }
+
       if (Array.isArray(npc.dialogue)) {
         return npc.dialogue;
       }
 
       return [npc.dialogue || "..."];
+    }
+
+    function getMathProgressDialogue() {
+      const total = getMathCommonEnemyIds().length;
+      const defeated = getDefeatedCommonCount();
+
+      if (mathProgress.bossDefeated) {
+        return [
+          "Status do Reino da Matemática: concluído.",
+          "Você derrotou os inimigos básicos, venceu Melog e superou o teste do Golem dos Cálculos.",
+          "Para repetir a jornada, volte à Vila Central e fale com a Professora Sintaxe."
+        ];
+      }
+
+      if (isMathBossUnlocked()) {
+        return [
+          "Status: Golem dos Cálculos liberado.",
+          "Melog foi eliminado. O Santuário do Golem está pronto para o teste final.",
+          "Vá ao norte do reino e enfrente o Guardião Final da Matemática."
+        ];
+      }
+
+      if (isMathMiniBossUnlocked()) {
+        return [
+          "Status: Melog revelado.",
+          "Todos os inimigos básicos foram derrotados. A ameaça anti-estudo apareceu na arena central.",
+          "Derrote Melog para liberar o Golem dos Cálculos."
+        ];
+      }
+
+      return [
+        `Status: ${defeated}/${total} inimigos básicos derrotados.`,
+        "Complete as três áreas: Adição/Subtração, Multiplicação/Divisão e Potenciação/Radiciação.",
+        "Quando todos forem derrotados, Melog aparecerá na Arena Anti-Estudo."
+      ];
+    }
+
+    function getMelogGateDialogue() {
+      if (mathProgress.miniBossDefeated || mathProgress.bossDefeated) {
+        return [
+          "O Portão do Melog está aberto e silencioso.",
+          "A ameaça anti-estudo já foi derrotada. Agora o caminho aponta para o Golem dos Cálculos."
+        ];
+      }
+
+      if (isMathMiniBossUnlocked()) {
+        return [
+          "O Portão do Melog está aberto.",
+          "Melog odeia contas, estudo e qualquer coisa que organize pensamento.",
+          "Entre na arena central e derrote essa ameaça para proteger o Reino da Matemática."
+        ];
+      }
+
+      const total = getMathCommonEnemyIds().length;
+      const defeated = getDefeatedCommonCount();
+      return [
+        "O Portão do Melog está bloqueado.",
+        `Progresso atual: ${defeated}/${total} inimigos básicos derrotados.`,
+        "Derrote todos os inimigos básicos para revelar a ameaça anti-estudo."
+      ];
+    }
+
+    function getGolemGateDialogue() {
+      if (mathProgress.bossDefeated) {
+        return [
+          "O Santuário do Golem está calmo.",
+          "Você já superou o teste final da Matemática. O reino reconhece seu progresso."
+        ];
+      }
+
+      if (isMathBossUnlocked()) {
+        return [
+          "O Santuário do Golem está aberto.",
+          "O Golem dos Cálculos não é uma ameaça: ele é o guardião final do reino.",
+          "Enfrente-o para provar que dominou a Matemática desta primeira jornada."
+        ];
+      }
+
+      if (isMathMiniBossUnlocked()) {
+        return [
+          "O Santuário do Golem continua fechado.",
+          "Antes do teste final, o reino precisa ser protegido de Melog.",
+          "Derrote a ameaça anti-estudo na arena central."
+        ];
+      }
+
+      return [
+        "O Santuário do Golem está selado.",
+        "O Guardião dos Cálculos só desperta quando o caminho básico do reino é concluído.",
+        "Primeiro derrote os inimigos das três áreas de treino."
+      ];
     }
 
     function renderDialogueLine() {
@@ -1179,7 +1599,12 @@ const viewport = document.getElementById("gameViewport");
 
       const shouldOpenRealmPanel = Boolean(currentDialogueNpc && currentDialogueNpc.opensRealmPanel);
       const shouldReturnToVillage = Boolean(currentDialogueNpc && currentDialogueNpc.returnToVillage);
+      const shouldResetMath = Boolean(currentDialogueNpc && currentDialogueNpc.resetsMathProgress);
       closeDialogue();
+
+      if (shouldResetMath) {
+        resetMathProgress();
+      }
 
       if (shouldOpenRealmPanel) {
         openRealmPanel();
@@ -1212,6 +1637,32 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function npcSvg(npc) {
+      if (npc.visualType === "terminal") {
+        return `
+          <svg class="npc-svg npc-svg-terminal" viewBox="0 0 120 150" role="img" aria-label="${npc.name}">
+            <ellipse cx="60" cy="128" rx="32" ry="9" fill="rgba(0,0,0,0.34)"></ellipse>
+            <rect x="26" y="52" width="68" height="54" rx="12" fill="${npc.colorB}" stroke="rgba(245,251,255,0.86)" stroke-width="4"></rect>
+            <rect x="34" y="61" width="52" height="28" rx="6" fill="rgba(2,4,13,0.72)" stroke="${npc.colorA}" stroke-width="3"></rect>
+            <path d="M41 76 H79 M47 86 H73" stroke="${npc.colorA}" stroke-width="4" stroke-linecap="round"></path>
+            <path d="M46 106 L36 128 M74 106 L84 128" stroke="${npc.colorA}" stroke-width="6" stroke-linecap="round"></path>
+            <circle cx="60" cy="37" r="13" fill="${npc.colorA}" stroke="#fff" stroke-width="3"></circle>
+            <path d="M52 37 H68 M60 29 V45" stroke="#02040d" stroke-width="4" stroke-linecap="round"></path>
+          </svg>
+        `;
+      }
+
+      if (npc.visualType === "gate") {
+        return `
+          <svg class="npc-svg npc-svg-gate" viewBox="0 0 120 150" role="img" aria-label="${npc.name}">
+            <ellipse cx="60" cy="130" rx="38" ry="10" fill="rgba(0,0,0,0.36)"></ellipse>
+            <path d="M28 126 V72 C28 42 44 28 60 28 C76 28 92 42 92 72 V126" fill="rgba(2,4,13,0.44)" stroke="${npc.colorA}" stroke-width="8" stroke-linecap="round"></path>
+            <path d="M42 126 V76 C42 55 50 47 60 47 C70 47 78 55 78 76 V126" fill="rgba(255,255,255,0.08)" stroke="${npc.colorB}" stroke-width="5" stroke-linecap="round"></path>
+            <circle cx="60" cy="82" r="12" fill="${npc.colorA}" stroke="#fff" stroke-width="3"></circle>
+            <path d="M37 58 L24 45 M83 58 L96 45" stroke="${npc.colorB}" stroke-width="6" stroke-linecap="round"></path>
+          </svg>
+        `;
+      }
+
       return `
         <svg class="npc-svg" viewBox="0 0 120 150" role="img" aria-label="${npc.name}">
           <ellipse cx="60" cy="128" rx="30" ry="10" fill="rgba(0,0,0,0.34)"></ellipse>
@@ -1251,11 +1702,7 @@ const viewport = document.getElementById("gameViewport");
       canopyLayer.innerHTML = "";
 
       const decorHtml = decorObjects.map((decor) => {
-        const className = decor.type === "water"
-          ? "decor-water"
-          : decor.type === "crystal"
-            ? "decor-crystal"
-            : "decor-wall";
+        const className = getDecorVisualClass(decor);
 
         const sortY = getDecorSortY(decor);
 
@@ -1266,7 +1713,9 @@ const viewport = document.getElementById("gameViewport");
             style="left: ${decor.x}px; top: ${decor.y}px; width: ${decor.w}px; height: ${decor.h}px; z-index: ${sortY};"
             aria-hidden="true"
           >
-            <div class="decor-object ${className}"></div>
+            <div class="decor-object ${className}">
+              ${decor.showLabel ? `<span class="decor-label">${decor.label}</span>` : ""}
+            </div>
           </div>
         `;
       }).join("");
@@ -1355,9 +1804,10 @@ const viewport = document.getElementById("gameViewport");
 
         return `
           <div
-            class="depth-object depth-enemy enemy-type-${enemy.typeId}"
+            class="depth-object depth-enemy enemy-type-${enemy.typeId} enemy-rank-${enemy.enemyRank || 'common'} ${enemy.defeatedPending ? 'defeated-pending' : ''}"
             data-enemy-id="${enemy.id}"
             data-direction="${enemy.direction}"
+            data-enemy-rank="${enemy.enemyRank || 'common'}"
             data-sort-y="${sortY}"
             style="left: ${enemy.x}px; top: ${enemy.y}px; z-index: ${sortY};"
           >
@@ -1376,18 +1826,14 @@ const viewport = document.getElementById("gameViewport");
 
     function renderDecorLayer() {
       decorLayer.innerHTML = decorObjects.map((decor) => {
-        const className = decor.type === "water"
-          ? "decor-water"
-          : decor.type === "crystal"
-            ? "decor-crystal"
-            : "decor-wall";
+        const className = getDecorVisualClass(decor);
 
         return `
           <div
             class="decor-object ${className}"
             style="left: ${decor.x}px; top: ${decor.y}px; width: ${decor.w}px; height: ${decor.h}px;"
             aria-hidden="true"
-          ></div>
+          >${decor.showLabel ? `<span class="decor-label">${decor.label}</span>` : ""}</div>
         `;
       }).join("");
     }
@@ -1415,6 +1861,10 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function getBuildingPhysicalColliders(building) {
+      if (building.solid === false) {
+        return [];
+      }
+
       /*
         Colisão de prédio em top-down:
         - teto continua sendo apenas visual/oclusão, sem colisão.
@@ -1567,17 +2017,7 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function renderColliderDebugLayer() {
-      const debugColliders = [
-        ...colliders,
-        ...enemyObjects.map(getEnemyCollider)
-      ];
-
-      colliderLayer.innerHTML = debugColliders.map((collider) => `
-        <div
-          class="collider-debug ${collider.debugClass || ""}"
-          style="left: ${collider.x}px; top: ${collider.y}px; width: ${collider.w}px; height: ${collider.h}px;"
-        >${collider.label}</div>
-      `).join("");
+      if (colliderLayer) colliderLayer.innerHTML = "";
     }
 
     function updateMovement() {
@@ -1735,6 +2175,7 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function updatePlayerLocator(visible) {
+      if (!playerLocator) return;
       const screenX = playerState.x - cameraState.x;
       const screenY = playerState.y - cameraState.y - playerState.height * 0.08;
 
@@ -1744,12 +2185,8 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function toggleColliderDebug() {
-      keys.debugColliders = !keys.debugColliders;
-      world.classList.toggle("show-colliders", keys.debugColliders);
-
-      interactionText.textContent = keys.debugColliders
-        ? "Colisores visíveis: rosa = físico, amarelo = pés. A profundidade visual usa o Y dos pés."
-        : "Colisores ocultos. Movimento normal.";
+      keys.debugColliders = false;
+      world.classList.remove("show-colliders");
     }
 
     function updateDirection(dx, dy) {
@@ -1803,6 +2240,7 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function updatePlayerHitboxDebug() {
+      if (!playerHitboxDebug) return;
       const hitbox = getPlayerHitboxAt(playerState.x, playerState.y);
 
       playerHitboxDebug.style.left = `${hitbox.x}px`;
@@ -1853,6 +2291,7 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function updateDebug() {
+      if (!debugX || !debugY || !debugSpeed || !debugDirection || !debugCameraX || !debugCameraY || !debugCollision || !debugOcclusion) return;
       debugX.textContent = Math.round(playerState.x);
       debugY.textContent = Math.round(playerState.y);
       debugSpeed.textContent = getCurrentSpeed().toFixed(1);
@@ -1865,12 +2304,12 @@ const viewport = document.getElementById("gameViewport");
 
     function updateHint() {
       if (lastCollisionLabel !== "livre") {
-        interactionText.textContent = `Bloqueado por: ${lastCollisionLabel}. Aperte C para ver colisores.`;
+        interactionText.textContent = `Caminho bloqueado por: ${lastCollisionLabel}.`;
         return;
       }
 
       if (currentOcclusionLabel !== "nada") {
-        interactionText.textContent = `Você está atrás/debaixo de: ${currentOcclusionLabel}. O círculo mostra sua posição.`;
+        interactionText.textContent = `Você está passando por trás de ${currentOcclusionLabel}.`;
         return;
       }
 
@@ -1886,8 +2325,8 @@ const viewport = document.getElementById("gameViewport");
 
       if (playerState.moving) {
         interactionText.textContent = keys.run
-          ? `Correndo para ${playerState.direction}. Profundidade por Y ativa; pés decidem frente/atrás.`
-          : `Andando para ${playerState.direction}. Câmera suave, hitbox nos pés e ordem visual dinâmica.`;
+          ? `Correndo para ${playerState.direction}.`
+          : `Andando para ${playerState.direction}.`;
       } else {
         interactionText.textContent = currentScene.defaultHint;
       }
@@ -1939,9 +2378,6 @@ const viewport = document.getElementById("gameViewport");
       if (key === "d" || key === "arrowright") keys.right = true;
       if (key === "shift") keys.run = true;
 
-      if (key === "c" && !event.repeat) {
-        toggleColliderDebug();
-      }
 
       if ((key === "e" || key === "enter") && !event.repeat) {
         const interactedWithEnemy = interactWithNearbyEnemy();
@@ -1968,7 +2404,7 @@ const viewport = document.getElementById("gameViewport");
     window.addEventListener("resize", () => {
       updateWorldSizeFromCss();
       updatePlayerSizeFromCss();
-      enemyObjects = cloneData(currentScene.enemyObjects || []);
+      enemyObjects = currentScene.id === "reino-matematica" ? getMathEnemyObjectsByProgress() : cloneData(currentScene.enemyObjects || []);
       buildCollisionAndOcclusionData();
       clampPlayer();
       renderDepthLayer();
@@ -1982,11 +2418,10 @@ const viewport = document.getElementById("gameViewport");
       updateDebug();
     });
 
+    window.completeEnemyDefeatFromBattle = completeEnemyDefeatFromBattle;
+    window.resetMathProgress = resetMathProgress;
     window.closeRealmPanel = closeRealmPanel;
     window.selectRealm = selectRealm;
-    window.closeEnemyPanel = closeEnemyPanel;
-    window.answerEnemyQuestion = answerEnemyQuestion;
-    window.nextEnemyQuestion = nextEnemyQuestion;
 
     setupPlayer();
     gameLoop();

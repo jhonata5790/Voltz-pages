@@ -1378,6 +1378,166 @@
       border-color: rgba(255, 209, 102, 0.14);
     }
 
+
+    .world.scene-math .ground-path.main-horizontal {
+      left: 355px;
+      top: 725px;
+      width: 1790px;
+      height: 128px;
+    }
+
+    .world.scene-math .ground-path.main-vertical {
+      left: 1185px;
+      top: 250px;
+      width: 130px;
+      height: 1110px;
+    }
+
+    .world.scene-math .ground-path.branch-north {
+      left: 1060px;
+      top: 300px;
+      width: 380px;
+      height: 82px;
+      opacity: 0.76;
+    }
+
+    .world.scene-math .ground-path.branch-south {
+      left: 1045px;
+      top: 1208px;
+      width: 410px;
+      height: 86px;
+      opacity: 0.72;
+    }
+
+    .world.scene-math .ground-path.branch-west-top {
+      left: 650px;
+      top: 650px;
+      width: 560px;
+      height: 80px;
+      transform: rotate(-14deg);
+      opacity: 0.72;
+    }
+
+    .world.scene-math .ground-path.branch-east-top {
+      left: 1290px;
+      top: 650px;
+      width: 560px;
+      height: 80px;
+      transform: rotate(14deg);
+      opacity: 0.72;
+    }
+
+    .world.scene-math .ground-path.branch-west-bottom {
+      left: 635px;
+      top: 1048px;
+      width: 575px;
+      height: 82px;
+      transform: rotate(14deg);
+      opacity: 0.62;
+    }
+
+    .world.scene-math .ground-path.branch-east-bottom {
+      left: 1290px;
+      top: 1048px;
+      width: 575px;
+      height: 82px;
+      transform: rotate(-14deg);
+      opacity: 0.62;
+    }
+
+    .decor-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      padding: 7px 12px;
+      border-radius: 999px;
+      color: rgba(245, 251, 255, 0.94);
+      background: rgba(5, 7, 19, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-size: 0.75rem;
+      font-weight: 950;
+      letter-spacing: 0.5px;
+      text-align: center;
+      white-space: nowrap;
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.25);
+      pointer-events: none;
+    }
+
+    .decor-math-pad {
+      position: absolute;
+      inset: 0;
+      border-radius: 44px;
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      background:
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.035) 0 10px, transparent 10px 22px),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.09), transparent 58%);
+      box-shadow:
+        inset 0 0 42px rgba(255, 255, 255, 0.045),
+        0 0 32px rgba(0, 234, 255, 0.075);
+    }
+
+    .decor-math-pad::before {
+      content: "";
+      position: absolute;
+      inset: 20px;
+      border-radius: 34px;
+      border: 1px dashed rgba(255, 255, 255, 0.18);
+    }
+
+    .decor-math-pad.operation-soma {
+      background:
+        repeating-linear-gradient(45deg, rgba(0,234,255,0.055) 0 10px, transparent 10px 22px),
+        radial-gradient(circle at 50% 50%, rgba(0, 234, 255, 0.15), transparent 62%),
+        rgba(0, 234, 255, 0.035);
+      border-color: rgba(0, 234, 255, 0.26);
+    }
+
+    .decor-math-pad.operation-fator {
+      background:
+        repeating-linear-gradient(45deg, rgba(146,87,255,0.06) 0 10px, transparent 10px 22px),
+        radial-gradient(circle at 50% 50%, rgba(146, 87, 255, 0.16), transparent 62%),
+        rgba(146, 87, 255, 0.04);
+      border-color: rgba(146, 87, 255, 0.30);
+    }
+
+    .decor-math-pad.operation-raiz {
+      background:
+        repeating-linear-gradient(45deg, rgba(255,209,102,0.055) 0 10px, transparent 10px 22px),
+        radial-gradient(circle at 50% 50%, rgba(255, 209, 102, 0.16), transparent 62%),
+        rgba(255, 209, 102, 0.04);
+      border-color: rgba(255, 209, 102, 0.30);
+    }
+
+    .decor-math-symbol {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      background: rgba(5, 7, 19, 0.74);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0 18px rgba(255, 209, 102, 0.08);
+    }
+
+    .decor-math-symbol .decor-label {
+      font-size: 1.05rem;
+      letter-spacing: 2px;
+      color: #ffd166;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    .decor-number-line {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,209,102,0.42) 0 2px, transparent 2px 42px),
+        linear-gradient(90deg, transparent, rgba(255,209,102,0.22), transparent);
+      opacity: 0.6;
+      box-shadow: 0 0 22px rgba(255, 209, 102, 0.08);
+    }
+
     .depth-enemy {
       width: 88px;
       height: 112px;
@@ -1681,3 +1841,169 @@
         grid-template-columns: 1fr;
       }
     }
+
+/* Patch progressão: derrota no mapa, mini-chefe e chefe */
+.depth-enemy.enemy-rank-miniBoss .enemy-shell {
+  transform: scale(1.14);
+  box-shadow:
+    0 0 0 1px rgba(255, 77, 125, 0.35),
+    0 0 24px rgba(255, 77, 125, 0.34),
+    inset 0 0 28px rgba(255, 77, 125, 0.12);
+}
+
+.depth-enemy.enemy-rank-boss .enemy-shell {
+  transform: scale(1.34);
+  box-shadow:
+    0 0 0 1px rgba(255, 209, 102, 0.42),
+    0 0 34px rgba(255, 209, 102, 0.38),
+    inset 0 0 34px rgba(146, 87, 255, 0.2);
+}
+
+.depth-enemy.enemy-rank-miniBoss .enemy-label::before {
+  content: "MINI-CHEFE · ";
+  color: #ff4d7d;
+}
+
+.depth-enemy.enemy-rank-boss .enemy-label::before {
+  content: "CHEFE · ";
+  color: #ffd166;
+}
+
+.depth-enemy.enemy-map-defeated {
+  pointer-events: none;
+  animation: enemyMapDefeatFall 0.58s ease-in-out forwards;
+}
+
+.depth-enemy.enemy-map-vanish {
+  animation: enemyMapVanish 0.72s ease-in forwards;
+}
+
+.depth-enemy.defeated-pending .enemy-interaction-ring {
+  display: none;
+}
+
+@keyframes enemyMapDefeatFall {
+  0% {
+    transform: translate(-50%, -100%) scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 14px rgba(0, 234, 255, 0.7));
+  }
+
+  45% {
+    transform: translate(-50%, -100%) scale(1.08) rotate(-8deg);
+    filter: drop-shadow(0 0 24px rgba(255, 77, 125, 0.75));
+  }
+
+  100% {
+    transform: translate(-50%, -88%) scale(0.9) rotate(14deg);
+    opacity: 0.82;
+    filter: grayscale(0.4) drop-shadow(0 0 12px rgba(255, 209, 102, 0.55));
+  }
+}
+
+@keyframes enemyMapVanish {
+  0% {
+    opacity: 0.82;
+    transform: translate(-50%, -88%) scale(0.9) rotate(14deg);
+  }
+
+  55% {
+    opacity: 0.55;
+    transform: translate(-50%, -96%) scale(1.12) rotate(0deg);
+    filter: blur(1px) drop-shadow(0 0 24px rgba(0, 234, 255, 0.85));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -112%) scale(0.18) rotate(0deg);
+    filter: blur(7px) drop-shadow(0 0 38px rgba(255, 255, 255, 0.95));
+  }
+}
+
+/* Patch Reino da Matemática 2.0 — zonas, portões e estruturas interativas */
+.decor-boss-pad {
+  position: absolute;
+  inset: 0;
+  border-radius: 46px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.035) 0 8px, transparent 8px 22px),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.10), transparent 60%),
+    rgba(5, 7, 19, 0.22);
+  box-shadow:
+    inset 0 0 46px rgba(255, 255, 255, 0.055),
+    0 0 35px rgba(146, 87, 255, 0.12);
+}
+
+.decor-boss-pad::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 36px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+}
+
+.decor-boss-pad.operation-melog {
+  border-color: rgba(255, 77, 125, 0.34);
+  background:
+    repeating-linear-gradient(135deg, rgba(255,77,125,0.055) 0 8px, transparent 8px 22px),
+    radial-gradient(circle at 50% 50%, rgba(255, 77, 125, 0.18), transparent 62%),
+    rgba(255, 77, 125, 0.04);
+  box-shadow: 0 0 38px rgba(255, 77, 125, 0.12), inset 0 0 44px rgba(255, 77, 125, 0.055);
+}
+
+.decor-boss-pad.operation-golem {
+  border-color: rgba(255, 209, 102, 0.34);
+  background:
+    repeating-linear-gradient(135deg, rgba(255,209,102,0.055) 0 8px, transparent 8px 22px),
+    radial-gradient(circle at 50% 50%, rgba(255, 209, 102, 0.18), transparent 62%),
+    rgba(255, 209, 102, 0.04);
+  box-shadow: 0 0 42px rgba(255, 209, 102, 0.14), inset 0 0 44px rgba(255, 209, 102, 0.055);
+}
+
+.decor-gate {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background:
+    linear-gradient(90deg, rgba(5,7,19,0.85), rgba(255,255,255,0.07), rgba(5,7,19,0.85));
+  border: 2px solid rgba(245, 251, 255, 0.18);
+  box-shadow: inset 0 0 24px rgba(0, 234, 255, 0.08), 0 0 22px rgba(0, 0, 0, 0.18);
+}
+
+.decor-gate.operation-melog {
+  border-color: rgba(255, 77, 125, 0.44);
+  box-shadow: inset 0 0 24px rgba(255, 77, 125, 0.14), 0 0 22px rgba(255, 77, 125, 0.1);
+}
+
+.decor-gate.operation-golem {
+  border-color: rgba(255, 209, 102, 0.46);
+  box-shadow: inset 0 0 24px rgba(255, 209, 102, 0.14), 0 0 22px rgba(255, 209, 102, 0.1);
+}
+
+.npc-svg-terminal,
+.npc-svg-gate {
+  animation: npcIdle 2.9s ease-in-out infinite;
+}
+
+.depth-npc:has(.npc-svg-terminal),
+.depth-npc:has(.npc-svg-gate) {
+  width: 96px;
+  height: 118px;
+}
+
+/* Modo oficial: sem visor de colisores, sem marcadores de área e sem debug visual. */
+.debug-panel,
+.zone-marker,
+.decor-label,
+.collider-debug,
+.player-hitbox-debug {
+  display: none !important;
+}
+
+#colliderLayer {
+  display: none !important;
+}
+
+.topbar .hud .hud-pill.official-hidden {
+  display: none !important;
+}
