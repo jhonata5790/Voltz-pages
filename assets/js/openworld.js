@@ -42,6 +42,7 @@ const viewport = document.getElementById("gameViewport");
     const treeBaseLayer = document.getElementById("treeBaseLayer");
     const canopyLayer = document.getElementById("canopyLayer");
     const depthLayer = document.getElementById("depthLayer");
+    const interiorLayer = document.getElementById("interiorLayer");
 
     const keys = {
       up: false,
@@ -60,6 +61,8 @@ const viewport = document.getElementById("gameViewport");
     const cameraState = {
       x: 0,
       y: 0,
+      zoom: 1,
+      targetZoom: 1,
       smoothing: 0.14
     };
 
@@ -71,20 +74,25 @@ const viewport = document.getElementById("gameViewport");
       baseSpeed: 3.4,
       runSpeed: 5.2,
       direction: "baixo",
-      moving: false
+      moving: false,
+      scale: 1,
+      targetScale: 1
     };
 
     const cloneData = (data) => JSON.parse(JSON.stringify(data));
 
     const sourceData = window.VoltzData;
+    const interiorSystem = window.VoltzInteriorSystem;
 
     if (
       !sourceData?.village ||
       !sourceData?.villageNpcs ||
       !sourceData?.villagePortals ||
-      !sourceData?.realmOptions
+      !sourceData?.realmOptions ||
+      !interiorSystem ||
+      interiorSystem.getAllScenes().length === 0
     ) {
-      throw new Error("Os dados modulares do mundo não foram carregados antes de openworld.js.");
+      throw new Error("Os dados modulares do mundo e dos interiores não foram carregados antes de openworld.js.");
     }
 
     let buildings = cloneData(sourceData.village.buildings);
@@ -592,6 +600,7 @@ const viewport = document.getElementById("gameViewport");
       enemyObjects: []
     };
 
+
     const mathScene = {
       id: "reino-matematica",
       name: "Reino da Matemática",
@@ -756,6 +765,7 @@ const viewport = document.getElementById("gameViewport");
     let dialogueOpen = false;
     let currentDialogueNpc = null;
     let currentDialogueIndex = 0;
+    let sceneTransitionLockedUntil = 0;
 
     let colliders = [];
     let occluders = [];
@@ -769,6 +779,10 @@ const viewport = document.getElementById("gameViewport");
       buildCollisionAndOcclusionData();
 
       applySceneVisualState(currentScene);
+      cameraState.zoom = currentScene.cameraZoom || 1;
+      cameraState.targetZoom = cameraState.zoom;
+      playerState.scale = currentScene.playerScale || 1;
+      playerState.targetScale = playerState.scale;
       playerState.x = currentScene.spawn.x;
       playerState.y = currentScene.spawn.y;
 
@@ -789,9 +803,8 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function updatePlayerSizeFromCss() {
-      const rect = player.getBoundingClientRect();
-      playerState.width = rect.width || 72;
-      playerState.height = rect.height || 92;
+      playerState.width = player.offsetWidth || 72;
+      playerState.height = player.offsetHeight || 92;
     }
 
     function getCurrentSpeed() {
@@ -811,7 +824,8 @@ const viewport = document.getElementById("gameViewport");
         ...buildingColliders,
         ...decorColliders,
         ...treeColliders,
-        ...npcColliders
+        ...npcColliders,
+        ...cloneData(currentScene.customColliders || [])
       ];
 
       const roofOccluders = buildings.map((building) => ({
@@ -956,8 +970,12 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function applySceneVisualState(scene) {
-      world.classList.remove("scene-village", "scene-math");
-      world.classList.add(scene.className);
+      interiorSystem.applySceneVisualState(scene, {
+        world,
+        viewport,
+        layer: interiorLayer,
+        baseSceneClasses: ["scene-village", "scene-math"]
+      });
 
       const centerPlaza = document.querySelector(".center-plaza");
       if (centerPlaza) {
@@ -972,7 +990,15 @@ const viewport = document.getElementById("gameViewport");
       applyZoneMarkers(scene);
     }
 
-    function changeScene(scene) {
+    function clearMovementKeys() {
+      keys.up = false;
+      keys.down = false;
+      keys.left = false;
+      keys.right = false;
+      keys.run = false;
+    }
+
+    function changeScene(scene, options = {}) {
       currentScene = scene;
       buildings = cloneData(scene.buildings);
       decorObjects = cloneData(scene.decorObjects);
@@ -990,27 +1016,68 @@ const viewport = document.getElementById("gameViewport");
       applySceneVisualState(scene);
       buildCollisionAndOcclusionData();
 
-      playerState.x = scene.spawn.x;
-      playerState.y = scene.spawn.y;
-      playerState.direction = "baixo";
+      const spawn = options.spawn || scene.spawn;
+      playerState.x = spawn.x;
+      playerState.y = spawn.y;
+      playerState.direction = options.direction || "baixo";
       playerState.moving = false;
-      keys.up = false;
-      keys.down = false;
-      keys.left = false;
-      keys.right = false;
-      keys.run = false;
+      playerState.targetScale = scene.playerScale || 1;
+      cameraState.targetZoom = scene.cameraZoom || 1;
+      clearMovementKeys();
+      sceneTransitionLockedUntil = performance.now() + 650;
+
+      if (!options.animateCamera) {
+        playerState.scale = playerState.targetScale;
+        cameraState.zoom = cameraState.targetZoom;
+      }
 
       renderDepthLayer();
       renderColliderDebugLayer();
       updatePlayerPosition();
       updatePlayerAnimation();
-      snapCameraToPlayer();
+
+      if (options.animateCamera) {
+        applyCameraTransform();
+      } else {
+        snapCameraToPlayer();
+      }
       updateOcclusionVisibility();
       updateNearbyNpc();
       updateNearbyPortal();
       updateNearbyEnemy();
       updateDebug();
       interactionText.textContent = scene.defaultHint;
+    }
+
+    function resolveSceneById(sceneId) {
+      if (sceneId === villageScene.id) return villageScene;
+      if (sceneId === mathScene.id) return mathScene;
+      return interiorSystem.getScene(sceneId);
+    }
+
+    function performSceneTransition(transition) {
+      const targetScene = resolveSceneById(transition.targetSceneId);
+
+      if (!targetScene) {
+        console.error(`[Voltz Interiors] Cena de destino não encontrada: ${transition.targetSceneId}.`);
+        return false;
+      }
+
+      changeScene(targetScene, transition.options);
+      interactionText.textContent = transition.message;
+      return true;
+    }
+
+    function updateSceneTransitions() {
+      if (performance.now() < sceneTransitionLockedUntil) return false;
+
+      const transition = interiorSystem.findTransition({
+        currentScene,
+        footPoint: getPlayerFootPoint(),
+        keys
+      });
+
+      return transition ? performSceneTransition(transition) : false;
     }
 
     function selectRealm(realmId) {
@@ -1755,6 +1822,19 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function getDecorPhysicalCollider(decor) {
+      if (decor.collider) {
+        const collider = decor.collider;
+
+        return {
+          id: `${decor.id}-fisico`,
+          label: `${decor.label} / base`,
+          x: decor.x + collider.x,
+          y: decor.y + collider.y,
+          w: collider.w,
+          h: collider.h
+        };
+      }
+
       if (decor.type === "water") {
         return {
           id: decor.id,
@@ -1827,9 +1907,25 @@ const viewport = document.getElementById("gameViewport");
       if (colliderLayer) colliderLayer.innerHTML = "";
     }
 
+    function updateVisualTransition() {
+      cameraState.zoom += (cameraState.targetZoom - cameraState.zoom) * 0.12;
+      playerState.scale += (playerState.targetScale - playerState.scale) * 0.14;
+
+      if (Math.abs(cameraState.targetZoom - cameraState.zoom) < 0.001) {
+        cameraState.zoom = cameraState.targetZoom;
+      }
+
+      if (Math.abs(playerState.targetScale - playerState.scale) < 0.001) {
+        playerState.scale = playerState.targetScale;
+      }
+    }
+
     function updateMovement() {
+      updateVisualTransition();
+
       if (dialogueOpen || realmPanelOpen || enemyPanelOpen) {
         playerState.moving = false;
+        updatePlayerPosition();
         updatePlayerAnimation();
         updateCamera();
         updateDebug();
@@ -1861,6 +1957,7 @@ const viewport = document.getElementById("gameViewport");
         lastCollisionLabel = "livre";
       }
 
+      updateSceneTransitions();
       clampPlayer();
       updatePlayerPosition();
       updatePlayerAnimation();
@@ -1874,23 +1971,28 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function getPlayerHitboxAt(x, y) {
-      const hitboxWidth = Math.max(20, playerState.width * 0.34);
-      const hitboxHeight = Math.max(12, playerState.height * 0.16);
+      const scaledWidth = playerState.width * playerState.scale;
+      const scaledHeight = playerState.height * playerState.scale;
+      const hitboxWidth = Math.max(14, scaledWidth * 0.34);
+      const hitboxHeight = Math.max(9, scaledHeight * 0.16);
 
       return {
         x: x - hitboxWidth / 2,
-        y: y + playerState.height * 0.24,
+        y: y + scaledHeight * 0.24,
         w: hitboxWidth,
         h: hitboxHeight
       };
     }
 
     function getPlayerVisualBox() {
+      const scaledWidth = playerState.width * playerState.scale;
+      const scaledHeight = playerState.height * playerState.scale;
+
       return {
-        x: playerState.x - playerState.width * 0.38,
-        y: playerState.y - playerState.height * 0.68,
-        w: playerState.width * 0.76,
-        h: playerState.height * 0.94
+        x: playerState.x - scaledWidth * 0.38,
+        y: playerState.y - scaledHeight * 0.68,
+        w: scaledWidth * 0.76,
+        h: scaledHeight * 0.94
       };
     }
 
@@ -1915,7 +2017,7 @@ const viewport = document.getElementById("gameViewport");
     function getPlayerFootPoint() {
       return {
         x: playerState.x,
-        y: playerState.y + playerState.height * 0.31
+        y: playerState.y + playerState.height * playerState.scale * 0.31
       };
     }
 
@@ -2016,8 +2118,8 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function clampPlayer() {
-      const halfWidth = playerState.width / 2;
-      const halfHeight = playerState.height / 2;
+      const halfWidth = playerState.width * playerState.scale / 2;
+      const halfHeight = playerState.height * playerState.scale / 2;
 
       const minX = halfWidth;
       const maxX = worldState.width - halfWidth;
@@ -2031,7 +2133,7 @@ const viewport = document.getElementById("gameViewport");
     function updatePlayerPosition() {
       player.style.left = `${playerState.x}px`;
       player.style.top = `${playerState.y}px`;
-      player.style.transform = "translate(-50%, -50%)";
+      player.style.transform = `translate(-50%, -50%) scale(${playerState.scale})`;
 
       const isLeftDirection = playerState.direction.includes("esquerda");
       const flip = isLeftDirection ? -1 : 1;
@@ -2059,11 +2161,13 @@ const viewport = document.getElementById("gameViewport");
     function getCameraTarget() {
       const rect = viewport.getBoundingClientRect();
 
-      const maxCameraX = Math.max(0, worldState.width - rect.width);
-      const maxCameraY = Math.max(0, worldState.height - rect.height);
+      const visibleWidth = rect.width / cameraState.zoom;
+      const visibleHeight = rect.height / cameraState.zoom;
+      const maxCameraX = Math.max(0, worldState.width - visibleWidth);
+      const maxCameraY = Math.max(0, worldState.height - visibleHeight);
 
-      const targetX = playerState.x - rect.width / 2;
-      const targetY = playerState.y - rect.height / 2;
+      const targetX = playerState.x - visibleWidth / 2;
+      const targetY = playerState.y - visibleHeight / 2;
 
       return {
         x: Math.max(0, Math.min(maxCameraX, targetX)),
@@ -2086,7 +2190,9 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function applyCameraTransform() {
-      world.style.transform = `translate3d(${-cameraState.x}px, ${-cameraState.y}px, 0)`;
+      const translateX = -cameraState.x * cameraState.zoom;
+      const translateY = -cameraState.y * cameraState.zoom;
+      world.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${cameraState.zoom})`;
     }
 
     function updatePlayerAnimation() {
@@ -2127,6 +2233,16 @@ const viewport = document.getElementById("gameViewport");
 
       if (nearbyNpc) {
         interactionText.textContent = `Pressione E para conversar com ${nearbyNpc.name}.`;
+        return;
+      }
+
+      const interiorHint = interiorSystem.getContextHint({
+        currentScene,
+        footPoint: getPlayerFootPoint()
+      });
+
+      if (interiorHint) {
+        interactionText.textContent = interiorHint;
         return;
       }
 
@@ -2229,6 +2345,7 @@ const viewport = document.getElementById("gameViewport");
     window.resetMathProgress = resetMathProgress;
     window.closeRealmPanel = closeRealmPanel;
     window.selectRealm = selectRealm;
+    window.getActiveSceneId = () => currentScene.id;
 
     setupPlayer();
     gameLoop();

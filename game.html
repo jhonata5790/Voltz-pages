@@ -7,6 +7,8 @@
   <title>Voltz Education — Jogo</title>
 
   <link rel="stylesheet" href="assets/css/openworld.css" />
+  <link rel="stylesheet" href="assets/css/interiors/interior-system.css" />
+  <link rel="stylesheet" href="assets/css/interiors/library-interior.css" />
   <link rel="stylesheet" href="assets/css/battle.css" />
 </head>
 
@@ -52,6 +54,7 @@
         <div id="decorLayer" class="map-layer-common"></div>
         <div id="buildingBaseLayer" class="map-layer-common"></div>
         <div id="treeBaseLayer" class="map-layer-common"></div>
+        <div id="interiorLayer" class="map-layer-common interior-layer" aria-hidden="true"></div>
         <div id="depthLayer" class="map-layer-common"></div>
         <div id="colliderLayer" class="map-layer-common"></div>
         <div id="playerHitboxDebug" class="player-hitbox-debug" aria-hidden="true"></div>
@@ -208,6 +211,9 @@
   </main>
 
   <script src="assets/js/world/village-data.js" defer></script>
+  <script src="assets/js/interiors/interior-data.js" defer></script>
+  <script src="assets/js/interiors/interior-system.js" defer></script>
+  <script src="assets/js/interiors/library-interior.js" defer></script>
   <script src="assets/js/npc/village-npc-data.js" defer></script>
   <script src="assets/js/realms/realm-data.js" defer></script>
   <script src="assets/js/openworld.js" defer></script>
