@@ -74,168 +74,24 @@ const viewport = document.getElementById("gameViewport");
       moving: false
     };
 
-    let buildings = [
-      { id: "portal", label: "Portal dos Reinos", x: 980, y: 115, w: 540, h: 290, roofH: 138, collider: { x: 0, y: 0, w: 0, h: 0 } },
-      { id: "biblioteca", label: "Biblioteca de Dicas", x: 410, y: 360, w: 400, h: 280, roofH: 144, collider: { x: 0, y: 0, w: 0, h: 0 } },
-      { id: "arena", label: "Arena de Treino", x: 1690, y: 360, w: 430, h: 300, roofH: 152, collider: { x: 0, y: 0, w: 0, h: 0 } },
-      { id: "loja", label: "Loja Voltz", x: 430, y: 965, w: 400, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } },
-      { id: "ranking", label: "Central de Ranking", x: 1690, y: 965, w: 430, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } },
-      { id: "terminal", label: "Terminal do Aluno", x: 1025, y: 1250, w: 450, h: 270, roofH: 140, collider: { x: 0, y: 0, w: 0, h: 0 } }
-    ];
+    const cloneData = (data) => JSON.parse(JSON.stringify(data));
 
-    let decorObjects = [
-      { id: "cristal-portal-esq", label: "Cristal", type: "crystal", x: 910, y: 275, w: 72, h: 104, solid: true },
-      { id: "cristal-portal-dir", label: "Cristal", type: "crystal", x: 1520, y: 275, w: 72, h: 104, solid: true },
-      { id: "cristal-praca-esq", label: "Cristal", type: "crystal", x: 1030, y: 575, w: 58, h: 86, solid: true },
-      { id: "cristal-praca-dir", label: "Cristal", type: "crystal", x: 1415, y: 575, w: 58, h: 86, solid: true },
-      { id: "banco-norte-esq", label: "Banco", type: "wall", x: 960, y: 610, w: 140, h: 34, solid: true },
-      { id: "banco-norte-dir", label: "Banco", type: "wall", x: 1400, y: 610, w: 140, h: 34, solid: true },
-      { id: "banco-sul-esq", label: "Banco", type: "wall", x: 960, y: 960, w: 140, h: 34, solid: true },
-      { id: "banco-sul-dir", label: "Banco", type: "wall", x: 1400, y: 960, w: 140, h: 34, solid: true },
-      { id: "muro-noroeste", label: "Muro", type: "wall", x: 195, y: 330, w: 120, h: 58, solid: true },
-      { id: "muro-nordeste", label: "Muro", type: "wall", x: 2185, y: 330, w: 120, h: 58, solid: true },
-      { id: "muro-sudoeste", label: "Muro", type: "wall", x: 195, y: 1200, w: 120, h: 58, solid: true },
-      { id: "muro-sudeste", label: "Muro", type: "wall", x: 2185, y: 1200, w: 120, h: 58, solid: true }
-    ];
+    const sourceData = window.VoltzData;
 
-    let treeObjects = [
-      { id: "arvore-01", label: "Tronco 1", x: 105, y: 90, w: 138, h: 126 },
-      { id: "arvore-02", label: "Tronco 2", x: 270, y: 135, w: 116, h: 108 },
-      { id: "arvore-03", label: "Tronco 3", x: 760, y: 125, w: 118, h: 110 },
-      { id: "arvore-04", label: "Tronco 4", x: 1650, y: 120, w: 118, h: 110 },
-      { id: "arvore-05", label: "Tronco 5", x: 2150, y: 115, w: 138, h: 126 },
-      { id: "arvore-06", label: "Tronco 6", x: 2315, y: 190, w: 116, h: 108 },
-      { id: "arvore-07", label: "Tronco 7", x: 95, y: 560, w: 130, h: 120 },
-      { id: "arvore-08", label: "Tronco 8", x: 245, y: 660, w: 112, h: 104 },
-      { id: "arvore-09", label: "Tronco 9", x: 2220, y: 560, w: 130, h: 120 },
-      { id: "arvore-10", label: "Tronco 10", x: 2370, y: 680, w: 112, h: 104 },
-      { id: "arvore-11", label: "Tronco 11", x: 125, y: 1390, w: 136, h: 126 },
-      { id: "arvore-12", label: "Tronco 12", x: 310, y: 1325, w: 116, h: 108 },
-      { id: "arvore-13", label: "Tronco 13", x: 770, y: 1430, w: 118, h: 110 },
-      { id: "arvore-14", label: "Tronco 14", x: 1605, y: 1430, w: 118, h: 110 },
-      { id: "arvore-15", label: "Tronco 15", x: 2170, y: 1320, w: 136, h: 126 },
-      { id: "arvore-16", label: "Tronco 16", x: 2325, y: 1400, w: 116, h: 108 },
-      { id: "arvore-17", label: "Tronco 17", x: 640, y: 675, w: 108, h: 100 },
-      { id: "arvore-18", label: "Tronco 18", x: 1760, y: 675, w: 108, h: 100 }
-    ];
+    if (
+      !sourceData?.village ||
+      !sourceData?.villageNpcs ||
+      !sourceData?.villagePortals ||
+      !sourceData?.realmOptions
+    ) {
+      throw new Error("Os dados modulares do mundo não foram carregados antes de openworld.js.");
+    }
 
-
-
-    let npcObjects = [
-      {
-        id: "npc-guardiao-portal",
-        name: "Guardião do Portal",
-        role: "Portal dos Reinos",
-        x: 1250,
-        y: 505,
-        colorA: "#78f7ff",
-        colorB: "#9257ff",
-        aura: "#00eaff",
-        portrait: "assets/images/npcs/guardiao-do-portal.png",
-        opensRealmPanel: true,
-        dialogue: [
-          "Bem-vindo à Vila Central, aprendiz. Eu sou o responsável por abrir o caminho entre os Reinos do Conhecimento.",
-          "O portal atrás de mim é apenas a passagem. Para escolher um destino, fale comigo primeiro.",
-          "Nesta versão, somente o Reino da Matemática está liberado. Os outros reinos aparecem como promessa visual do projeto."
-        ]
-      },
-      {
-        id: "npc-professora-sintaxe",
-        name: "Professora Sintaxe",
-        role: "Biblioteca de Dicas",
-        x: 870,
-        y: 675,
-        colorA: "#ffd166",
-        colorB: "#78f7ff",
-        aura: "#ffd166",
-        portrait: "assets/images/npcs/professora-sintaxe.png",
-        resetsMathProgress: true,
-        dialogue: [
-          "Antes de enfrentar uma questão, respire e leia com atenção. Muitas respostas se escondem no próprio enunciado.",
-          "Aqui na Biblioteca, as dicas aparecem antes e depois das perguntas para transformar erro em aprendizado.",
-          "Conhecimento não é decorar tudo. É entender o caminho até a resposta.",
-          "Se você já limpou o Reino da Matemática e quiser tentar de novo, fale comigo até o fim. Eu reinicio os desafios para você."
-        ]
-      },
-      {
-        id: "npc-treinador-energia",
-        name: "Treinador de Energia",
-        role: "Arena de Treino",
-        x: 1640,
-        y: 690,
-        colorA: "#ff4d7d",
-        colorB: "#9257ff",
-        aura: "#ff4d7d",
-        portrait: "assets/images/npcs/treinador-de-energia.png",
-        dialogue: [
-          "Na arena, cada resposta vira movimento. Acertou, você ataca. Errou, aprende e tenta de novo.",
-          "O tempo existe para testar domínio, não para te humilhar. Quanto mais você entende, mais rápido sua energia flui.",
-          "Treine sem medo. Evolução também conta como vitória."
-        ]
-      },
-      {
-        id: "npc-mercador-foco",
-        name: "Mercador de Foco",
-        role: "Loja Voltz",
-        x: 875,
-        y: 1195,
-        colorA: "#00eaff",
-        colorB: "#ffd166",
-        aura: "#ffd166",
-        portrait: "assets/images/npcs/mercador-de-foco.png",
-        dialogue: [
-          "Moedas não servem só para brilhar. Com elas, você poderá comprar dicas, recuperação e bônus de jornada.",
-          "Um bom aventureiro não vence só com força. Ele usa recurso, estratégia e foco.",
-          "Quando a loja abrir oficialmente, passe aqui antes dos chefes. Vai por mim."
-        ]
-      },
-      {
-        id: "npc-arquivista-questoes",
-        name: "Arquivista das Questões",
-        role: "Arquivo de Progresso",
-        x: 1645,
-        y: 1195,
-        colorA: "#9257ff",
-        colorB: "#78f7ff",
-        aura: "#9257ff",
-        portrait: "assets/images/npcs/arquivista-das-questoes.png",
-        dialogue: [
-          "Eu organizo as perguntas, justificativas e registros de progresso da sua jornada.",
-          "Cada erro deixa uma pista. Cada acerto deixa uma marca. O arquivo nunca esquece sua evolução.",
-          "Quando o ranking estiver completo, você poderá ver não só pontuação, mas constância e crescimento."
-        ]
-      },
-      {
-        id: "npc-voltinho-terminal",
-        name: "Voltinho",
-        role: "Guia do Aluno",
-        x: 1505,
-        y: 1355,
-        colorA: "#78f7ff",
-        colorB: "#00eaff",
-        aura: "#78f7ff",
-        portrait: "assets/images/sprites/voltinho_explicando.png",
-        dialogue: [
-          "Ei! Eu sou o Voltinho, seu guia nessa jornada pelo Reino do Conhecimento.",
-          "Seu perfil vai guardar XP, moedas, progresso por reino e tudo que você conquistar.",
-          "A ideia é simples: estudar, explorar, batalhar, errar, aprender e evoluir."
-        ]
-      }
-    ];
-
-
-
-    let portalObjects = [
-      {
-        id: "portal-dos-reinos",
-        name: "Portal dos Reinos",
-        x: 1250,
-        y: 360,
-        interactionRange: 0,
-        colorA: "#00eaff",
-        colorB: "#9257ff"
-      }
-    ];
+    let buildings = cloneData(sourceData.village.buildings);
+    let decorObjects = cloneData(sourceData.village.decorObjects);
+    let treeObjects = cloneData(sourceData.village.treeObjects);
+    let npcObjects = cloneData(sourceData.villageNpcs);
+    let portalObjects = cloneData(sourceData.villagePortals);
 
     const enemyTypes = {
       "soma-subtracao": {
@@ -528,58 +384,9 @@ const viewport = document.getElementById("gameViewport");
       }));
     }
 
-    const realmOptions = [
-      {
-        id: "reino-matematica",
-        name: "Reino da Matemática",
-        icon: "➗",
-        unlocked: true,
-        status: "Disponível",
-        description: "Primeiro reino jogável do protótipo. Aqui operações, raciocínio e problemas viram energia de exploração."
-      },
-      {
-        id: "reino-gramatica",
-        name: "Reino da Gramática",
-        icon: "📘",
-        unlocked: false,
-        status: "Visual futuro",
-        description: "Área futura de Português, interpretação, classes gramaticais e construção de frases."
-      },
-      {
-        id: "reino-ciencias",
-        name: "Reino do Laboratório",
-        icon: "🧪",
-        unlocked: false,
-        status: "Visual futuro",
-        description: "Área futura de Ciências, Biologia, Química e experimentos de energia."
-      },
-      {
-        id: "reino-tempo",
-        name: "Reino do Tempo",
-        icon: "⏳",
-        unlocked: false,
-        status: "Visual futuro",
-        description: "Área futura de História, com linhas do tempo, eventos e guardiões do passado."
-      },
-      {
-        id: "reino-mapas",
-        name: "Reino dos Mapas",
-        icon: "🗺️",
-        unlocked: false,
-        status: "Visual futuro",
-        description: "Área futura de Geografia, com territórios, clima, mapas e exploração."
-      },
-      {
-        id: "reino-idiomas",
-        name: "Reino dos Idiomas",
-        icon: "💬",
-        unlocked: false,
-        status: "Visual futuro",
-        description: "Área futura de Inglês e linguagem, com palavras-chave, tradução e interpretação."
-      }
-    ];
+    const realmOptions = cloneData(sourceData.realmOptions);
 
-    const cloneData = (data) => JSON.parse(JSON.stringify(data));
+
 
     const mathProgress = {
       defeatedEnemyIds: [],
