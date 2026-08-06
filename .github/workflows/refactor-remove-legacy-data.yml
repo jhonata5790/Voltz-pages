@@ -41,26 +41,28 @@ jobs:
           prefix, remainder = text.split(data_start, 1)
           _, suffix = remainder.split(enemy_marker, 1)
 
-          modular_initialization = '''    const cloneData = (data) => JSON.parse(JSON.stringify(data));
-
-    const sourceData = window.VoltzData;
-
-    if (
-      !sourceData?.village ||
-      !sourceData?.villageNpcs ||
-      !sourceData?.villagePortals ||
-      !sourceData?.realmOptions
-    ) {
-      throw new Error("Os dados modulares do mundo não foram carregados antes de openworld.js.");
-    }
-
-    let buildings = cloneData(sourceData.village.buildings);
-    let decorObjects = cloneData(sourceData.village.decorObjects);
-    let treeObjects = cloneData(sourceData.village.treeObjects);
-    let npcObjects = cloneData(sourceData.villageNpcs);
-    let portalObjects = cloneData(sourceData.villagePortals);
-
-'''
+          modular_initialization = "\n".join((
+              "    const cloneData = (data) => JSON.parse(JSON.stringify(data));",
+              "",
+              "    const sourceData = window.VoltzData;",
+              "",
+              "    if (",
+              "      !sourceData?.village ||",
+              "      !sourceData?.villageNpcs ||",
+              "      !sourceData?.villagePortals ||",
+              "      !sourceData?.realmOptions",
+              "    ) {",
+              '      throw new Error("Os dados modulares do mundo não foram carregados antes de openworld.js.");',
+              "    }",
+              "",
+              "    let buildings = cloneData(sourceData.village.buildings);",
+              "    let decorObjects = cloneData(sourceData.village.decorObjects);",
+              "    let treeObjects = cloneData(sourceData.village.treeObjects);",
+              "    let npcObjects = cloneData(sourceData.villageNpcs);",
+              "    let portalObjects = cloneData(sourceData.villagePortals);",
+              "",
+              "",
+          ))
 
           text = prefix + modular_initialization + enemy_marker + suffix
 
