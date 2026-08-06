@@ -1,0 +1,111 @@
+name: Remove legacy world data
+
+on:
+  push:
+    branches:
+      - refactor/remove-legacy-world-data
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: refactor/remove-legacy-world-data
+
+      - name: Replace duplicated data with modular sources
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          openworld_path = Path("assets/js/openworld.js")
+          text = openworld_path.read_text(encoding="utf-8")
+
+          data_start = "    let buildings = ["
+          enemy_marker = "    const enemyTypes = {"
+          realm_start = "    const realmOptions = ["
+          clone_marker = "    const cloneData = (data) => JSON.parse(JSON.stringify(data));"
+
+          for marker in (data_start, enemy_marker, realm_start, clone_marker):
+              if text.count(marker) != 1:
+                  raise RuntimeError(f"Marcador inesperado em openworld.js: {marker!r}")
+
+          prefix, remainder = text.split(data_start, 1)
+          _, suffix = remainder.split(enemy_marker, 1)
+
+          modular_initialization = '''    const cloneData = (data) => JSON.parse(JSON.stringify(data));
+
+    const sourceData = window.VoltzData;
+
+    if (
+      !sourceData?.village ||
+      !sourceData?.villageNpcs ||
+      !sourceData?.villagePortals ||
+      !sourceData?.realmOptions
+    ) {
+      throw new Error("Os dados modulares do mundo não foram carregados antes de openworld.js.");
+    }
+
+    let buildings = cloneData(sourceData.village.buildings);
+    let decorObjects = cloneData(sourceData.village.decorObjects);
+    let treeObjects = cloneData(sourceData.village.treeObjects);
+    let npcObjects = cloneData(sourceData.villageNpcs);
+    let portalObjects = cloneData(sourceData.villagePortals);
+
+'''
+
+          text = prefix + modular_initialization + enemy_marker + suffix
+
+          prefix, remainder = text.split(realm_start, 1)
+          _, suffix = remainder.split(clone_marker, 1)
+          text = prefix + "    const realmOptions = cloneData(sourceData.realmOptions);\n\n" + suffix
+
+          if "let buildings = [" in text:
+              raise RuntimeError("O bloco legado de prédios ainda existe.")
+          if "const realmOptions = [" in text:
+              raise RuntimeError("O bloco legado de reinos ainda existe.")
+          if text.count("const cloneData =") != 1:
+              raise RuntimeError("cloneData deveria existir exatamente uma vez.")
+
+          openworld_path.write_text(text, encoding="utf-8")
+
+          bootstrap_tag = '  <script src="assets/js/main/data-bootstrap.js" defer></script>\n'
+          for html_name in ("game.html", "openworld-test.html"):
+              html_path = Path(html_name)
+              html = html_path.read_text(encoding="utf-8")
+              if html.count(bootstrap_tag) != 1:
+                  raise RuntimeError(f"Tag temporária não encontrada exatamente uma vez em {html_name}.")
+              html_path.write_text(html.replace(bootstrap_tag, ""), encoding="utf-8")
+          PY
+
+          node --check assets/js/openworld.js
+          node --check assets/js/world/village-data.js
+          node --check assets/js/npc/village-npc-data.js
+          node --check assets/js/realms/realm-data.js
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -- assets/js/openworld.js game.html openworld-test.html
+          if [ -f assets/js/main/data-bootstrap.js ]; then
+            git rm -- assets/js/main/data-bootstrap.js
+          fi
+
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração necessária."
+            exit 0
+          fi
+
+          git commit -m "refactor: consume modular world data directly"
+          git push origin HEAD:refactor/remove-legacy-world-data
