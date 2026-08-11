@@ -177,6 +177,8 @@
         Explore a Vila Central. Fale com o Guardião do Portal para viajar ao Reino da Matemática.
       </div>
 
+      <div id="mathBuffHud" class="math-buff-hud" aria-live="polite"></div>
+
       <div id="dialogueBox" class="dialogue-box" aria-live="polite">
         <div class="dialogue-layout">
           <div class="dialogue-portrait-area">
@@ -255,6 +257,30 @@
 
         <div id="shopMessage" class="shop-message">
           Fale com o Mercador sempre que precisar reabastecer sua mochila.
+        </div>
+      </div>
+
+      <div id="equationPanel" class="equation-panel" aria-live="polite">
+        <div class="equation-panel-header">
+          <div>
+            <div id="equationPanelKicker" class="equation-panel-kicker">Equação do Mundo</div>
+            <div id="equationPanelTitle" class="equation-panel-title">Mecanismo Matemático</div>
+            <p class="equation-panel-subtitle">
+              Complete a igualdade para estabilizar esta parte do Reino da Matemática.
+            </p>
+          </div>
+          <button class="equation-close-btn" type="button" onclick="closeWorldEquationPanel()">Fechar ✕</button>
+        </div>
+
+        <div class="equation-challenge-card">
+          <div id="equationFormula" class="equation-formula">?</div>
+          <div id="equationPrompt" class="equation-prompt">Descubra o valor ausente.</div>
+          <div id="equationOptions" class="equation-options"></div>
+          <div id="equationFeedback" class="equation-feedback"></div>
+        </div>
+
+        <div class="equation-panel-footer">
+          Cada Equação do Mundo estabilizada concede <strong>+2 segundos</strong> por pergunta enquanto você estiver neste reino.
         </div>
       </div>
 

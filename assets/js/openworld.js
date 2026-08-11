@@ -31,6 +31,15 @@ const viewport = document.getElementById("gameViewport");
     const shopBuyHintButton = document.getElementById("shopBuyHintButton");
     const shopMessage = document.getElementById("shopMessage");
 
+    const equationPanel = document.getElementById("equationPanel");
+    const equationPanelKicker = document.getElementById("equationPanelKicker");
+    const equationPanelTitle = document.getElementById("equationPanelTitle");
+    const equationFormula = document.getElementById("equationFormula");
+    const equationPrompt = document.getElementById("equationPrompt");
+    const equationOptions = document.getElementById("equationOptions");
+    const equationFeedback = document.getElementById("equationFeedback");
+    const mathBuffHud = document.getElementById("mathBuffHud");
+
     const enemyPanel = document.getElementById("enemyPanel");
     const enemyPanelKicker = document.getElementById("enemyPanelKicker");
     const enemyPanelTitle = document.getElementById("enemyPanelTitle");
@@ -109,6 +118,7 @@ const viewport = document.getElementById("gameViewport");
     let treeObjects = cloneData(sourceData.village.treeObjects);
     let npcObjects = cloneData(sourceData.villageNpcs);
     let portalObjects = cloneData(sourceData.villagePortals);
+    let worldEquationObjects = [];
 
     const mathRealmData = sourceData.realms?.mathematics;
 
@@ -154,6 +164,9 @@ const viewport = document.getElementById("gameViewport");
         ...source,
         defeatedEnemyIds: Array.isArray(source.defeatedEnemyIds)
           ? [...new Set(source.defeatedEnemyIds.filter((id) => typeof id === "string" && id.trim()))]
+          : [],
+        solvedWorldEquationIds: Array.isArray(source.solvedWorldEquationIds)
+          ? [...new Set(source.solvedWorldEquationIds.filter((id) => typeof id === "string" && id.trim()))]
           : [],
         miniBossDefeated: Boolean(source.miniBossDefeated),
         bossDefeated: Boolean(source.bossDefeated),
@@ -302,7 +315,8 @@ const viewport = document.getElementById("gameViewport");
       if (!currentScene || currentScene.id !== realmId || !getLoadedRealmData(realmId)) return;
 
       enemyObjects = getRealmEnemyObjectsByProgress(realmId);
-      renderSceneObjects();
+      buildCollisionAndOcclusionData();
+      renderDepthLayer();
       updateNearbyEnemy();
       if (keys.debugColliders) renderColliderDebugLayer();
     }
@@ -366,24 +380,25 @@ const viewport = document.getElementById("gameViewport");
     function getMathProgressMessage() {
       const total = getMathCommonEnemyIds().length;
       const defeated = getDefeatedCommonCount();
+      const rhythm = getMathLogicalRhythmState();
 
       if (mathProgress.bossDefeated) {
-        return "Todos os desafios do Reino da Matemática foram concluídos. Fale com a Professora Sintaxe na Vila Central para reiniciar a jornada.";
+        return "Reino da Matemática concluído. A Fortaleza do Golem reconheceu seu progresso e o estado do reino foi salvo.";
       }
 
       if (isMathBossUnlocked()) {
-        return "Melog foi derrotado. O Golem dos Cálculos liberou o Santuário Final para testar seu domínio.";
+        return "Melog foi superado. O Portão do Teorema abriu o caminho até a Fortaleza do Golem.";
       }
 
       if (isMathMiniBossUnlocked()) {
-        return "Ameaça liberada! Melog apareceu na Arena Anti-Estudo para tentar destruir a lógica do reino.";
+        return "As três zonas foram limpas. A corrupção cedeu e as Ruínas do Melog estão acessíveis.";
       }
 
-      if (mathProgress.miniBossDefeated) {
-        return "Mini-chefe eliminado. O Chefe da Matemática está surgindo no núcleo do reino.";
+      if (!isWorldEquationSolved("equacao-operacoes-01")) {
+        return `Ritmo Lógico ${rhythm.stacks}/3. Estabilize a Equação do Mundo no Distrito das Operações para materializar a Ponte das Equações.`;
       }
 
-      return `Inimigos básicos derrotados: ${defeated}/${total}. Derrote todos para revelar Melog, a ameaça anti-estudo.`;
+      return `Inimigos básicos derrotados: ${defeated}/${total}. Ritmo Lógico ${rhythm.stacks}/3. Explore o Bosque das Potências e os Campos dos Fatores.`;
     }
 
     function getGenericRealmProgressMessage(realmId) {
@@ -474,7 +489,7 @@ const viewport = document.getElementById("gameViewport");
 
       if (currentScene && currentScene.id === "reino-matematica") {
         enemyObjects = getMathEnemyObjectsByProgress();
-        renderSceneObjects();
+        renderDepthLayer();
         updateNearbyEnemy();
         if (keys.debugColliders) renderColliderDebugLayer();
       }
@@ -559,6 +574,10 @@ const viewport = document.getElementById("gameViewport");
     let realmPanelOpen = false;
     let shopPanelOpen = false;
     let shopPurchaseBusy = false;
+    let worldEquationPanelOpen = false;
+    let nearbyWorldEquation = null;
+    let currentWorldEquation = null;
+    let currentWorldEquationChoices = [];
     let dialogueOpen = false;
     let currentDialogueNpc = null;
     let currentDialogueIndex = 0;
@@ -591,6 +610,8 @@ const viewport = document.getElementById("gameViewport");
       updateNearbyNpc();
       updateNearbyPortal();
       updateNearbyEnemy();
+      updateNearbyWorldEquation();
+      updateMathBuffHud();
       updateDebug();
     }
 
@@ -611,8 +632,9 @@ const viewport = document.getElementById("gameViewport");
     function buildCollisionAndOcclusionData() {
       const buildingColliders = buildings.flatMap(getBuildingPhysicalColliders);
       const decorColliders = decorObjects
-        .filter((decor) => decor.solid)
-        .map(getDecorPhysicalCollider);
+        .filter((decor) => decor.solid && !isDecorProgressGateOpen(decor))
+        .map(getDecorPhysicalCollider)
+        .filter(Boolean);
 
       const treeColliders = treeObjects.map(getTreeTrunkCollider);
       const npcColliders = npcObjects.map(getNpcCollider);
@@ -658,10 +680,41 @@ const viewport = document.getElementById("gameViewport");
       return Math.round(tree.y + tree.h + 18);
     }
 
+    function isDecorProgressGateOpen(decor) {
+      const gate = decor?.progressGate;
+      if (!gate) return false;
+
+      const realmId = gate.realmId || currentScene?.id;
+      if (!realmId) return false;
+
+      const progress = getRuntimeRealmProgress(realmId);
+
+      if (gate.type === "world-equation") {
+        return Boolean(gate.equationId && getSolvedWorldEquationIds(realmId).includes(gate.equationId));
+      }
+
+      if (gate.type === "mini-boss-unlocked") {
+        return Boolean(
+          isRealmMiniBossUnlocked(realmId) ||
+          progress.miniBossDefeated ||
+          progress.bossDefeated
+        );
+      }
+
+      if (gate.type === "boss-unlocked") {
+        return Boolean(isRealmBossUnlocked(realmId) || progress.bossDefeated);
+      }
+
+      return false;
+    }
+
     function getDecorVisualClass(decor) {
       const baseClass = decor.type ? `decor-${decor.type}` : "decor-wall";
       const operationClass = decor.operation ? `operation-${decor.operation}` : "";
-      return `${baseClass} ${operationClass}`.trim();
+      const gateClass = decor.progressGate
+        ? (isDecorProgressGateOpen(decor) ? "gate-open" : "gate-locked")
+        : "";
+      return `${baseClass} ${operationClass} ${gateClass}`.trim();
     }
 
     function getDecorSortY(decor) {
@@ -669,13 +722,215 @@ const viewport = document.getElementById("gameViewport");
         return Math.round(decor.y + decor.h * 0.58);
       }
 
-      if (decor.type === "math-pad" || decor.type === "math-symbol" || decor.type === "number-line") {
+      if ([
+        "math-pad",
+        "math-symbol",
+        "number-line",
+        "math-zone",
+        "infinity-plaza",
+        "math-chasm",
+        "equation-bridge",
+        "corruption-zone",
+        "corruption-wall",
+        "fortress-court",
+        "fortress-wall",
+        "zone-title"
+      ].includes(decor.type)) {
         return Math.round(decor.y + decor.h * 0.52);
       }
 
       return Math.round(decor.y + decor.h);
     }
 
+
+    function getWorldEquationSortY(equation) {
+      return Math.round(equation.y + 34);
+    }
+
+    function getWorldEquationDistance(equation) {
+      const footPoint = getPlayerFootPoint();
+      return Math.hypot(footPoint.x - equation.x, footPoint.y - equation.y);
+    }
+
+    function getNearestWorldEquationInRange() {
+      return worldEquationObjects
+        .map((equation) => ({ equation, distance: getWorldEquationDistance(equation) }))
+        .filter((entry) => entry.distance <= 105)
+        .sort((a, b) => a.distance - b.distance)[0]?.equation || null;
+    }
+
+    function getSolvedWorldEquationIds(realmId = "reino-matematica") {
+      const progress = getRuntimeRealmProgress(realmId);
+      return Array.isArray(progress.solvedWorldEquationIds) ? progress.solvedWorldEquationIds : [];
+    }
+
+    function isWorldEquationSolved(equationId) {
+      return getSolvedWorldEquationIds().includes(equationId);
+    }
+
+    function getMathLogicalRhythmState() {
+      const total = mathRealmData.worldEquations?.length || 0;
+      const solved = mathRealmData.worldEquations
+        ? mathRealmData.worldEquations.filter((equation) => isWorldEquationSolved(equation.id)).length
+        : 0;
+      const stacks = Math.min(3, solved);
+      return {
+        stacks,
+        total,
+        bonusSeconds: stacks * 2
+      };
+    }
+
+    function getActiveBattleTimeBonus() {
+      if (currentScene?.id !== "reino-matematica") return 0;
+      return getMathLogicalRhythmState().bonusSeconds;
+    }
+
+    function updateMathBuffHud() {
+      if (!mathBuffHud) return;
+
+      const active = currentScene?.id === "reino-matematica";
+      mathBuffHud.classList.toggle("visible", active);
+      if (!active) return;
+
+      const rhythm = getMathLogicalRhythmState();
+      mathBuffHud.innerHTML = `
+        <span class="math-buff-icon">∞</span>
+        <span>
+          <strong>Ritmo Lógico ${rhythm.stacks}/3</strong>
+          <small>${rhythm.bonusSeconds > 0 ? `+${rhythm.bonusSeconds}s por pergunta` : "Estabilize Equações do Mundo"}</small>
+        </span>
+      `;
+    }
+
+    function updateNearbyWorldEquation() {
+      nearbyWorldEquation = currentScene?.id === "reino-matematica"
+        ? getNearestWorldEquationInRange()
+        : null;
+
+      document.querySelectorAll("[data-world-equation-id]").forEach((element) => {
+        const id = element.dataset.worldEquationId;
+        element.classList.toggle("nearby", Boolean(nearbyWorldEquation && id === nearbyWorldEquation.id));
+        element.classList.toggle("solved", isWorldEquationSolved(id));
+      });
+    }
+
+    function shuffleWorldEquationChoices(values) {
+      const result = [...values];
+      for (let i = result.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+
+    function renderWorldEquationPanel(message = "") {
+      if (!equationPanel || !currentWorldEquation) return;
+
+      const equation = currentWorldEquation;
+      const solved = isWorldEquationSolved(equation.id);
+      const rhythm = getMathLogicalRhythmState();
+
+      if (equationPanelKicker) equationPanelKicker.textContent = equation.area || "Equação do Mundo";
+      if (equationPanelTitle) equationPanelTitle.textContent = equation.name || "Equação do Mundo";
+      if (equationFormula) equationFormula.textContent = equation.formula || "?";
+      if (equationPrompt) {
+        equationPrompt.textContent = solved
+          ? `Mecanismo estabilizado. Ritmo Lógico ativo: +${rhythm.bonusSeconds}s por pergunta neste reino.`
+          : (equation.prompt || "Complete a equação para estabilizar esta parte do reino.");
+      }
+
+      if (equationOptions) {
+        if (solved) {
+          equationOptions.innerHTML = `<div class="equation-solved-seal">✓ EQUAÇÃO ESTABILIZADA</div>`;
+        } else {
+          equationOptions.innerHTML = currentWorldEquationChoices.map((choice, index) => {
+            const letter = ["A", "B", "C", "D"][index] || String(index + 1);
+            return `
+              <button class="equation-option-btn" type="button" onclick="answerWorldEquation(${JSON.stringify(String(choice)).replaceAll('"', '&quot;')})">
+                <strong>${letter}</strong>
+                <span>${escapeHtml(choice)}</span>
+              </button>
+            `;
+          }).join("");
+        }
+      }
+
+      if (equationFeedback) {
+        equationFeedback.className = `equation-feedback${message ? " visible" : ""}`;
+        equationFeedback.textContent = message;
+      }
+    }
+
+    function openWorldEquationPanel(equation) {
+      if (!equation || !equationPanel || worldEquationPanelOpen) return false;
+
+      currentWorldEquation = equation;
+      currentWorldEquationChoices = shuffleWorldEquationChoices(equation.options || []);
+      worldEquationPanelOpen = true;
+      clearMovementKeys();
+      playerState.moving = false;
+      renderWorldEquationPanel();
+      equationPanel.classList.add("visible");
+      interactionText.textContent = `${equation.name}: resolva a equação para estabilizar o mundo.`;
+      return true;
+    }
+
+    function closeWorldEquationPanel() {
+      if (!equationPanel) return;
+      equationPanel.classList.remove("visible");
+      worldEquationPanelOpen = false;
+      currentWorldEquation = null;
+      currentWorldEquationChoices = [];
+      updateNearbyWorldEquation();
+    }
+
+    function interactWithNearbyWorldEquation() {
+      updateNearbyWorldEquation();
+      if (!nearbyWorldEquation) return false;
+      return openWorldEquationPanel(nearbyWorldEquation);
+    }
+
+    async function answerWorldEquation(value) {
+      if (!worldEquationPanelOpen || !currentWorldEquation) return;
+
+      const equation = currentWorldEquation;
+      if (isWorldEquationSolved(equation.id)) {
+        renderWorldEquationPanel("Esta Equação do Mundo já está estável.");
+        return;
+      }
+
+      const buttons = equationPanel?.querySelectorAll(".equation-option-btn") || [];
+      buttons.forEach((button) => { button.disabled = true; });
+
+      if (String(value) !== String(equation.answer)) {
+        buttons.forEach((button) => { button.disabled = false; });
+        if (equationFeedback) {
+          equationFeedback.className = "equation-feedback visible wrong";
+          equationFeedback.textContent = "Ainda não. Releia a igualdade e tente descobrir qual valor mantém os dois lados equivalentes.";
+        }
+        return;
+      }
+
+      const progress = getRuntimeRealmProgress("reino-matematica");
+      progress.solvedWorldEquationIds = Array.isArray(progress.solvedWorldEquationIds)
+        ? progress.solvedWorldEquationIds
+        : [];
+
+      if (!progress.solvedWorldEquationIds.includes(equation.id)) {
+        progress.solvedWorldEquationIds.push(equation.id);
+        progress.lastWorldEquationAt = new Date().toISOString();
+        await persistRealmProgress("reino-matematica");
+      }
+
+      const rhythm = getMathLogicalRhythmState();
+      renderWorldEquationPanel(`${equation.explanation} Ritmo Lógico ${rhythm.stacks}/3: +${rhythm.bonusSeconds}s por pergunta.`);
+      updateMathBuffHud();
+      buildCollisionAndOcclusionData();
+      renderDepthLayer();
+      updateNearbyWorldEquation();
+      interactionText.textContent = `Equação estabilizada! Ritmo Lógico ${rhythm.stacks}/3 (+${rhythm.bonusSeconds}s por pergunta neste reino).`;
+    }
 
     function getPortalSortY(portal) {
       // O portal é alto, então seu ponto de profundidade fica na base luminosa dele,
@@ -899,9 +1154,12 @@ const viewport = document.getElementById("gameViewport");
       treeObjects = cloneData(scene.treeObjects);
       npcObjects = cloneData(scene.npcObjects);
       portalObjects = cloneData(scene.portalObjects);
+      worldEquationObjects = cloneData(scene.worldEquations || []);
       enemyObjects = getEnemyObjectsForScene(scene);
 
+      if (worldEquationPanelOpen) closeWorldEquationPanel();
       nearbyNpc = null;
+      nearbyWorldEquation = null;
       nearbyEnemy = null;
       nearbyPortal = null;
       lastCollisionLabel = "livre";
@@ -939,6 +1197,8 @@ const viewport = document.getElementById("gameViewport");
       updateNearbyNpc();
       updateNearbyPortal();
       updateNearbyEnemy();
+      updateNearbyWorldEquation();
+      updateMathBuffHud();
       updateDebug();
       interactionText.textContent = scene.defaultHint;
     }
@@ -1234,91 +1494,100 @@ const viewport = document.getElementById("gameViewport");
     function getMathProgressDialogue() {
       const total = getMathCommonEnemyIds().length;
       const defeated = getDefeatedCommonCount();
+      const rhythm = getMathLogicalRhythmState();
+      const bridgeStable = isWorldEquationSolved("equacao-operacoes-01");
 
       if (mathProgress.bossDefeated) {
         return [
           "Status do Reino da Matemática: concluído.",
-          "Você derrotou os inimigos básicos, venceu Melog e superou o teste do Golem dos Cálculos.",
-          "Para repetir a jornada, volte à Vila Central e fale com a Professora Sintaxe."
+          "A Praça do Infinito, as três zonas de estudo, as Ruínas do Melog e a Fortaleza do Golem registram sua passagem.",
+          `Ritmo Lógico estabilizado em ${rhythm.stacks}/3 nesta jornada.`
         ];
       }
 
       if (isMathBossUnlocked()) {
         return [
-          "Status: Golem dos Cálculos liberado.",
-          "Melog foi eliminado. O Santuário do Golem está pronto para o teste final.",
-          "Vá ao norte do reino e enfrente o Guardião Final da Matemática."
+          "Status: Fortaleza do Golem acessível.",
+          "Melog foi superado e o Portão do Teorema se abriu ao norte.",
+          "O Golem dos Cálculos aguarda no último pátio."
         ];
       }
 
       if (isMathMiniBossUnlocked()) {
         return [
-          "Status: Melog revelado.",
-          "Todos os inimigos básicos foram derrotados. A ameaça anti-estudo apareceu na arena central.",
-          "Derrote Melog para liberar o Golem dos Cálculos."
+          "Status: Ruínas do Melog acessíveis.",
+          `Todos os ${total} inimigos básicos foram derrotados. A corrupção que selava o norte perdeu força.`,
+          "Atravesse o selo e encontre Melog nas ruínas."
+        ];
+      }
+
+      if (!bridgeStable) {
+        return [
+          `Status: ${defeated}/${total} inimigos básicos derrotados. Ritmo Lógico ${rhythm.stacks}/3.`,
+          "A Ponte das Equações ainda está instável e impede o acesso à bifurcação do reino.",
+          "Resolva o Núcleo da Ponte no Distrito das Operações para materializar o caminho."
         ];
       }
 
       return [
-        `Status: ${defeated}/${total} inimigos básicos derrotados.`,
-        "Complete as três áreas: Adição/Subtração, Multiplicação/Divisão e Potenciação/Radiciação.",
-        "Quando todos forem derrotados, Melog aparecerá na Arena Anti-Estudo."
+        `Status: ${defeated}/${total} inimigos básicos derrotados. Ritmo Lógico ${rhythm.stacks}/3.`,
+        "A Ponte das Equações está estável. À esquerda fica o Bosque das Potências; à direita, os Campos dos Fatores.",
+        "Limpe as três zonas para enfraquecer o selo das Ruínas do Melog."
       ];
     }
 
     function getMelogGateDialogue() {
       if (mathProgress.miniBossDefeated || mathProgress.bossDefeated) {
         return [
-          "O Portão do Melog está aberto e silencioso.",
-          "A ameaça anti-estudo já foi derrotada. Agora o caminho aponta para o Golem dos Cálculos."
+          "O selo das Ruínas está quebrado.",
+          "A corrupção de Melog perdeu força e o caminho agora aponta para a Fortaleza do Golem."
         ];
       }
 
       if (isMathMiniBossUnlocked()) {
         return [
-          "O Portão do Melog está aberto.",
-          "Melog odeia contas, estudo e qualquer coisa que organize pensamento.",
-          "Entre na arena central e derrote essa ameaça para proteger o Reino da Matemática."
+          "O selo das Ruínas se desfez.",
+          "A lógica das três zonas foi restaurada o bastante para atravessar a corrupção.",
+          "Melog está logo adiante."
         ];
       }
 
       const total = getMathCommonEnemyIds().length;
       const defeated = getDefeatedCommonCount();
       return [
-        "O Portão do Melog está bloqueado.",
+        "A corrupção bloqueia fisicamente o caminho para as Ruínas do Melog.",
         `Progresso atual: ${defeated}/${total} inimigos básicos derrotados.`,
-        "Derrote todos os inimigos básicos para revelar a ameaça anti-estudo."
+        "Restaure as três zonas do reino para enfraquecer este selo."
       ];
     }
 
     function getGolemGateDialogue() {
       if (mathProgress.bossDefeated) {
         return [
-          "O Santuário do Golem está calmo.",
-          "Você já superou o teste final da Matemática. O reino reconhece seu progresso."
+          "O Portão do Teorema permanece aberto.",
+          "A Fortaleza do Golem já reconheceu que você concluiu o teste desta jornada."
         ];
       }
 
       if (isMathBossUnlocked()) {
         return [
-          "O Santuário do Golem está aberto.",
-          "O Golem dos Cálculos não é uma ameaça: ele é o guardião final do reino.",
-          "Enfrente-o para provar que dominou a Matemática desta primeira jornada."
+          "O Portão do Teorema está aberto.",
+          "O Golem dos Cálculos não protege a fortaleza de você; ele está esperando para avaliar o que você aprendeu.",
+          "Siga em frente para o teste final."
         ];
       }
 
-      if (isMathMiniBossUnlocked()) {
+      if (mathProgress.miniBossDefeated) {
         return [
-          "O Santuário do Golem continua fechado.",
-          "Antes do teste final, o reino precisa ser protegido de Melog.",
-          "Derrote a ameaça anti-estudo na arena central."
+          "A energia da corrupção desapareceu, mas o portão ainda está recalculando o caminho.",
+          "Aguarde um instante: o teste do Golem está sendo liberado."
         ];
       }
 
       return [
-        "O Santuário do Golem está selado.",
-        "O Guardião dos Cálculos só desperta quando o caminho básico do reino é concluído.",
-        "Primeiro derrote os inimigos das três áreas de treino."
+        "O Portão do Teorema está selado.",
+        "A Fortaleza do Golem pode ser vista daqui, mas nenhum caminho atravessa a muralha enquanto Melog corromper o reino.",
+        "Primeiro avance pelas Ruínas do Melog."
       ];
     }
 
@@ -1539,6 +1808,29 @@ const viewport = document.getElementById("gameViewport");
         `;
       }).join("");
 
+      const worldEquationHtml = worldEquationObjects.map((equation) => {
+        const sortY = getWorldEquationSortY(equation);
+        const solved = isWorldEquationSolved(equation.id);
+
+        return `
+          <div
+            class="depth-object depth-world-equation ${solved ? "solved" : ""}"
+            data-world-equation-id="${equation.id}"
+            data-sort-y="${sortY}"
+            style="left: ${equation.x}px; top: ${equation.y}px; z-index: ${sortY};"
+          >
+            <div class="world-equation-shell">
+              <div class="world-equation-ring"></div>
+              <div class="world-equation-core">
+                <span class="world-equation-symbol">${solved ? "✓" : "?"}</span>
+                <strong>${escapeHtml(equation.formula)}</strong>
+              </div>
+              <span class="world-equation-label">${solved ? "Equação Estável" : equation.name}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+
       const npcHtml = npcObjects.map((npc) => {
         const sortY = getNpcSortY(npc);
 
@@ -1599,7 +1891,7 @@ const viewport = document.getElementById("gameViewport");
         `;
       }).join("");
 
-      depthLayer.innerHTML = `${decorHtml}${buildingHtml}${treeHtml}${portalHtml}${npcHtml}${enemyHtml}`;
+      depthLayer.innerHTML = `${decorHtml}${buildingHtml}${treeHtml}${portalHtml}${worldEquationHtml}${npcHtml}${enemyHtml}`;
       depthLayer.appendChild(player);
     }
 
@@ -1843,7 +2135,7 @@ const viewport = document.getElementById("gameViewport");
     function updateMovement() {
       updateVisualTransition();
 
-      if (dialogueOpen || realmPanelOpen || shopPanelOpen || enemyPanelOpen) {
+      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldEquationPanelOpen || enemyPanelOpen) {
         playerState.moving = false;
         updatePlayerPosition();
         updatePlayerAnimation();
@@ -1886,6 +2178,7 @@ const viewport = document.getElementById("gameViewport");
       updateNearbyNpc();
       updateNearbyPortal();
       updateNearbyEnemy();
+      updateNearbyWorldEquation();
       updateDebug();
       updateHint();
     }
@@ -2152,6 +2445,13 @@ const viewport = document.getElementById("gameViewport");
         return;
       }
 
+      if (nearbyWorldEquation) {
+        interactionText.textContent = isWorldEquationSolved(nearbyWorldEquation.id)
+          ? `Pressione E para inspecionar ${nearbyWorldEquation.name} (estabilizada).`
+          : `Pressione E para resolver ${nearbyWorldEquation.name}.`;
+        return;
+      }
+
       if (nearbyNpc) {
         interactionText.textContent = `Pressione E para conversar com ${nearbyNpc.name}.`;
         return;
@@ -2193,6 +2493,11 @@ const viewport = document.getElementById("gameViewport");
           nextEnemyQuestion();
         }
 
+        return;
+      }
+
+      if (worldEquationPanelOpen) {
+        if (key === "escape") closeWorldEquationPanel();
         return;
       }
 
@@ -2238,7 +2543,8 @@ const viewport = document.getElementById("gameViewport");
       if ((key === "e" || key === "enter") && !event.repeat) {
         const interactedWithEnemy = interactWithNearbyEnemy();
         if (!interactedWithEnemy) {
-          interactWithNearbyNpc();
+          const interactedWithEquation = interactWithNearbyWorldEquation();
+          if (!interactedWithEquation) interactWithNearbyNpc();
         }
       }
 
@@ -2271,6 +2577,8 @@ const viewport = document.getElementById("gameViewport");
       updateNearbyNpc();
       updateNearbyPortal();
       updateNearbyEnemy();
+      updateNearbyWorldEquation();
+      updateMathBuffHud();
       updateDebug();
     });
 
@@ -2279,6 +2587,9 @@ const viewport = document.getElementById("gameViewport");
     window.closeRealmPanel = closeRealmPanel;
     window.closeShopPanel = closeShopPanel;
     window.buyShopHint = buyShopHint;
+    window.closeWorldEquationPanel = closeWorldEquationPanel;
+    window.answerWorldEquation = answerWorldEquation;
+    window.getActiveBattleTimeBonus = getActiveBattleTimeBonus;
     window.selectRealm = selectRealm;
     window.getActiveSceneId = () => currentScene.id;
     window.getActiveRealmProgressKey = () => {
@@ -2288,10 +2599,19 @@ const viewport = document.getElementById("gameViewport");
 
     setupPlayer();
     hydrateMathProgress();
-    window.addEventListener("voltz:profile-ready", hydrateMathProgress, { once: true });
+    window.addEventListener("voltz:profile-ready", () => {
+      hydrateMathProgress();
+      updateMathBuffHud();
+      updateNearbyWorldEquation();
+    }, { once: true });
     window.addEventListener("voltz:profile-updated", () => {
       syncAllRealmProgressFromProfile();
       refreshRealmEnemyObjectsAfterProgress(currentScene?.id);
+      updateMathBuffHud();
+      if (currentScene?.id === "reino-matematica") {
+        renderDepthLayer();
+        updateNearbyWorldEquation();
+      }
       if (shopPanelOpen) renderShopPanel(shopMessage?.textContent || "");
     });
     gameLoop();

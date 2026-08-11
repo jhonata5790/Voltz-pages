@@ -10,6 +10,7 @@ const battleState = {
   enemyHp: 100,
   timeLimit: 30,
   timeLeft: 30,
+  timeBonus: 0,
   timerId: null,
   questionNumber: 1,
   questionDeck: [],
@@ -138,7 +139,8 @@ function clearBattleTimer() {
       battleState.playerHp = 100;
       battleState.enemyMaxHp = type.maxHp || 100;
       battleState.enemyHp = battleState.enemyMaxHp;
-      battleState.timeLimit = type.timeLimit || 30;
+      battleState.timeBonus = Math.max(0, Number(window.getActiveBattleTimeBonus?.() || 0));
+      battleState.timeLimit = (type.timeLimit || 30) + battleState.timeBonus;
       battleState.timeLeft = battleState.timeLimit;
       battleState.currentTab = "question";
       battleState.hintRevealed = false;
@@ -219,7 +221,7 @@ function clearBattleTimer() {
 
               <div class="battle-timer-card">
                 <div class="battle-timer-label">
-                  <span>Tempo</span>
+                  <span>Tempo ${battleState.timeBonus > 0 ? `<small class="battle-time-bonus">Ritmo Lógico +${battleState.timeBonus}s</small>` : ""}</span>
                   <strong id="battleTimerText">${battleState.timeLeft}s</strong>
                 </div>
                 <div class="battle-timer-track">

@@ -2322,3 +2322,774 @@ body.debug-mode .world.show-colliders .player-hitbox-debug {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   Equações do Mundo — mecânica exclusiva da Matemática
+   ========================================================= */
+
+.depth-world-equation {
+  width: 150px;
+  height: 120px;
+  transform: translate(-50%, -82%);
+  pointer-events: none;
+}
+
+.world-equation-shell {
+  position: relative;
+  width: 150px;
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.world-equation-core {
+  position: relative;
+  width: 112px;
+  min-height: 72px;
+  padding: 12px 10px 10px;
+  border-radius: 22px 22px 14px 14px;
+  border: 2px solid rgba(120, 247, 255, 0.58);
+  background:
+    linear-gradient(180deg, rgba(8, 17, 39, 0.96), rgba(14, 8, 36, 0.94));
+  box-shadow:
+    0 0 22px rgba(0, 234, 255, 0.2),
+    inset 0 0 18px rgba(146, 87, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #f5fbff;
+  text-align: center;
+}
+
+.world-equation-core strong {
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 12px rgba(120, 247, 255, 0.48);
+}
+
+.world-equation-symbol {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  font-weight: 900;
+  color: #050713;
+  background: #ffd166;
+  box-shadow: 0 0 18px rgba(255, 209, 102, 0.48);
+}
+
+.world-equation-ring {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  width: 126px;
+  height: 34px;
+  border: 2px solid rgba(120, 247, 255, 0.35);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 18px rgba(0, 234, 255, 0.24);
+  animation: world-equation-pulse 2.2s ease-in-out infinite;
+}
+
+.world-equation-label {
+  max-width: 150px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(2, 4, 13, 0.78);
+  border: 1px solid rgba(120, 247, 255, 0.22);
+  color: rgba(245, 251, 255, 0.88);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.depth-world-equation.nearby .world-equation-shell {
+  transform: translateY(-4px) scale(1.06);
+  filter: drop-shadow(0 0 15px rgba(120, 247, 255, 0.48));
+}
+
+.depth-world-equation.solved .world-equation-core {
+  border-color: rgba(255, 209, 102, 0.72);
+  box-shadow:
+    0 0 24px rgba(255, 209, 102, 0.22),
+    inset 0 0 18px rgba(120, 247, 255, 0.1);
+}
+
+.depth-world-equation.solved .world-equation-symbol {
+  background: #78f7ff;
+  box-shadow: 0 0 18px rgba(120, 247, 255, 0.55);
+}
+
+@keyframes world-equation-pulse {
+  0%, 100% { opacity: 0.45; transform: translateX(-50%) scale(0.94); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+}
+
+.math-buff-hud {
+  position: absolute;
+  top: 74px;
+  right: 18px;
+  z-index: 950;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+  padding: 10px 13px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 209, 102, 0.34);
+  background: rgba(4, 7, 18, 0.9);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24), 0 0 24px rgba(255, 209, 102, 0.08);
+  backdrop-filter: blur(12px);
+  color: #f5fbff;
+}
+
+.math-buff-hud.visible {
+  display: flex;
+}
+
+.math-buff-hud .math-buff-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 900;
+  color: #080b18;
+  background: linear-gradient(135deg, #ffd166, #78f7ff);
+}
+
+.math-buff-hud span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.math-buff-hud strong {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.math-buff-hud small {
+  color: rgba(245, 251, 255, 0.7);
+  font-size: 10px;
+}
+
+.equation-panel {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 1300;
+  width: min(760px, calc(100% - 32px));
+  max-height: calc(100% - 36px);
+  overflow: auto;
+  transform: translate(-50%, -46%) scale(0.97);
+  opacity: 0;
+  pointer-events: none;
+  padding: 22px;
+  border-radius: 24px;
+  border: 1px solid rgba(120, 247, 255, 0.28);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(0, 234, 255, 0.14), transparent 38%),
+    radial-gradient(circle at 85% 100%, rgba(146, 87, 255, 0.16), transparent 42%),
+    rgba(4, 7, 18, 0.97);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.56), 0 0 42px rgba(0, 234, 255, 0.08);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.equation-panel.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.equation-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.equation-panel-kicker {
+  color: #78f7ff;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.equation-panel-title {
+  margin-top: 4px;
+  color: #f5fbff;
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 900;
+}
+
+.equation-panel-subtitle,
+.equation-panel-footer,
+.equation-prompt {
+  color: rgba(245, 251, 255, 0.72);
+  line-height: 1.45;
+}
+
+.equation-close-btn {
+  border: 1px solid rgba(245, 251, 255, 0.16);
+  border-radius: 12px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5fbff;
+  cursor: pointer;
+}
+
+.equation-challenge-card {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 209, 102, 0.22);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.equation-formula {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(120, 247, 255, 0.28);
+  background: rgba(0, 234, 255, 0.06);
+  color: #ffd166;
+  font-size: clamp(30px, 7vw, 52px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-shadow: 0 0 20px rgba(255, 209, 102, 0.25);
+}
+
+.equation-prompt {
+  margin: 14px 0 0;
+  text-align: center;
+}
+
+.equation-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.equation-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 10px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 247, 255, 0.2);
+  background: rgba(120, 247, 255, 0.055);
+  color: #f5fbff;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.equation-option-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(255, 209, 102, 0.54);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.equation-option-btn strong {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: rgba(146, 87, 255, 0.22);
+  color: #78f7ff;
+}
+
+.equation-feedback {
+  display: none;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(120, 247, 255, 0.07);
+  border: 1px solid rgba(120, 247, 255, 0.18);
+  color: rgba(245, 251, 255, 0.9);
+  line-height: 1.45;
+}
+
+.equation-feedback.visible {
+  display: block;
+}
+
+.equation-feedback.wrong {
+  border-color: rgba(255, 77, 125, 0.34);
+  background: rgba(255, 77, 125, 0.08);
+}
+
+.equation-solved-seal {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 247, 255, 0.32);
+  background: rgba(120, 247, 255, 0.07);
+  color: #78f7ff;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+
+.equation-panel-footer {
+  margin-top: 14px;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .math-buff-hud {
+    top: 66px;
+    right: 10px;
+    min-width: 0;
+    max-width: 210px;
+  }
+
+  .equation-panel {
+    padding: 16px;
+  }
+
+  .equation-panel-header {
+    flex-direction: column;
+  }
+
+  .equation-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   Reino da Matemática 3.0 — mapa-jornada por zonas
+   Praça do Infinito → Operações → Fatores/Potências → Melog → Golem
+   ========================================================= */
+.world.scene-math {
+  background:
+    radial-gradient(circle at 24% 53%, rgba(255, 209, 102, 0.11), transparent 24%),
+    radial-gradient(circle at 76% 53%, rgba(146, 87, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 50% 31%, rgba(255, 77, 125, 0.10), transparent 18%),
+    radial-gradient(circle at 50% 11%, rgba(255, 209, 102, 0.17), transparent 16%),
+    radial-gradient(circle at 50% 88%, rgba(0, 234, 255, 0.12), transparent 22%),
+    linear-gradient(180deg, #0d0d1a 0%, #17142a 38%, #16172a 66%, #101624 100%);
+}
+
+.world.scene-math .map-layer {
+  background:
+    linear-gradient(rgba(255, 209, 102, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 234, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 18px 18px, rgba(255, 255, 255, 0.03) 0 2px, transparent 3px);
+  background-size: 56px 56px, 56px 56px, 112px 112px;
+}
+
+.world.scene-math .map-glow {
+  background:
+    radial-gradient(ellipse at 50% 89%, rgba(0, 234, 255, 0.15), transparent 18%),
+    radial-gradient(ellipse at 25% 52%, rgba(255, 209, 102, 0.13), transparent 22%),
+    radial-gradient(ellipse at 75% 52%, rgba(146, 87, 255, 0.16), transparent 22%),
+    radial-gradient(ellipse at 50% 31%, rgba(255, 77, 125, 0.12), transparent 16%),
+    radial-gradient(ellipse at 50% 12%, rgba(255, 209, 102, 0.16), transparent 15%);
+}
+
+/* O círculo central antigo vira a Praça do Infinito, no ponto de chegada. */
+.world.scene-math .center-plaza {
+  left: 1250px;
+  top: 1415px;
+  width: 320px;
+  height: 250px;
+  border-radius: 48% 52% 48% 52%;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #78f7ff;
+  background:
+    radial-gradient(ellipse at center, rgba(0, 234, 255, 0.19), rgba(146, 87, 255, 0.09) 52%, rgba(5, 7, 19, 0.72) 73%),
+    repeating-conic-gradient(from 22deg, rgba(255, 209, 102, 0.09) 0 11deg, transparent 11deg 24deg);
+  border-color: rgba(120, 247, 255, 0.34);
+  box-shadow: 0 0 44px rgba(0, 234, 255, 0.14), inset 0 0 38px rgba(146, 87, 255, 0.08);
+}
+
+/* Caminho principal: em vez de uma cruz, uma jornada que bifurca e converge. */
+.world.scene-math .ground-path.main-vertical {
+  left: 1180px;
+  top: 125px;
+  width: 140px;
+  height: 1340px;
+  opacity: 0.78;
+}
+
+.world.scene-math .ground-path.main-horizontal {
+  left: 650px;
+  top: 1085px;
+  width: 1200px;
+  height: 150px;
+  opacity: 0.84;
+}
+
+.world.scene-math .ground-path.branch-south {
+  left: 1065px;
+  top: 1325px;
+  width: 370px;
+  height: 88px;
+  opacity: 0.8;
+}
+
+.world.scene-math .ground-path.branch-west-bottom {
+  left: 620px;
+  top: 900px;
+  width: 690px;
+  height: 92px;
+  transform: rotate(-19deg);
+  opacity: 0.72;
+}
+
+.world.scene-math .ground-path.branch-east-bottom {
+  left: 1190px;
+  top: 900px;
+  width: 690px;
+  height: 92px;
+  transform: rotate(19deg);
+  opacity: 0.72;
+}
+
+.world.scene-math .ground-path.branch-west-top {
+  left: 650px;
+  top: 650px;
+  width: 660px;
+  height: 88px;
+  transform: rotate(15deg);
+  opacity: 0.66;
+}
+
+.world.scene-math .ground-path.branch-east-top {
+  left: 1190px;
+  top: 650px;
+  width: 660px;
+  height: 88px;
+  transform: rotate(-15deg);
+  opacity: 0.66;
+}
+
+.world.scene-math .ground-path.branch-north {
+  left: 1080px;
+  top: 245px;
+  width: 340px;
+  height: 84px;
+  opacity: 0.76;
+}
+
+/* Fundos de zona */
+.decor-infinity-plaza,
+.decor-math-zone,
+.decor-corruption-zone,
+.decor-fortress-court {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.decor-infinity-plaza {
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(0,234,255,0.11), transparent 58%),
+    repeating-radial-gradient(ellipse at center, transparent 0 35px, rgba(120,247,255,0.055) 36px 38px, transparent 39px 66px);
+  border: 1px solid rgba(120, 247, 255, 0.12);
+  box-shadow: inset 0 0 44px rgba(0, 234, 255, 0.06);
+}
+
+.decor-math-zone {
+  border-radius: 90px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  box-shadow: inset 0 0 58px rgba(255, 255, 255, 0.025);
+}
+
+.decor-math-zone.operation-soma {
+  background:
+    linear-gradient(90deg, rgba(0,234,255,0.045), rgba(255,209,102,0.06), rgba(0,234,255,0.045)),
+    repeating-linear-gradient(90deg, transparent 0 58px, rgba(0,234,255,0.035) 59px 61px, transparent 62px 116px);
+  border-color: rgba(0, 234, 255, 0.13);
+}
+
+.decor-math-zone.operation-fator {
+  background:
+    radial-gradient(circle at 24% 46%, rgba(146,87,255,0.13), transparent 16%),
+    radial-gradient(circle at 74% 58%, rgba(120,247,255,0.08), transparent 18%),
+    repeating-conic-gradient(from 0deg at 50% 50%, rgba(146,87,255,0.035) 0 10deg, transparent 10deg 25deg);
+  border-color: rgba(146, 87, 255, 0.18);
+}
+
+.decor-math-zone.operation-raiz {
+  background:
+    radial-gradient(circle at 30% 52%, rgba(255,209,102,0.11), transparent 18%),
+    radial-gradient(circle at 72% 43%, rgba(146,87,255,0.09), transparent 18%),
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 46px, rgba(255,209,102,0.035) 47px 49px, transparent 50px 88px);
+  border-color: rgba(255, 209, 102, 0.16);
+}
+
+.decor-corruption-zone {
+  border-radius: 34% 66% 44% 56% / 55% 38% 62% 45%;
+  background:
+    repeating-linear-gradient(128deg, rgba(255,77,125,0.055) 0 5px, transparent 5px 30px),
+    radial-gradient(circle at center, rgba(255,77,125,0.13), rgba(146,87,255,0.04) 56%, transparent 74%);
+  border: 1px dashed rgba(255, 77, 125, 0.23);
+  box-shadow: inset 0 0 52px rgba(255, 77, 125, 0.08), 0 0 38px rgba(255, 77, 125, 0.05);
+  animation: mathCorruptionPulse 3.8s ease-in-out infinite;
+}
+
+.decor-fortress-court {
+  border-radius: 36px;
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(255,209,102,0.12) 49% 51%, transparent 51%),
+    linear-gradient(transparent 49%, rgba(255,209,102,0.08) 49% 51%, transparent 51%),
+    radial-gradient(circle at center, rgba(255,209,102,0.14), rgba(5,7,19,0.14) 60%);
+  background-size: 86px 86px, 86px 86px, 100% 100%;
+  border: 1px solid rgba(255, 209, 102, 0.22);
+  box-shadow: inset 0 0 46px rgba(255,209,102,0.06), 0 0 34px rgba(255,209,102,0.05);
+}
+
+/* Nomes grandes de região: deliberadamente visíveis no modo oficial. */
+.world.scene-math .decor-zone-title {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.world.scene-math .decor-zone-title .decor-label {
+  display: block !important;
+  width: max-content;
+  max-width: 100%;
+  padding: 8px 15px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 1.3px;
+  color: rgba(245, 251, 255, 0.9);
+  background: rgba(5, 7, 19, 0.72);
+  border: 1px solid rgba(255,255,255,0.13);
+  box-shadow: 0 0 18px rgba(0,0,0,0.25);
+}
+
+.world.scene-math .decor-zone-title.operation-soma .decor-label { color: #78f7ff; border-color: rgba(0,234,255,0.24); }
+.world.scene-math .decor-zone-title.operation-fator .decor-label { color: #c7a9ff; border-color: rgba(146,87,255,0.28); }
+.world.scene-math .decor-zone-title.operation-raiz .decor-label { color: #ffd166; border-color: rgba(255,209,102,0.28); }
+.world.scene-math .decor-zone-title.operation-melog .decor-label { color: #ff7b9e; border-color: rgba(255,77,125,0.30); }
+.world.scene-math .decor-zone-title.operation-golem .decor-label { color: #ffe19a; border-color: rgba(255,209,102,0.32); }
+.world.scene-math .decor-zone-title.operation-infinito .decor-label { color: #78f7ff; border-color: rgba(120,247,255,0.25); }
+
+/* Abismo e Ponte das Equações */
+.decor-math-chasm {
+  position: absolute;
+  inset: 0;
+  border-top: 1px solid rgba(0, 234, 255, 0.12);
+  border-bottom: 1px solid rgba(146, 87, 255, 0.12);
+  background:
+    repeating-linear-gradient(135deg, rgba(0,0,0,0.68) 0 22px, rgba(11,6,28,0.82) 22px 44px),
+    radial-gradient(ellipse at center, rgba(146,87,255,0.11), transparent 70%);
+  box-shadow: inset 0 16px 22px rgba(0,0,0,0.38), inset 0 -16px 22px rgba(0,0,0,0.38), 0 0 22px rgba(0,0,0,0.28);
+}
+
+.decor-equation-bridge {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  transition: opacity 0.35s ease, filter 0.35s ease, box-shadow 0.35s ease;
+}
+
+.decor-equation-bridge.gate-locked {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,77,125,0.18) 0 24px, transparent 24px 46px),
+    linear-gradient(180deg, rgba(20,8,34,0.92), rgba(5,7,19,0.92));
+  border: 2px dashed rgba(255, 77, 125, 0.48);
+  box-shadow: 0 0 28px rgba(255,77,125,0.18), inset 0 0 24px rgba(255,77,125,0.12);
+}
+
+.decor-equation-bridge.gate-locked::after {
+  content: "?  +  ?  =  ?";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #ff7b9e;
+  font-size: 1.05rem;
+  font-weight: 950;
+  letter-spacing: 5px;
+}
+
+.decor-equation-bridge.gate-open {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,209,102,0.14) 0 26px, rgba(0,234,255,0.08) 26px 52px),
+    linear-gradient(180deg, rgba(17,24,42,0.94), rgba(5,7,19,0.94));
+  border: 2px solid rgba(120, 247, 255, 0.42);
+  box-shadow: 0 0 32px rgba(0,234,255,0.18), inset 0 0 26px rgba(255,209,102,0.08);
+}
+
+.decor-equation-bridge.gate-open::after {
+  content: "18 + 27 = 45  ✓";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #78f7ff;
+  font-size: 0.86rem;
+  font-weight: 950;
+  letter-spacing: 2px;
+}
+
+/* Barreiras de progressão */
+.decor-corruption-wall,
+.decor-fortress-wall {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.decor-corruption-wall {
+  background:
+    repeating-linear-gradient(115deg, transparent 0 38px, rgba(255,77,125,0.16) 39px 44px, transparent 45px 78px),
+    linear-gradient(180deg, rgba(255,77,125,0.03), rgba(146,87,255,0.11), rgba(255,77,125,0.03));
+  border-top: 1px dashed rgba(255,77,125,0.22);
+  border-bottom: 1px dashed rgba(255,77,125,0.22);
+  box-shadow: 0 0 24px rgba(255,77,125,0.07);
+}
+
+.decor-fortress-wall {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,209,102,0.07) 0 38px, rgba(5,7,19,0.36) 38px 52px),
+    linear-gradient(180deg, rgba(255,209,102,0.04), rgba(5,7,19,0.5));
+  border-top: 1px solid rgba(255,209,102,0.20);
+  border-bottom: 1px solid rgba(255,209,102,0.12);
+}
+
+.decor-gate {
+  transition: opacity 0.35s ease, filter 0.35s ease, transform 0.35s ease;
+}
+
+.decor-gate.gate-locked::after {
+  content: "SELADO";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 4px;
+  color: rgba(245,251,255,0.82);
+}
+
+.decor-gate.gate-open {
+  opacity: 0.22;
+  filter: saturate(0.65) brightness(1.35);
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.decor-gate.gate-open::after {
+  content: "CAMINHO ABERTO";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 2.6px;
+  color: rgba(245,251,255,0.7);
+}
+
+/* Landmarks próprios de cada setor */
+.decor-math-obelisk,
+.decor-factor-pillar {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px 20px 12px 12px;
+}
+
+.decor-math-obelisk {
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.05), transparent 24% 76%, rgba(255,255,255,0.05)),
+    linear-gradient(180deg, rgba(255,209,102,0.20), rgba(15,15,36,0.92));
+  border: 1px solid rgba(255,209,102,0.28);
+  box-shadow: 0 0 24px rgba(255,209,102,0.08), inset 0 0 18px rgba(255,209,102,0.06);
+  clip-path: polygon(50% 0, 86% 20%, 100% 100%, 0 100%, 14% 20%);
+}
+
+.decor-math-obelisk.operation-soma { border-color: rgba(0,234,255,0.34); box-shadow: 0 0 24px rgba(0,234,255,0.10); }
+.decor-math-obelisk.operation-golem { border-color: rgba(255,209,102,0.42); box-shadow: 0 0 30px rgba(255,209,102,0.12); }
+
+.decor-factor-pillar {
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(146,87,255,0.28) 0 12deg, rgba(5,7,19,0.86) 12deg 28deg),
+    radial-gradient(circle, rgba(120,247,255,0.14), rgba(5,7,19,0.95) 64%);
+  border: 2px solid rgba(146,87,255,0.34);
+  box-shadow: 0 0 28px rgba(146,87,255,0.14), inset 0 0 24px rgba(0,234,255,0.05);
+}
+
+.decor-factor-pillar::after {
+  content: "×";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #c7a9ff;
+  font-weight: 950;
+  font-size: 1.6rem;
+}
+
+/* Alguns símbolos precisam aparecer como parte do cenário, não como debug. */
+.world.scene-math .decor-math-symbol .decor-label,
+.world.scene-math .decor-corrupt-equation .decor-label {
+  display: block !important;
+}
+
+.world.scene-math .decor-math-symbol .decor-label {
+  white-space: nowrap;
+  color: #ffe19a;
+  font-size: 0.82rem;
+  letter-spacing: 1.5px;
+}
+
+.decor-corrupt-equation {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  transform: rotate(-3deg);
+  background: rgba(20, 4, 24, 0.78);
+  border: 1px dashed rgba(255,77,125,0.35);
+  box-shadow: 0 0 22px rgba(255,77,125,0.09);
+}
+
+.decor-corrupt-equation:nth-child(even) { transform: rotate(3deg); }
+
+.world.scene-math .decor-corrupt-equation .decor-label {
+  color: #ff6f98;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+/* Árvores do Bosque das Potências recebem uma leitura mais cristalina no reino. */
+.world.scene-math .depth-tree .tree-canopy {
+  filter: hue-rotate(28deg) saturate(0.86) brightness(0.94) drop-shadow(0 0 10px rgba(255,209,102,0.08));
+}
+
+.world.scene-math .depth-tree:nth-of-type(3n) .tree-canopy {
+  filter: hue-rotate(245deg) saturate(0.82) brightness(0.92) drop-shadow(0 0 10px rgba(146,87,255,0.10));
+}
+
+@keyframes mathCorruptionPulse {
+  0%, 100% { filter: brightness(0.92); opacity: 0.82; }
+  50% { filter: brightness(1.12); opacity: 1; }
+}

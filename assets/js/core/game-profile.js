@@ -42,9 +42,14 @@ function normalizeRealmProgress(realmProgress) {
     ? [...new Set(source.defeatedEnemyIds.filter((id) => typeof id === "string" && id.trim()))]
     : [];
 
+  const solvedWorldEquationIds = Array.isArray(source.solvedWorldEquationIds)
+    ? [...new Set(source.solvedWorldEquationIds.filter((id) => typeof id === "string" && id.trim()))]
+    : [];
+
   return {
     ...source,
     defeatedEnemyIds,
+    solvedWorldEquationIds,
     miniBossDefeated: Boolean(source.miniBossDefeated),
     bossDefeated: Boolean(source.bossDefeated),
     completed: Boolean(source.completed || source.bossDefeated)
