@@ -61,3 +61,21 @@ O combate agora trata `questions` como um **banco de questões**, não como uma 
 - Se uma batalha excepcionalmente consumir o banco inteiro, um novo ciclo é embaralhado e a primeira questão do novo ciclo não repete imediatamente a anterior.
 
 Para novas matérias, continue cadastrando questões no formato atual (`options` + `answer`). O motor de batalha cuida do embaralhamento automaticamente.
+
+## Loja, inventário e dicas
+
+As dicas continuam armazenadas em cada questão (`tip`), mas não aparecem gratuitamente no combate.
+
+- O Mercador de Foco abre a Loja Voltz.
+- `Dica de Foco` custa 15 moedas.
+- O inventário é salvo dentro de `progresso._inventory`, então não exige uma nova coluna no Supabase.
+- Na batalha, o jogador abre a aba **Mochila** e usa 1 `Dica de Foco` para revelar apenas a dica da pergunta atual.
+- Ao avançar para a próxima pergunta, a dica volta a ficar escondida.
+
+API disponível em `window.VoltzProfile`:
+
+```js
+window.VoltzProfile.getItemCount("dica-foco");
+window.VoltzProfile.purchaseItem("dica-foco", 15, 1);
+window.VoltzProfile.consumeItem("dica-foco", 1);
+```

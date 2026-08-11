@@ -476,3 +476,97 @@
     drop-shadow(0 0 22px rgba(255, 209, 102, 0.52))
     drop-shadow(0 0 42px rgba(146, 87, 255, 0.32));
 }
+
+/* Mochila e Dica de Foco */
+.battle-hint-revealed {
+  margin-bottom: 10px;
+  border-color: rgba(255, 209, 102, 0.42);
+  background: rgba(255, 209, 102, 0.1);
+}
+
+.battle-bag {
+  min-height: 460px;
+  padding: 20px;
+  border-radius: 28px;
+  border: 1px dashed rgba(120, 247, 255, 0.28);
+  background:
+    radial-gradient(circle at center, rgba(146, 87, 255, 0.14), transparent 42%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.battle-bag-item {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 209, 102, 0.26);
+  background: rgba(5, 7, 19, 0.62);
+}
+
+.battle-bag-item-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.2), rgba(0, 234, 255, 0.14));
+  font-size: 1.8rem;
+}
+
+.battle-bag-item-name {
+  color: var(--warning);
+  font-weight: 950;
+  margin-bottom: 4px;
+}
+
+.battle-bag-item-copy p {
+  margin: 0 0 7px;
+  color: rgba(203, 215, 255, 0.84);
+  line-height: 1.45;
+}
+
+.battle-bag-item-count {
+  color: var(--cyan);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.battle-item-use-btn {
+  min-width: 126px;
+  border: none;
+  border-radius: 14px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, var(--warning), var(--cyan));
+  color: #02040d;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.battle-item-use-btn:disabled {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(245, 251, 255, 0.5);
+}
+
+.battle-bag-message {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(120, 247, 255, 0.18);
+  background: rgba(0, 234, 255, 0.06);
+  color: rgba(245, 251, 255, 0.86);
+  line-height: 1.45;
+}
+
+@media (max-width: 820px) {
+  .battle-bag-item {
+    grid-template-columns: 1fr;
+  }
+
+  .battle-item-use-btn {
+    width: 100%;
+  }
+}

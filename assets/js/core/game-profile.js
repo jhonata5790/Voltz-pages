@@ -182,6 +182,110 @@ async function setRealmProgress(realmId, realmProgress) {
   }
 }
 
+
+function getInventory() {
+  const progress = state.profile?.progresso;
+  const inventory = progress && typeof progress === "object" ? progress._inventory : null;
+  return inventory && typeof inventory === "object"
+    ? JSON.parse(JSON.stringify(inventory))
+    : {};
+}
+
+function getItemCount(itemId) {
+  if (!itemId) return 0;
+  return Math.max(0, Number(getInventory()[itemId] || 0)) || 0;
+}
+
+async function saveInventory(nextInventory, extraFields = {}) {
+  await ready;
+  if (!state.profile) return null;
+
+  const progressField = state.profile._dbFields?.progress || "progresso";
+  const currentProgress = state.profile.progresso && typeof state.profile.progresso === "object"
+    ? state.profile.progresso
+    : {};
+
+  const nextProgress = {
+    ...currentProgress,
+    _inventory: JSON.parse(JSON.stringify(nextInventory || {}))
+  };
+
+  try {
+    const updated = await updateProfileFields({
+      ...extraFields,
+      [progressField]: nextProgress
+    });
+    if (updated) updated.progresso = nextProgress;
+    return updated;
+  } catch (error) {
+    console.error("Não foi possível salvar o inventário:", error);
+    state.profile.progresso = nextProgress;
+
+    const coinField = state.profile._dbFields?.coins || "moedas";
+    if (Object.prototype.hasOwnProperty.call(extraFields, coinField)) {
+      state.profile.moedas = Math.max(0, Number(extraFields[coinField] || 0));
+    }
+
+    renderProfileHud();
+    window.dispatchEvent(new CustomEvent("voltz:profile-updated", { detail: state.profile }));
+    return state.profile;
+  }
+}
+
+async function purchaseItem(itemId, unitPrice, quantity = 1) {
+  await ready;
+  if (!state.profile || !itemId) return { ok: false, reason: "profile" };
+
+  const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+  const price = Math.max(0, Number(unitPrice) || 0);
+  const total = price * qty;
+  const currentCoins = Math.max(0, Number(state.profile.moedas || 0));
+
+  if (currentCoins < total) {
+    return {
+      ok: false,
+      reason: "coins",
+      required: total,
+      available: currentCoins
+    };
+  }
+
+  const inventory = getInventory();
+  inventory[itemId] = Math.max(0, Number(inventory[itemId] || 0)) + qty;
+
+  const coinField = state.profile._dbFields?.coins || "moedas";
+  await saveInventory(inventory, { [coinField]: currentCoins - total });
+
+  return {
+    ok: true,
+    count: getItemCount(itemId),
+    coins: Math.max(0, Number(state.profile?.moedas || 0))
+  };
+}
+
+async function consumeItem(itemId, quantity = 1) {
+  await ready;
+  if (!state.profile || !itemId) return { ok: false, reason: "profile" };
+
+  const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+  const inventory = getInventory();
+  const current = Math.max(0, Number(inventory[itemId] || 0));
+
+  if (current < qty) {
+    return { ok: false, reason: "quantity", count: current };
+  }
+
+  const nextCount = current - qty;
+  if (nextCount > 0) {
+    inventory[itemId] = nextCount;
+  } else {
+    delete inventory[itemId];
+  }
+
+  await saveInventory(inventory);
+  return { ok: true, count: getItemCount(itemId) };
+}
+
 async function logout() {
   try {
     await supabase.auth.signOut();
@@ -227,6 +331,10 @@ window.VoltzProfile = {
   addRewards,
   getRealmProgress,
   setRealmProgress,
+  getInventory,
+  getItemCount,
+  purchaseItem,
+  consumeItem,
   logout
 };
 

@@ -25,6 +25,12 @@ const viewport = document.getElementById("gameViewport");
     const realmGrid = document.getElementById("realmGrid");
     const realmMessage = document.getElementById("realmMessage");
 
+    const shopPanel = document.getElementById("shopPanel");
+    const shopCoins = document.getElementById("shopCoins");
+    const shopHintCount = document.getElementById("shopHintCount");
+    const shopBuyHintButton = document.getElementById("shopBuyHintButton");
+    const shopMessage = document.getElementById("shopMessage");
+
     const enemyPanel = document.getElementById("enemyPanel");
     const enemyPanelKicker = document.getElementById("enemyPanelKicker");
     const enemyPanelTitle = document.getElementById("enemyPanelTitle");
@@ -363,6 +369,8 @@ const viewport = document.getElementById("gameViewport");
     let nearbyNpc = null;
     let nearbyPortal = null;
     let realmPanelOpen = false;
+    let shopPanelOpen = false;
+    let shopPurchaseBusy = false;
     let dialogueOpen = false;
     let currentDialogueNpc = null;
     let currentDialogueIndex = 0;
@@ -562,6 +570,89 @@ const viewport = document.getElementById("gameViewport");
       realmPanelOpen = false;
       realmPanel.classList.remove("visible");
       updateHint();
+    }
+
+    function renderShopPanel(message = "") {
+      if (!shopPanel) return;
+
+      const profile = window.VoltzProfile?.state?.profile;
+      const coins = Math.max(0, Number(profile?.moedas || 0));
+      const hintCount = Math.max(0, Number(window.VoltzProfile?.getItemCount?.("dica-foco") || 0));
+
+      if (shopCoins) shopCoins.textContent = `${coins} moedas`;
+      if (shopHintCount) shopHintCount.textContent = `Na mochila: ${hintCount}`;
+
+      if (shopBuyHintButton) {
+        shopBuyHintButton.disabled = shopPurchaseBusy || coins < 15;
+        shopBuyHintButton.textContent = shopPurchaseBusy
+          ? "Comprando..."
+          : coins < 15
+            ? "Moedas insuficientes"
+            : "Comprar 1";
+      }
+
+      if (shopMessage) {
+        shopMessage.textContent = message || "A Dica de Foco custa 15 moedas e pode ser usada uma vez durante qualquer pergunta.";
+        shopMessage.classList.toggle("success", Boolean(message && message.startsWith("Compra concluída")));
+        shopMessage.classList.toggle("error", Boolean(message && !message.startsWith("Compra concluída")));
+      }
+    }
+
+    function openShopPanel() {
+      if (!shopPanel) return;
+      shopPanelOpen = true;
+
+      keys.up = false;
+      keys.down = false;
+      keys.left = false;
+      keys.right = false;
+      keys.run = false;
+      playerState.moving = false;
+      updatePlayerAnimation();
+
+      renderShopPanel();
+      shopPanel.classList.add("visible");
+      interactionText.textContent = "Loja Voltz aberta. Compre recursos ou pressione Esc para voltar.";
+    }
+
+    function closeShopPanel() {
+      shopPanelOpen = false;
+      shopPurchaseBusy = false;
+      shopPanel?.classList.remove("visible");
+      updateHint();
+    }
+
+    async function buyShopHint() {
+      if (!shopPanelOpen || shopPurchaseBusy) return;
+
+      if (!window.VoltzProfile?.purchaseItem) {
+        renderShopPanel("Não foi possível acessar seu inventário agora.");
+        return;
+      }
+
+      shopPurchaseBusy = true;
+      renderShopPanel();
+
+      try {
+        const result = await window.VoltzProfile.purchaseItem("dica-foco", 15, 1);
+
+        if (!result?.ok) {
+          if (result?.reason === "coins") {
+            renderShopPanel(`Você precisa de 15 moedas. Saldo atual: ${result.available || 0}.`);
+          } else {
+            renderShopPanel("Não foi possível concluir a compra. Tente novamente.");
+          }
+          return;
+        }
+
+        renderShopPanel(`Compra concluída! Você agora tem ${result.count} Dica${result.count === 1 ? "" : "s"} de Foco.`);
+      } catch (error) {
+        console.error("Falha ao comprar Dica de Foco:", error);
+        renderShopPanel("Não foi possível concluir a compra. Tente novamente.");
+      } finally {
+        shopPurchaseBusy = false;
+        renderShopPanel(shopMessage?.textContent || "");
+      }
     }
 
     function applyZoneMarkers(scene) {
@@ -1093,6 +1184,7 @@ const viewport = document.getElementById("gameViewport");
       }
 
       const shouldOpenRealmPanel = Boolean(currentDialogueNpc && currentDialogueNpc.opensRealmPanel);
+      const shouldOpenShop = Boolean(currentDialogueNpc && currentDialogueNpc.opensShop);
       const shouldReturnToVillage = Boolean(currentDialogueNpc && currentDialogueNpc.returnToVillage);
       const shouldResetMath = Boolean(currentDialogueNpc && currentDialogueNpc.resetsMathProgress);
       closeDialogue();
@@ -1103,6 +1195,10 @@ const viewport = document.getElementById("gameViewport");
 
       if (shouldOpenRealmPanel) {
         openRealmPanel();
+      }
+
+      if (shouldOpenShop) {
+        openShopPanel();
       }
 
       if (shouldReturnToVillage) {
@@ -1559,7 +1655,7 @@ const viewport = document.getElementById("gameViewport");
     function updateMovement() {
       updateVisualTransition();
 
-      if (dialogueOpen || realmPanelOpen || enemyPanelOpen) {
+      if (dialogueOpen || realmPanelOpen || shopPanelOpen || enemyPanelOpen) {
         playerState.moving = false;
         updatePlayerPosition();
         updatePlayerAnimation();
@@ -1920,6 +2016,14 @@ const viewport = document.getElementById("gameViewport");
         return;
       }
 
+      if (shopPanelOpen) {
+        if (key === "escape") {
+          closeShopPanel();
+        }
+
+        return;
+      }
+
       if (dialogueOpen) {
         if ((key === "e" || key === "enter") && !event.repeat) {
           advanceDialogue();
@@ -1985,10 +2089,15 @@ const viewport = document.getElementById("gameViewport");
     window.completeEnemyDefeatFromBattle = completeEnemyDefeatFromBattle;
     window.resetMathProgress = resetMathProgress;
     window.closeRealmPanel = closeRealmPanel;
+    window.closeShopPanel = closeShopPanel;
+    window.buyShopHint = buyShopHint;
     window.selectRealm = selectRealm;
     window.getActiveSceneId = () => currentScene.id;
 
     setupPlayer();
     hydrateMathProgress();
     window.addEventListener("voltz:profile-ready", hydrateMathProgress, { once: true });
+    window.addEventListener("voltz:profile-updated", () => {
+      if (shopPanelOpen) renderShopPanel(shopMessage?.textContent || "");
+    });
     gameLoop();

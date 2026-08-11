@@ -31,7 +31,7 @@ window.VoltzData.villageNpcs = [
     resetsMathProgress: true,
     dialogue: [
       "Antes de enfrentar uma questão, respire e leia com atenção. Muitas respostas se escondem no próprio enunciado.",
-      "Aqui na Biblioteca, as dicas aparecem antes e depois das perguntas para transformar erro em aprendizado.",
+      "As explicações aparecem depois das respostas para transformar erro em aprendizado. As dicas, porém, são recursos de jornada.",
       "Conhecimento não é decorar tudo. É entender o caminho até a resposta.",
       "Se você já limpou o Reino da Matemática e quiser tentar de novo, fale comigo até o fim. Eu reinicio os desafios para você."
     ]
@@ -62,10 +62,11 @@ window.VoltzData.villageNpcs = [
     colorB: "#ffd166",
     aura: "#ffd166",
     portrait: "assets/images/npcs/mercador-de-foco.webp",
+    opensShop: true,
     dialogue: [
-      "Moedas não servem só para brilhar. Com elas, você poderá comprar dicas, recuperação e bônus de jornada.",
-      "Um bom aventureiro não vence só com força. Ele usa recurso, estratégia e foco.",
-      "Quando a loja abrir oficialmente, passe aqui antes dos chefes. Vai por mim."
+      "Moedas não servem só para brilhar. Aqui você pode comprar recursos para levar aos Reinos do Conhecimento.",
+      "A Dica de Foco vai para sua mochila. Durante uma batalha, use uma para revelar a dica da pergunta atual.",
+      "Cada uso consome uma unidade. Então guarde algumas para quando a conta realmente apertar."
     ]
   },
   {

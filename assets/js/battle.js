@@ -15,6 +15,9 @@ const battleState = {
   questionDeck: [],
   questionDeckIndex: 0,
   questionsAsked: 0,
+  hintRevealed: false,
+  hintBusy: false,
+  bagMessage: "",
   currentTab: "question",
   outcomeTimerId: null,
   resultMode: false
@@ -138,6 +141,9 @@ function clearBattleTimer() {
       battleState.timeLimit = type.timeLimit || 30;
       battleState.timeLeft = battleState.timeLimit;
       battleState.currentTab = "question";
+      battleState.hintRevealed = false;
+      battleState.hintBusy = false;
+      battleState.bagMessage = "";
       battleState.resultMode = false;
 
       keys.up = false;
@@ -160,6 +166,8 @@ function clearBattleTimer() {
       const type = getEnemyType(currentEnemy);
       const q = currentEnemyQuestion;
       const questionNumber = battleState.questionNumber;
+      const hintCount = Math.max(0, Number(window.VoltzProfile?.getItemCount?.("dica-foco") || 0));
+      const canUseHint = hintCount > 0 && !battleState.hintRevealed && !battleState.locked && !battleState.hintBusy;
 
       enemyPanel.innerHTML = `
         <div class="battle-panel-inner enemy-theme-${type.id}">
@@ -220,7 +228,7 @@ function clearBattleTimer() {
               </div>
 
               <div class="enemy-question-card battle-question-card">
-                <div class="enemy-question-tip">Dica: ${escapeHtml(q.tip)}</div>
+                ${battleState.hintRevealed ? `<div class="enemy-question-tip battle-hint-revealed">💡 Dica: ${escapeHtml(q.tip)}</div>` : ""}
                 <div class="battle-question-count">Pergunta ${questionNumber} • banco com ${type.questions.length}</div>
                 <div class="enemy-question-text">${escapeHtml(q.text)}</div>
 
@@ -241,10 +249,35 @@ function clearBattleTimer() {
           </div>
 
           <div id="battleBagTab" class="battle-tab-content">
-            <div class="battle-bag-empty">
-              <div>
-                <strong>Mochila vazia</strong>
-                <p>Nenhum item equipado ainda. Esta aba já ficou reservada para dicas, cura e bônus futuros.</p>
+            <div class="battle-bag">
+              <article class="battle-bag-item">
+                <div class="battle-bag-item-icon">💡</div>
+                <div class="battle-bag-item-copy">
+                  <div class="battle-bag-item-name">Dica de Foco</div>
+                  <p>Revela a dica da pergunta atual. Cada uso consome 1 unidade.</p>
+                  <span class="battle-bag-item-count">Na mochila: ${hintCount}</span>
+                </div>
+                <button
+                  id="battleUseHintButton"
+                  class="battle-item-use-btn"
+                  type="button"
+                  onclick="useBattleHint()"
+                  ${canUseHint ? "" : "disabled"}
+                >
+                  ${battleState.hintBusy
+                    ? "Usando..."
+                    : battleState.hintRevealed
+                      ? "Dica já usada"
+                      : hintCount > 0
+                        ? "Usar dica"
+                        : "Sem dicas"}
+                </button>
+              </article>
+
+              <div id="battleBagMessage" class="battle-bag-message ${battleState.bagMessage ? "visible" : ""}">
+                ${escapeHtml(battleState.bagMessage || (hintCount > 0
+                  ? "Use a Dica de Foco apenas quando precisar. O item é consumido imediatamente."
+                  : "Sua mochila não tem dicas. Compre novas unidades com o Mercador de Foco na Loja Voltz."))}
               </div>
             </div>
           </div>
@@ -253,6 +286,59 @@ function clearBattleTimer() {
 
       updateBattleHud();
       setBattleTab(battleState.currentTab || "question");
+    }
+
+    async function useBattleHint() {
+      if (
+        !battleState.active ||
+        battleState.locked ||
+        battleState.hintBusy ||
+        battleState.hintRevealed ||
+        !currentEnemyQuestion
+      ) {
+        return;
+      }
+
+      const count = Math.max(0, Number(window.VoltzProfile?.getItemCount?.("dica-foco") || 0));
+      if (count <= 0) {
+        battleState.bagMessage = "Você não possui Dicas de Foco. Compre mais na Loja Voltz.";
+        renderBattleScreen();
+        setBattleTab("bag");
+        return;
+      }
+
+      if (!window.VoltzProfile?.consumeItem) {
+        battleState.bagMessage = "Seu inventário não está disponível agora.";
+        renderBattleScreen();
+        setBattleTab("bag");
+        return;
+      }
+
+      battleState.hintBusy = true;
+      battleState.locked = true;
+      battleState.bagMessage = "Abrindo a Dica de Foco...";
+
+      try {
+        const result = await window.VoltzProfile.consumeItem("dica-foco", 1);
+
+        if (!result?.ok) {
+          battleState.bagMessage = "Não foi possível usar a dica. Verifique seu inventário e tente novamente.";
+          return;
+        }
+
+        battleState.hintRevealed = true;
+        battleState.bagMessage = "";
+        battleState.currentTab = "question";
+      } catch (error) {
+        console.error("Falha ao usar Dica de Foco:", error);
+        battleState.bagMessage = "Não foi possível usar a dica agora. Tente novamente.";
+        battleState.currentTab = "bag";
+      } finally {
+        battleState.hintBusy = false;
+        battleState.locked = false;
+        renderBattleScreen();
+        setBattleTab(battleState.currentTab);
+      }
     }
 
     function setBattleTab(tab) {
@@ -499,6 +585,9 @@ function clearBattleTimer() {
       const type = getEnemyType(currentEnemy);
       enemyQuestionAnswered = false;
       battleState.locked = false;
+      battleState.hintRevealed = false;
+      battleState.hintBusy = false;
+      battleState.bagMessage = "";
       currentEnemyQuestion = drawNextBattleQuestion(type);
       renderBattleScreen();
       startBattleTimer();
@@ -517,6 +606,9 @@ function clearBattleTimer() {
       battleState.questionDeck = [];
       battleState.questionDeckIndex = 0;
       battleState.questionsAsked = 0;
+      battleState.hintRevealed = false;
+      battleState.hintBusy = false;
+      battleState.bagMessage = "";
       enemyQuestionAnswered = false;
       enemyPanel.classList.remove("visible", "battle-mode", "player-damaged");
       enemyPanel.innerHTML = "";
@@ -638,3 +730,4 @@ window.closeEnemyPanel = closeEnemyPanel;
 window.answerEnemyQuestion = answerEnemyQuestion;
 window.nextEnemyQuestion = nextEnemyQuestion;
 window.setBattleTab = setBattleTab;
+window.useBattleHint = useBattleHint;

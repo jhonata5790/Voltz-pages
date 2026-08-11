@@ -2129,3 +2129,196 @@ body.debug-mode .world.show-colliders .player-hitbox-debug {
     padding-left: 0;
   }
 }
+
+/* Loja Voltz — recursos consumíveis */
+.shop-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 138;
+  width: min(760px, calc(100% - 34px));
+  max-height: min(620px, calc(100% - 34px));
+  transform: translate(-50%, -50%) scale(0.96);
+  padding: 24px;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 209, 102, 0.18), transparent 34%),
+    radial-gradient(circle at 86% 20%, rgba(0, 234, 255, 0.16), transparent 32%),
+    linear-gradient(135deg, rgba(5, 7, 19, 0.985), rgba(13, 13, 42, 0.985));
+  border: 1px solid rgba(255, 209, 102, 0.36);
+  box-shadow:
+    0 0 54px rgba(255, 209, 102, 0.15),
+    inset 0 0 40px rgba(0, 234, 255, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  overflow: auto;
+  backdrop-filter: blur(18px);
+  transition: opacity 0.16s linear, transform 0.16s linear;
+}
+
+.shop-panel.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.shop-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.shop-panel-kicker {
+  color: var(--warning);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.shop-panel-title {
+  color: var(--cyan);
+  font-size: clamp(1.32rem, 2.8vw, 2rem);
+  font-weight: 950;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.shop-panel-subtitle {
+  color: rgba(203, 215, 255, 0.88);
+  line-height: 1.5;
+  margin-top: 8px;
+  max-width: 560px;
+}
+
+.shop-close-btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--white);
+  padding: 9px 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.shop-wallet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 12px 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 209, 102, 0.24);
+  background: rgba(255, 209, 102, 0.07);
+  color: rgba(245, 251, 255, 0.9);
+}
+
+.shop-wallet strong {
+  color: var(--warning);
+}
+
+.shop-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.shop-item-card {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(120, 247, 255, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.shop-item-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.22), rgba(0, 234, 255, 0.16));
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  font-size: 2rem;
+}
+
+.shop-item-name {
+  color: var(--white);
+  font-size: 1.08rem;
+  font-weight: 950;
+  margin-bottom: 5px;
+}
+
+.shop-item-content p {
+  color: rgba(203, 215, 255, 0.84);
+  line-height: 1.5;
+}
+
+.shop-item-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  color: rgba(245, 251, 255, 0.82);
+  font-size: 0.86rem;
+}
+
+.shop-item-meta strong {
+  color: var(--warning);
+}
+
+.shop-buy-btn {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, var(--warning), var(--cyan));
+  color: #02040d;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(255, 209, 102, 0.16);
+}
+
+.shop-buy-btn:disabled {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(245, 251, 255, 0.5);
+  box-shadow: none;
+}
+
+.shop-message {
+  margin-top: 14px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(120, 247, 255, 0.18);
+  background: rgba(0, 234, 255, 0.06);
+  color: rgba(245, 251, 255, 0.88);
+  line-height: 1.45;
+}
+
+.shop-message.success {
+  border-color: rgba(120, 247, 255, 0.34);
+}
+
+.shop-message.error {
+  border-color: rgba(255, 77, 125, 0.34);
+}
+
+@media (max-width: 820px) {
+  .shop-panel {
+    padding: 17px;
+  }
+
+  .shop-panel-header {
+    flex-direction: column;
+  }
+
+  .shop-item-card {
+    grid-template-columns: 1fr;
+  }
+}

@@ -208,13 +208,53 @@
         </div>
 
         <div class="enemy-question-card">
-          <div id="enemyQuestionTip" class="enemy-question-tip">Dica: leia com atenção.</div>
           <div id="enemyQuestionText" class="enemy-question-text">...</div>
           <div id="enemyQuestionOptions" class="enemy-question-options"></div>
           <div id="enemyFeedback" class="enemy-feedback"></div>
           <button id="enemyNextButton" class="enemy-next-btn" type="button" onclick="nextEnemyQuestion()">
             Próxima pergunta
           </button>
+        </div>
+      </div>
+
+
+      <div id="shopPanel" class="shop-panel" aria-live="polite">
+        <div class="shop-panel-header">
+          <div>
+            <div class="shop-panel-kicker">Loja Voltz</div>
+            <div class="shop-panel-title">Mercador de Foco</div>
+            <p class="shop-panel-subtitle">
+              Compre recursos com as moedas conquistadas nos desafios. Os itens ficam salvos no seu inventário.
+            </p>
+          </div>
+
+          <button class="shop-close-btn" type="button" onclick="closeShopPanel()">Fechar ✕</button>
+        </div>
+
+        <div class="shop-wallet">
+          <span>Seu saldo</span>
+          <strong id="shopCoins">0 moedas</strong>
+        </div>
+
+        <div class="shop-grid">
+          <article class="shop-item-card">
+            <div class="shop-item-icon">💡</div>
+            <div class="shop-item-content">
+              <div class="shop-item-name">Dica de Foco</div>
+              <p>Revela a dica da pergunta atual durante uma batalha. Cada uso consome 1 unidade.</p>
+              <div class="shop-item-meta">
+                <span id="shopHintCount">Na mochila: 0</span>
+                <strong>15 moedas</strong>
+              </div>
+              <button id="shopBuyHintButton" class="shop-buy-btn" type="button" onclick="buyShopHint()">
+                Comprar 1
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <div id="shopMessage" class="shop-message">
+          Fale com o Mercador sempre que precisar reabastecer sua mochila.
         </div>
       </div>
 
