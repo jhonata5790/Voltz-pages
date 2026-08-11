@@ -58,6 +58,76 @@
           options: { A: "175", B: "205", C: "215", D: "225" },
           answer: "C",
           explanation: "300 − 125 = 175; 175 + 40 = 215."
+        },
+        {
+          tip: "Some as dezenas e depois ajuste as unidades.",
+          text: "Quanto é 47 + 38?",
+          options: { A: "75", B: "83", C: "85", D: "95" },
+          answer: "C",
+          explanation: "47 + 38 = 85."
+        },
+        {
+          tip: "Quebre 68 em 60 + 8 para facilitar a subtração.",
+          text: "Quanto é 150 − 68?",
+          options: { A: "72", B: "82", C: "88", D: "92" },
+          answer: "B",
+          explanation: "150 − 68 = 82."
+        },
+        {
+          tip: "Observe que 240 e 160 completam quatro centenas.",
+          text: "Quanto é 240 + 160?",
+          options: { A: "360", B: "380", C: "400", D: "420" },
+          answer: "C",
+          explanation: "240 + 160 = 400."
+        },
+        {
+          tip: "Subtraia 200 e depois 75.",
+          text: "Quanto é 500 − 275?",
+          options: { A: "215", B: "225", C: "235", D: "275" },
+          answer: "B",
+          explanation: "500 − 275 = 225."
+        },
+        {
+          tip: "Faça 63 + 29 antes de tirar 17.",
+          text: "Quanto é 63 + 29 − 17?",
+          options: { A: "65", B: "75", C: "85", D: "95" },
+          answer: "B",
+          explanation: "63 + 29 = 92; 92 − 17 = 75."
+        },
+        {
+          tip: "Pense em quanto falta de 458 até 1000.",
+          text: "Quanto é 1000 − 458?",
+          options: { A: "532", B: "542", C: "552", D: "562" },
+          answer: "B",
+          explanation: "1000 − 458 = 542."
+        },
+        {
+          tip: "Acompanhe primeiro o que saiu e depois o que entrou.",
+          text: "Ana tinha 85 figurinhas, deu 27 e ganhou 19. Com quantas ficou?",
+          options: { A: "67", B: "75", C: "77", D: "81" },
+          answer: "C",
+          explanation: "85 − 27 = 58; 58 + 19 = 77."
+        },
+        {
+          tip: "Some 376 com 200 e depois com 49.",
+          text: "Quanto é 376 + 249?",
+          options: { A: "615", B: "625", C: "635", D: "645" },
+          answer: "B",
+          explanation: "376 + 249 = 625."
+        },
+        {
+          tip: "Faça as duas subtrações em sequência.",
+          text: "Quanto é 720 − 180 − 95?",
+          options: { A: "435", B: "445", C: "455", D: "545" },
+          answer: "B",
+          explanation: "720 − 180 = 540; 540 − 95 = 445."
+        },
+        {
+          tip: "Somar 1 a 999 forma 1000; depois retire 250.",
+          text: "Quanto é 999 + 1 − 250?",
+          options: { A: "650", B: "700", C: "750", D: "850" },
+          answer: "C",
+          explanation: "999 + 1 = 1000; 1000 − 250 = 750."
         }
       ]
     },
@@ -112,6 +182,76 @@
           options: { A: "12", B: "15", C: "18", D: "27" },
           answer: "C",
           explanation: "9 × 6 = 54; 54 ÷ 3 = 18."
+        },
+        {
+          tip: "Use a tabuada do 12 ou decomponha 12 × 9.",
+          text: "Quanto é 12 × 9?",
+          options: { A: "96", B: "108", C: "112", D: "120" },
+          answer: "B",
+          explanation: "12 × 9 = 108."
+        },
+        {
+          tip: "Procure qual número vezes 15 resulta em 225.",
+          text: "Quanto é 225 ÷ 15?",
+          options: { A: "12", B: "15", C: "18", D: "20" },
+          answer: "B",
+          explanation: "15 × 15 = 225, então 225 ÷ 15 = 15."
+        },
+        {
+          tip: "Faça a multiplicação antes de somar 6.",
+          text: "Quanto é 7 × 8 + 6?",
+          options: { A: "56", B: "60", C: "62", D: "68" },
+          answer: "C",
+          explanation: "7 × 8 = 56; 56 + 6 = 62."
+        },
+        {
+          tip: "Pense em 9 grupos iguais formando 180.",
+          text: "Quanto é 180 ÷ 9?",
+          options: { A: "18", B: "20", C: "22", D: "24" },
+          answer: "B",
+          explanation: "9 × 20 = 180, então 180 ÷ 9 = 20."
+        },
+        {
+          tip: "Multiplique 14 por 5 e depois divida por 7.",
+          text: "Quanto é 14 × 5 ÷ 7?",
+          options: { A: "8", B: "10", C: "12", D: "14" },
+          answer: "B",
+          explanation: "14 × 5 = 70; 70 ÷ 7 = 10."
+        },
+        {
+          tip: "Use 25 × 10 mais 25 × 2.",
+          text: "Quanto é 25 × 12?",
+          options: { A: "250", B: "275", C: "300", D: "325" },
+          answer: "C",
+          explanation: "25 × 12 = 300."
+        },
+        {
+          tip: "Dividir 360 por 12 é encontrar quantos grupos de 12 cabem nele.",
+          text: "Quanto é 360 ÷ 12?",
+          options: { A: "20", B: "25", C: "30", D: "36" },
+          answer: "C",
+          explanation: "12 × 30 = 360, então 360 ÷ 12 = 30."
+        },
+        {
+          tip: "Multiplique a quantidade de caixas pela quantidade em cada caixa.",
+          text: "Há 8 caixas com 6 cristais em cada uma. Quantos cristais há ao todo?",
+          options: { A: "42", B: "46", C: "48", D: "54" },
+          answer: "C",
+          explanation: "8 × 6 = 48 cristais."
+        },
+        {
+          tip: "Faça a divisão primeiro e depois some 5.",
+          text: "Quanto é 144 ÷ 12 + 5?",
+          options: { A: "12", B: "15", C: "17", D: "19" },
+          answer: "C",
+          explanation: "144 ÷ 12 = 12; 12 + 5 = 17."
+        },
+        {
+          tip: "Multiplicação e divisão vêm antes da subtração.",
+          text: "Quanto é 18 × 4 − 24 ÷ 6?",
+          options: { A: "64", B: "68", C: "72", D: "76" },
+          answer: "B",
+          explanation: "18 × 4 = 72 e 24 ÷ 6 = 4; 72 − 4 = 68."
         }
       ]
     },
@@ -159,6 +299,76 @@
           options: { A: "3", B: "4", C: "6", D: "12" },
           answer: "B",
           explanation: "√144 = 12; 12 ÷ 3 = 4."
+        },
+        {
+          tip: "3⁴ é 3 multiplicado por ele mesmo quatro vezes.",
+          text: "Quanto é 3⁴?",
+          options: { A: "27", B: "64", C: "81", D: "243" },
+          answer: "C",
+          explanation: "3⁴ = 3 × 3 × 3 × 3 = 81."
+        },
+        {
+          tip: "Procure o número cujo quadrado é 121.",
+          text: "Qual é a raiz quadrada de 121?",
+          options: { A: "9", B: "10", C: "11", D: "12" },
+          answer: "C",
+          explanation: "11 × 11 = 121, então √121 = 11."
+        },
+        {
+          tip: "Calcule 10² e √36 separadamente.",
+          text: "Quanto é 10² − √36?",
+          options: { A: "84", B: "90", C: "94", D: "96" },
+          answer: "C",
+          explanation: "10² = 100 e √36 = 6; 100 − 6 = 94."
+        },
+        {
+          tip: "4³ significa 4 × 4 × 4.",
+          text: "Quanto é 4³?",
+          options: { A: "16", B: "32", C: "48", D: "64" },
+          answer: "D",
+          explanation: "4³ = 64."
+        },
+        {
+          tip: "Procure o número que multiplicado por ele mesmo dá 225.",
+          text: "Qual é a raiz quadrada de 225?",
+          options: { A: "13", B: "14", C: "15", D: "16" },
+          answer: "C",
+          explanation: "15 × 15 = 225, então √225 = 15."
+        },
+        {
+          tip: "Cada potência de 2 dobra o resultado anterior.",
+          text: "Quanto é 2⁶?",
+          options: { A: "32", B: "48", C: "64", D: "128" },
+          answer: "C",
+          explanation: "2⁶ = 64."
+        },
+        {
+          tip: "Faça a raiz antes da soma.",
+          text: "Quanto é √196 + 6?",
+          options: { A: "18", B: "20", C: "22", D: "26" },
+          answer: "B",
+          explanation: "√196 = 14; 14 + 6 = 20."
+        },
+        {
+          tip: "Calcule os dois quadrados e depois subtraia.",
+          text: "Quanto é 6² − 5²?",
+          options: { A: "9", B: "10", C: "11", D: "12" },
+          answer: "C",
+          explanation: "6² = 36 e 5² = 25; 36 − 25 = 11."
+        },
+        {
+          tip: "Descubra √169 e depois multiplique por 2.",
+          text: "Quanto é √169 × 2?",
+          options: { A: "22", B: "24", C: "26", D: "28" },
+          answer: "C",
+          explanation: "√169 = 13; 13 × 2 = 26."
+        },
+        {
+          tip: "Resolva a potência antes da divisão.",
+          text: "Quanto é 5³ ÷ 25?",
+          options: { A: "5", B: "10", C: "20", D: "25" },
+          answer: "A",
+          explanation: "5³ = 125; 125 ÷ 25 = 5."
         }
       ]
     },
@@ -214,6 +424,76 @@
           options: { A: "14", B: "16", C: "18", D: "20" },
           answer: "B",
           explanation: "18 − 6 = 12; 2³ = 8; 8 ÷ 2 = 4; 12 + 4 = 16."
+        },
+        {
+          tip: "Multiplicação e divisão têm a mesma prioridade; resolva da esquerda para a direita.",
+          text: "Quanto é 7 × 6 + 18 ÷ 3?",
+          options: { A: "44", B: "46", C: "48", D: "54" },
+          answer: "C",
+          explanation: "7 × 6 = 42 e 18 ÷ 3 = 6; 42 + 6 = 48."
+        },
+        {
+          tip: "Resolva o parêntese antes de dividir.",
+          text: "Quanto é (45 − 21) ÷ 6?",
+          options: { A: "3", B: "4", C: "5", D: "6" },
+          answer: "B",
+          explanation: "45 − 21 = 24; 24 ÷ 6 = 4."
+        },
+        {
+          tip: "Potência e raiz vêm antes da soma.",
+          text: "Quanto é 2⁴ + √49?",
+          options: { A: "21", B: "23", C: "25", D: "30" },
+          answer: "B",
+          explanation: "2⁴ = 16 e √49 = 7; 16 + 7 = 23."
+        },
+        {
+          tip: "Faça divisão e potência antes da soma.",
+          text: "Quanto é 120 ÷ 10 + 3²?",
+          options: { A: "18", B: "19", C: "21", D: "24" },
+          answer: "C",
+          explanation: "120 ÷ 10 = 12 e 3² = 9; 12 + 9 = 21."
+        },
+        {
+          tip: "Parênteses primeiro, depois multiplicação e subtração.",
+          text: "Quanto é (8 + 4) × 5 − 16?",
+          options: { A: "40", B: "44", C: "50", D: "56" },
+          answer: "B",
+          explanation: "8 + 4 = 12; 12 × 5 = 60; 60 − 16 = 44."
+        },
+        {
+          tip: "Resolva raiz e multiplicação antes da soma.",
+          text: "Quanto é √100 + 6 × 7?",
+          options: { A: "46", B: "50", C: "52", D: "60" },
+          answer: "C",
+          explanation: "√100 = 10 e 6 × 7 = 42; 10 + 42 = 52."
+        },
+        {
+          tip: "Potência e multiplicação vêm antes da subtração.",
+          text: "Quanto é 200 − 5² × 4?",
+          options: { A: "90", B: "100", C: "125", D: "180" },
+          answer: "B",
+          explanation: "5² = 25; 25 × 4 = 100; 200 − 100 = 100."
+        },
+        {
+          tip: "Resolva cada parêntese antes de multiplicar.",
+          text: "Quanto é (72 ÷ 8) × (15 − 9)?",
+          options: { A: "45", B: "48", C: "54", D: "63" },
+          answer: "C",
+          explanation: "72 ÷ 8 = 9 e 15 − 9 = 6; 9 × 6 = 54."
+        },
+        {
+          tip: "Faça potência e divisão antes de somar e subtrair.",
+          text: "Quanto é 3³ + 64 ÷ 8 − 5?",
+          options: { A: "28", B: "30", C: "32", D: "35" },
+          answer: "B",
+          explanation: "3³ = 27 e 64 ÷ 8 = 8; 27 + 8 − 5 = 30."
+        },
+        {
+          tip: "Resolva a raiz, depois a divisão e por fim a soma.",
+          text: "Quanto é √256 ÷ 4 + 11?",
+          options: { A: "13", B: "14", C: "15", D: "16" },
+          answer: "C",
+          explanation: "√256 = 16; 16 ÷ 4 = 4; 4 + 11 = 15."
         }
       ]
     },
@@ -269,6 +549,76 @@
           options: { A: "17", B: "27", C: "37", D: "47" },
           answer: "B",
           explanation: "√144 = 12; 7 × 5 = 35; 12 + 35 − 20 = 27."
+        },
+        {
+          tip: "Parênteses primeiro; depois potência e soma.",
+          text: "Quanto é (25 − 7) × 4 + 2³?",
+          options: { A: "72", B: "76", C: "80", D: "88" },
+          answer: "C",
+          explanation: "25 − 7 = 18; 18 × 4 = 72; 2³ = 8; 72 + 8 = 80."
+        },
+        {
+          tip: "Potência, raiz e divisão vêm antes da soma e subtração.",
+          text: "Quanto é 3⁴ − √121 + 18 ÷ 3?",
+          options: { A: "70", B: "74", C: "76", D: "82" },
+          answer: "C",
+          explanation: "3⁴ = 81, √121 = 11 e 18 ÷ 3 = 6; 81 − 11 + 6 = 76."
+        },
+        {
+          tip: "Resolva tudo dentro do parêntese antes de multiplicar por 2.",
+          text: "Quanto é (96 ÷ 8 + 4²) × 2?",
+          options: { A: "48", B: "52", C: "56", D: "64" },
+          answer: "C",
+          explanation: "96 ÷ 8 = 12 e 4² = 16; 12 + 16 = 28; 28 × 2 = 56."
+        },
+        {
+          tip: "Calcule raiz e potência antes de somar e subtrair.",
+          text: "Quanto é √225 + 5² − 7?",
+          options: { A: "31", B: "33", C: "35", D: "40" },
+          answer: "B",
+          explanation: "√225 = 15 e 5² = 25; 15 + 25 − 7 = 33."
+        },
+        {
+          tip: "Potência, divisão e raiz são resolvidas antes da soma/subtração.",
+          text: "Quanto é 2⁵ + 144 ÷ 12 − √49?",
+          options: { A: "35", B: "37", C: "39", D: "44" },
+          answer: "B",
+          explanation: "2⁵ = 32, 144 ÷ 12 = 12 e √49 = 7; 32 + 12 − 7 = 37."
+        },
+        {
+          tip: "Resolva o parêntese antes da divisão.",
+          text: "Quanto é (7² − 13) ÷ 6?",
+          options: { A: "5", B: "6", C: "7", D: "8" },
+          answer: "B",
+          explanation: "7² = 49; 49 − 13 = 36; 36 ÷ 6 = 6."
+        },
+        {
+          tip: "Faça raiz, multiplicação e potência antes da soma/subtração.",
+          text: "Quanto é √324 + 8 × 7 − 3²?",
+          options: { A: "61", B: "63", C: "65", D: "67" },
+          answer: "C",
+          explanation: "√324 = 18, 8 × 7 = 56 e 3² = 9; 18 + 56 − 9 = 65."
+        },
+        {
+          tip: "Resolva o parêntese, depois a divisão e a potência.",
+          text: "Quanto é (150 − 30) ÷ 5 + 2⁴?",
+          options: { A: "36", B: "40", C: "44", D: "48" },
+          answer: "B",
+          explanation: "150 − 30 = 120; 120 ÷ 5 = 24; 2⁴ = 16; 24 + 16 = 40."
+        },
+        {
+          tip: "Potência e multiplicação antes da raiz e das somas/subtrações.",
+          text: "Quanto é 5³ − 9 × 8 + √361?",
+          options: { A: "68", B: "70", C: "72", D: "74" },
+          answer: "C",
+          explanation: "5³ = 125, 9 × 8 = 72 e √361 = 19; 125 − 72 + 19 = 72."
+        },
+        {
+          tip: "Resolva a raiz e a potência dentro do parêntese antes de dividir.",
+          text: "Quanto é (√196 + 6²) ÷ 5?",
+          options: { A: "8", B: "9", C: "10", D: "12" },
+          answer: "C",
+          explanation: "√196 = 14 e 6² = 36; 14 + 36 = 50; 50 ÷ 5 = 10."
         }
       ]
     }

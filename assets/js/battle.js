@@ -12,6 +12,9 @@ const battleState = {
   timeLeft: 30,
   timerId: null,
   questionNumber: 1,
+  questionDeck: [],
+  questionDeckIndex: 0,
+  questionsAsked: 0,
   currentTab: "question",
   outcomeTimerId: null,
   resultMode: false
@@ -23,6 +26,81 @@ function clearBattleTimer() {
         window.clearInterval(battleState.timerId);
         battleState.timerId = null;
       }
+    }
+
+    function shuffleBattleItems(items) {
+      const shuffled = [...items];
+
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      return shuffled;
+    }
+
+    function prepareBattleQuestion(question) {
+      if (!question) return null;
+
+      const sourceOptions = Object.entries(question.options || {}).map(([letter, value]) => ({
+        value,
+        correct: letter === question.answer
+      }));
+
+      const shuffledOptions = shuffleBattleItems(sourceOptions);
+      const letters = ["A", "B", "C", "D"];
+      const options = {};
+      let answer = "";
+
+      shuffledOptions.forEach((option, index) => {
+        const letter = letters[index];
+        if (!letter) return;
+
+        options[letter] = option.value;
+        if (option.correct) answer = letter;
+      });
+
+      return {
+        ...question,
+        options,
+        answer
+      };
+    }
+
+    function resetBattleQuestionDeck(type) {
+      battleState.questionDeck = shuffleBattleItems(type.questions || []);
+      battleState.questionDeckIndex = 0;
+      battleState.questionsAsked = 0;
+      battleState.questionNumber = 1;
+    }
+
+    function drawNextBattleQuestion(type) {
+      const questions = type.questions || [];
+      if (!questions.length) return null;
+
+      if (!battleState.questionDeck.length || battleState.questionDeckIndex >= battleState.questionDeck.length) {
+        const previousText = currentEnemyQuestion?.text || "";
+        battleState.questionDeck = shuffleBattleItems(questions);
+        battleState.questionDeckIndex = 0;
+
+        if (
+          battleState.questionDeck.length > 1 &&
+          previousText &&
+          battleState.questionDeck[0]?.text === previousText
+        ) {
+          [battleState.questionDeck[0], battleState.questionDeck[1]] = [
+            battleState.questionDeck[1],
+            battleState.questionDeck[0]
+          ];
+        }
+      }
+
+      const rawQuestion = battleState.questionDeck[battleState.questionDeckIndex];
+      battleState.questionDeckIndex += 1;
+      battleState.questionsAsked += 1;
+      battleState.questionNumber = battleState.questionsAsked;
+
+      return prepareBattleQuestion(rawQuestion);
     }
 
     function clearBattleOutcomeTimer() {
@@ -48,7 +126,8 @@ function clearBattleTimer() {
       enemyPanelOpen = true;
       currentEnemy = enemy;
       enemyQuestionAnswered = false;
-      currentEnemyQuestion = getQuestionForEnemy(enemy);
+      resetBattleQuestionDeck(type);
+      currentEnemyQuestion = drawNextBattleQuestion(type);
 
       battleState.active = true;
       battleState.locked = false;
@@ -58,7 +137,6 @@ function clearBattleTimer() {
       battleState.enemyHp = battleState.enemyMaxHp;
       battleState.timeLimit = type.timeLimit || 30;
       battleState.timeLeft = battleState.timeLimit;
-      battleState.questionNumber = (enemy.questionIndex % type.questions.length) + 1;
       battleState.currentTab = "question";
       battleState.resultMode = false;
 
@@ -81,8 +159,7 @@ function clearBattleTimer() {
 
       const type = getEnemyType(currentEnemy);
       const q = currentEnemyQuestion;
-      const questionNumber = (currentEnemy.questionIndex % type.questions.length) + 1;
-      battleState.questionNumber = questionNumber;
+      const questionNumber = battleState.questionNumber;
 
       enemyPanel.innerHTML = `
         <div class="battle-panel-inner enemy-theme-${type.id}">
@@ -144,7 +221,7 @@ function clearBattleTimer() {
 
               <div class="enemy-question-card battle-question-card">
                 <div class="enemy-question-tip">Dica: ${escapeHtml(q.tip)}</div>
-                <div class="battle-question-count">Pergunta ${questionNumber}/${type.questions.length}</div>
+                <div class="battle-question-count">Pergunta ${questionNumber} • banco com ${type.questions.length}</div>
                 <div class="enemy-question-text">${escapeHtml(q.text)}</div>
 
                 <div class="enemy-question-options" id="enemyQuestionOptions">
@@ -247,7 +324,8 @@ function clearBattleTimer() {
         if (buttonLetter === currentEnemyQuestion.answer) button.classList.add("correct");
       });
 
-      showBattleFeedback("wrong", `Tempo esgotado! Você sofreu ${damage} de dano. Resposta correta: ${currentEnemyQuestion.answer}. ${currentEnemyQuestion.explanation}`);
+      const correctText = currentEnemyQuestion.options[currentEnemyQuestion.answer];
+      showBattleFeedback("wrong", `Tempo esgotado! Você sofreu ${damage} de dano. Resposta correta: ${currentEnemyQuestion.answer}) ${correctText}. ${currentEnemyQuestion.explanation}`);
       triggerBattleEffect("player-hit", `-${damage}`);
       updateBattleHud();
 
@@ -290,7 +368,8 @@ function clearBattleTimer() {
       } else {
         const damage = type.playerDamageOnWrong || 15;
         battleState.playerHp = Math.max(0, battleState.playerHp - damage);
-        showBattleFeedback("wrong", `Ainda não. Resposta correta: ${currentEnemyQuestion.answer}. ${currentEnemyQuestion.explanation} Você sofreu ${damage} de dano.`);
+        const correctText = currentEnemyQuestion.options[currentEnemyQuestion.answer];
+        showBattleFeedback("wrong", `Ainda não. Resposta correta: ${currentEnemyQuestion.answer}) ${correctText}. ${currentEnemyQuestion.explanation} Você sofreu ${damage} de dano.`);
         triggerBattleEffect("player-hit", `-${damage}`);
       }
 
@@ -417,10 +496,10 @@ function clearBattleTimer() {
     function nextEnemyQuestion() {
       if (!currentEnemy || !battleState.active) return;
 
-      currentEnemy.questionIndex = (currentEnemy.questionIndex + 1) % getEnemyType(currentEnemy).questions.length;
+      const type = getEnemyType(currentEnemy);
       enemyQuestionAnswered = false;
       battleState.locked = false;
-      currentEnemyQuestion = getQuestionForEnemy(currentEnemy);
+      currentEnemyQuestion = drawNextBattleQuestion(type);
       renderBattleScreen();
       startBattleTimer();
     }
@@ -435,6 +514,9 @@ function clearBattleTimer() {
       enemyPanelOpen = false;
       currentEnemy = null;
       currentEnemyQuestion = null;
+      battleState.questionDeck = [];
+      battleState.questionDeckIndex = 0;
+      battleState.questionsAsked = 0;
       enemyQuestionAnswered = false;
       enemyPanel.classList.remove("visible", "battle-mode", "player-damaged");
       enemyPanel.innerHTML = "";

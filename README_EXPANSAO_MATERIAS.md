@@ -49,3 +49,15 @@ Não existe mais uma segunda cópia do jogo para teste.
 - `openworld-test.html` apenas redireciona para o modo debug.
 
 No modo debug, `F3` liga/desliga os colisores.
+
+## Banco de questões e embaralhamento
+
+O combate agora trata `questions` como um **banco de questões**, não como uma sequência fixa.
+
+- Ao iniciar uma batalha, o banco do inimigo é embaralhado.
+- Uma questão não se repete até o banco inteiro ser consumido.
+- As alternativas A/B/C/D são embaralhadas a cada vez que a questão é preparada.
+- A letra correta é recalculada depois do embaralhamento, então a resposta não depende mais de uma posição fixa.
+- Se uma batalha excepcionalmente consumir o banco inteiro, um novo ciclo é embaralhado e a primeira questão do novo ciclo não repete imediatamente a anterior.
+
+Para novas matérias, continue cadastrando questões no formato atual (`options` + `answer`). O motor de batalha cuida do embaralhamento automaticamente.
