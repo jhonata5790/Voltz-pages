@@ -253,9 +253,25 @@ async function setRealmProgress(realmId, realmProgress) {
     ? state.profile.progresso
     : {};
 
+  const normalizedRealmProgress = normalizeRealmProgress(realmProgress || {});
+  const currentWorld = currentProgress._world && typeof currentProgress._world === "object"
+    ? cloneJson(currentProgress._world)
+    : {};
+  const completedRealmIds = Array.isArray(currentWorld.completedRealmIds)
+    ? [...new Set(currentWorld.completedRealmIds.filter((id) => typeof id === "string"))]
+    : [];
+  const nextCompletedRealmIds = normalizedRealmProgress.completed
+    ? [...new Set([...completedRealmIds, realmId])]
+    : completedRealmIds.filter((id) => id !== realmId);
+
   const nextProgress = {
     ...currentProgress,
-    [realmId]: JSON.parse(JSON.stringify(realmProgress || {}))
+    [realmId]: normalizedRealmProgress,
+    _world: {
+      ...currentWorld,
+      completedRealmIds: nextCompletedRealmIds,
+      lastProgressAt: new Date().toISOString()
+    }
   };
 
   try {
@@ -492,6 +508,18 @@ async function purchaseItem(itemId, unitPrice, quantity = 1) {
   };
 }
 
+async function addItem(itemId, quantity = 1) {
+  await ready;
+  if (!state.profile || !itemId) return { ok: false, reason: "profile" };
+
+  const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+  const inventory = getInventory();
+  inventory[itemId] = Math.max(0, Number(inventory[itemId] || 0)) + qty;
+
+  await saveInventory(inventory);
+  return { ok: true, count: getItemCount(itemId) };
+}
+
 async function consumeItem(itemId, quantity = 1) {
   await ready;
   if (!state.profile || !itemId) return { ok: false, reason: "profile" };
@@ -565,6 +593,7 @@ window.VoltzProfile = {
   getInventory,
   getItemCount,
   purchaseItem,
+  addItem,
   consumeItem,
   logout
 };

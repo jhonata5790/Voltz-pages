@@ -1,0 +1,132 @@
+/* Voltz Education — painel interno de desenvolvimento. */
+.dev-code-gate,
+.dev-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: none;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.dev-code-gate.visible,
+.dev-menu-overlay.visible { display: flex; }
+.dev-code-gate {
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 11vh;
+  background: rgba(3, 7, 18, 0.22);
+  backdrop-filter: blur(2px);
+}
+.dev-code-card {
+  width: min(460px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid rgba(120, 247, 255, 0.38);
+  border-radius: 14px;
+  background: rgba(7, 13, 28, 0.96);
+  box-shadow: 0 20px 70px rgba(0,0,0,.5), 0 0 35px rgba(0,234,255,.12);
+}
+.dev-code-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+  color: #78f7ff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+.dev-code-title small { color: rgba(255,255,255,.42); letter-spacing: 0; font-weight: 600; }
+.dev-code-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.dev-code-input {
+  min-width: 0;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 10px;
+  padding: 11px 12px;
+  color: #f7fbff;
+  background: rgba(255,255,255,.055);
+  outline: none;
+  font: 700 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.dev-code-input:focus { border-color: rgba(120,247,255,.7); box-shadow: 0 0 0 3px rgba(120,247,255,.08); }
+.dev-code-submit,
+.dev-btn,
+.dev-close {
+  border: 1px solid rgba(120,247,255,.25);
+  border-radius: 10px;
+  color: #e9fbff;
+  background: rgba(0,234,255,.09);
+  cursor: pointer;
+  font-weight: 800;
+}
+.dev-code-submit { padding: 0 16px; }
+.dev-code-submit:hover,
+.dev-btn:hover,
+.dev-close:hover { background: rgba(0,234,255,.17); border-color: rgba(120,247,255,.55); }
+.dev-code-error { min-height: 18px; margin-top: 7px; color: #ff7c9e; font-size: 12px; }
+
+.dev-menu-overlay {
+  align-items: stretch;
+  justify-content: flex-end;
+  background: rgba(2, 5, 14, .43);
+  backdrop-filter: blur(3px);
+}
+.dev-menu {
+  width: min(520px, 94vw);
+  height: 100%;
+  overflow: auto;
+  padding: 18px;
+  color: #edfaff;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(0,234,255,.11), transparent 34%),
+    linear-gradient(180deg, rgba(8,14,30,.99), rgba(4,8,19,.99));
+  border-left: 1px solid rgba(120,247,255,.2);
+  box-shadow: -20px 0 70px rgba(0,0,0,.42);
+}
+.dev-menu-header { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:14px; }
+.dev-menu-kicker { color:#78f7ff; font-size:11px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; }
+.dev-menu h2 { margin:3px 0 0; font-size:25px; line-height:1; }
+.dev-close { width:38px; height:38px; font-size:18px; flex:0 0 auto; }
+.dev-warning {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,209,102,.22);
+  border-radius: 10px;
+  color: #ffe5a2;
+  background: rgba(255,209,102,.06);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.dev-status {
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap:7px;
+  margin-bottom:14px;
+}
+.dev-stat { padding:9px; border:1px solid rgba(255,255,255,.08); border-radius:9px; background:rgba(255,255,255,.035); }
+.dev-stat span { display:block; color:rgba(255,255,255,.46); font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+.dev-stat strong { display:block; margin-top:2px; color:#fff; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dev-section { margin: 14px 0 18px; }
+.dev-section-title { display:flex; align-items:center; gap:8px; margin-bottom:8px; color:#a9fbff; font-size:12px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+.dev-section-title::after { content:""; height:1px; flex:1; background:rgba(120,247,255,.12); }
+.dev-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.dev-grid.dev-grid-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.dev-btn { min-height:39px; padding:8px 10px; font-size:11px; line-height:1.2; text-align:left; }
+.dev-btn.session { border-color:rgba(146,87,255,.28); background:rgba(146,87,255,.09); }
+.dev-btn.session:hover { border-color:rgba(178,139,255,.56); background:rgba(146,87,255,.17); }
+.dev-btn.save { border-color:rgba(255,209,102,.23); background:rgba(255,209,102,.07); }
+.dev-btn.save:hover { border-color:rgba(255,209,102,.52); background:rgba(255,209,102,.14); }
+.dev-btn.danger { border-color:rgba(255,77,125,.28); background:rgba(255,77,125,.08); color:#ffd6e0; }
+.dev-btn.danger:hover { border-color:rgba(255,77,125,.58); background:rgba(255,77,125,.16); }
+.dev-btn:disabled { opacity:.45; cursor:wait; }
+.dev-log { min-height:34px; padding:9px 10px; border-radius:9px; color:#a9f7c6; background:rgba(71,255,157,.055); border:1px solid rgba(71,255,157,.12); font:600 11px/1.35 ui-monospace, monospace; }
+.dev-log.error { color:#ff9ab3; background:rgba(255,77,125,.055); border-color:rgba(255,77,125,.14); }
+.dev-shortcut { color:rgba(255,255,255,.38); font-size:10px; margin-top:10px; text-align:center; }
+@media (max-width: 560px) {
+  .dev-grid, .dev-grid.dev-grid-3 { grid-template-columns:1fr; }
+  .dev-status { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+/* O Painel Dev pode visualizar colisores sem exigir ?debug=1. */
+body.dev-colliders #colliderLayer { display: block !important; }
+body.dev-colliders .world.show-colliders .collider-debug,
+body.dev-colliders .world.show-colliders .player-hitbox-debug { display: grid !important; }

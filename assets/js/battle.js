@@ -384,7 +384,7 @@ function clearBattleTimer() {
       updateBattleHud();
 
       battleState.timerId = window.setInterval(() => {
-        if (!battleState.active || battleState.locked || !enemyPanelOpen) return;
+        if (!battleState.active || battleState.locked || !enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) return;
 
         battleState.timeLeft -= 1;
         updateBattleHud();

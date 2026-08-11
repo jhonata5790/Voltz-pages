@@ -97,6 +97,10 @@ const viewport = document.getElementById("gameViewport");
       targetScale: 1
     };
 
+    // Modificadores exclusivos do Painel Dev. Nunca são persistidos no save.
+    let devSpeedMultiplier = 1;
+    let devMathRhythmOverride = null;
+
     const cloneData = (data) => JSON.parse(JSON.stringify(data));
 
     const sourceData = window.VoltzData;
@@ -475,26 +479,32 @@ const viewport = document.getElementById("gameViewport");
       return getGenericRealmProgressMessage(realmId);
     }
 
-    function resetMathProgress() {
+    async function resetMathProgress() {
       applyRealmProgressState("reino-matematica", createDefaultRealmProgress());
 
       const progressKey = getRealmProgressKey("reino-matematica");
-      if (window.VoltzProfile?.resetRealmProgress) {
-        window.VoltzProfile
-          .resetRealmProgress(progressKey)
-          .catch((error) => console.error("Falha ao reiniciar progresso da Matemática:", error));
-      } else {
-        persistMathProgress();
+      try {
+        if (window.VoltzProfile?.resetRealmProgress) {
+          await window.VoltzProfile.resetRealmProgress(progressKey);
+        } else {
+          await persistMathProgress();
+        }
+      } catch (error) {
+        console.error("Falha ao reiniciar progresso da Matemática:", error);
       }
 
       if (currentScene && currentScene.id === "reino-matematica") {
         enemyObjects = getMathEnemyObjectsByProgress();
+        buildCollisionAndOcclusionData();
         renderDepthLayer();
         updateNearbyEnemy();
+        updateNearbyWorldEquation();
         if (keys.debugColliders) renderColliderDebugLayer();
       }
 
+      updateMathBuffHud();
       interactionText.textContent = "Jornada da Matemática reiniciada. Todos os inimigos voltaram ao mapa.";
+      return getMathProgressSnapshot();
     }
 
     function refreshMathEnemyObjectsAfterProgress() {
@@ -626,7 +636,8 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function getCurrentSpeed() {
-      return keys.run ? playerState.runSpeed : playerState.baseSpeed;
+      const base = keys.run ? playerState.runSpeed : playerState.baseSpeed;
+      return base * devSpeedMultiplier;
     }
 
     function buildCollisionAndOcclusionData() {
@@ -773,11 +784,16 @@ const viewport = document.getElementById("gameViewport");
       const solved = mathRealmData.worldEquations
         ? mathRealmData.worldEquations.filter((equation) => isWorldEquationSolved(equation.id)).length
         : 0;
-      const stacks = Math.min(3, solved);
+      const naturalStacks = Math.min(3, solved);
+      const stacks = devMathRhythmOverride === null
+        ? naturalStacks
+        : Math.max(0, Math.min(3, Number(devMathRhythmOverride) || 0));
       return {
         stacks,
+        naturalStacks,
         total,
-        bonusSeconds: stacks * 2
+        bonusSeconds: stacks * 2,
+        devOverride: devMathRhythmOverride !== null
       };
     }
 
@@ -2138,7 +2154,7 @@ const viewport = document.getElementById("gameViewport");
     function updateMovement() {
       updateVisualTransition();
 
-      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldEquationPanelOpen || enemyPanelOpen) {
+      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) {
         playerState.moving = false;
         updatePlayerPosition();
         updatePlayerAnimation();
@@ -2584,6 +2600,246 @@ const viewport = document.getElementById("gameViewport");
       updateMathBuffHud();
       updateDebug();
     });
+
+    // ==============================
+    // Painel Dev — ponte controlada para testes
+    // ==============================
+    const mathDevTeleportPoints = {
+      praca: { x: 2500, y: 2960, label: "Praça do Infinito" },
+      operacoes: { x: 2500, y: 2530, label: "Distrito das Operações" },
+      bosque: { x: 1120, y: 1870, label: "Bosque das Potências" },
+      fatores: { x: 3880, y: 1870, label: "Campos dos Fatores" },
+      melog: { x: 2500, y: 1110, label: "Ruínas do Melog" },
+      golem: { x: 2500, y: 470, label: "Fortaleza do Golem" }
+    };
+
+    function refreshAfterDevProgressChange() {
+      if (currentScene?.id === "reino-matematica") {
+        refreshRealmEnemyObjectsAfterProgress("reino-matematica");
+        buildCollisionAndOcclusionData();
+        renderDepthLayer();
+        renderColliderDebugLayer();
+        updateNearbyEnemy();
+        updateNearbyWorldEquation();
+      }
+      updateMathBuffHud();
+      updateHint();
+    }
+
+    async function persistMathDevProgress(message) {
+      await persistRealmProgress("reino-matematica");
+      refreshAfterDevProgressChange();
+      if (message) interactionText.textContent = `[DEV] ${message}`;
+      return getMathDevSnapshot();
+    }
+
+    function getMathDevSnapshot() {
+      const progress = getRuntimeRealmProgress("reino-matematica");
+      const commonIds = getMathCommonEnemyIds();
+      const rhythm = getMathLogicalRhythmState();
+      return {
+        sceneId: currentScene?.id || "",
+        sceneName: currentScene?.name || "",
+        x: Math.round(playerState.x),
+        y: Math.round(playerState.y),
+        commonDefeated: commonIds.filter((id) => progress.defeatedEnemyIds.includes(id)).length,
+        commonTotal: commonIds.length,
+        miniBossDefeated: Boolean(progress.miniBossDefeated),
+        bossDefeated: Boolean(progress.bossDefeated),
+        completed: Boolean(progress.completed),
+        solvedEquations: getSolvedWorldEquationIds("reino-matematica").length,
+        totalEquations: mathRealmData.worldEquations?.length || 0,
+        rhythmStacks: rhythm.stacks,
+        rhythmDevOverride: rhythm.devOverride,
+        speedMultiplier: devSpeedMultiplier,
+        colliders: Boolean(keys.debugColliders)
+      };
+    }
+
+    function devCloseBlockingPanels() {
+      if (enemyPanelOpen && typeof window.closeEnemyPanel === "function") {
+        window.closeEnemyPanel({ force: true });
+      }
+      if (worldEquationPanelOpen) closeWorldEquationPanel();
+      if (realmPanelOpen) closeRealmPanel();
+      if (shopPanelOpen) closeShopPanel();
+      if (dialogueOpen) closeDialogue();
+    }
+
+    function devTeleportPosition(x, y) {
+      devCloseBlockingPanels();
+      clearMovementKeys();
+      playerState.moving = false;
+      playerState.x = Number(x) || 0;
+      playerState.y = Number(y) || 0;
+      clampPlayer();
+      updatePlayerPosition();
+      updatePlayerAnimation();
+      snapCameraToPlayer();
+      updateNearbyNpc();
+      updateNearbyEnemy();
+      updateNearbyWorldEquation();
+      updateHint();
+    }
+
+    function devTeleportMath(zoneId) {
+      devCloseBlockingPanels();
+      const point = mathDevTeleportPoints[zoneId] || mathDevTeleportPoints.praca;
+      if (currentScene?.id !== "reino-matematica") {
+        const scene = getSceneForRealm("reino-matematica");
+        if (!scene) return false;
+        changeScene(scene, { spawn: { x: point.x, y: point.y } });
+      } else {
+        devTeleportPosition(point.x, point.y);
+      }
+      interactionText.textContent = `[DEV] Teleporte: ${point.label}.`;
+      return true;
+    }
+
+    function devTeleportVillage() {
+      devCloseBlockingPanels();
+      changeScene(villageScene);
+      interactionText.textContent = "[DEV] Teleporte: Vila Central.";
+      return true;
+    }
+
+    async function devSetCommonsDefeated(value) {
+      devCloseBlockingPanels();
+      const progress = getRuntimeRealmProgress("reino-matematica");
+      progress.defeatedEnemyIds = value ? getMathCommonEnemyIds() : [];
+      if (!value) {
+        progress.miniBossDefeated = false;
+        progress.bossDefeated = false;
+        progress.completed = false;
+        delete progress.completedAt;
+      }
+      return persistMathDevProgress(value ? "Todos os inimigos comuns marcados como derrotados." : "Inimigos comuns restaurados.");
+    }
+
+    async function devSetMiniBossDefeated(value) {
+      devCloseBlockingPanels();
+      const progress = getRuntimeRealmProgress("reino-matematica");
+      if (value) {
+        progress.defeatedEnemyIds = getMathCommonEnemyIds();
+        progress.miniBossDefeated = true;
+      } else {
+        progress.miniBossDefeated = false;
+        progress.bossDefeated = false;
+        progress.completed = false;
+        delete progress.completedAt;
+      }
+      return persistMathDevProgress(value ? "Melog marcado como derrotado." : "Melog restaurado.");
+    }
+
+    async function devSetBossDefeated(value) {
+      devCloseBlockingPanels();
+      const progress = getRuntimeRealmProgress("reino-matematica");
+      if (value) {
+        progress.defeatedEnemyIds = getMathCommonEnemyIds();
+        progress.miniBossDefeated = true;
+        progress.bossDefeated = true;
+        progress.completed = true;
+        progress.completedAt = progress.completedAt || new Date().toISOString();
+      } else {
+        progress.bossDefeated = false;
+        progress.completed = false;
+        delete progress.completedAt;
+      }
+      return persistMathDevProgress(value ? "Golem/guardião marcado como concluído." : "Desafio do Golem restaurado.");
+    }
+
+    async function devSetEquationsSolved(value) {
+      devCloseBlockingPanels();
+      const progress = getRuntimeRealmProgress("reino-matematica");
+      progress.solvedWorldEquationIds = value
+        ? (mathRealmData.worldEquations || []).map((equation) => equation.id)
+        : [];
+      return persistMathDevProgress(value ? "Todas as Equações do Mundo estabilizadas." : "Equações do Mundo restauradas.");
+    }
+
+    async function devDefeatNearestEnemy() {
+      devCloseBlockingPanels();
+      updateNearbyEnemy();
+      if (!nearbyEnemy) return { ok: false, reason: "no-enemy", snapshot: getMathDevSnapshot() };
+      const snapshot = cloneData(nearbyEnemy);
+      const realmId = currentScene?.id;
+      if (!realmId || !getLoadedRealmData(realmId)) {
+        return { ok: false, reason: "not-realm", snapshot: getMathDevSnapshot() };
+      }
+
+      const progress = getRuntimeRealmProgress(realmId);
+      const rank = String(snapshot.enemyRank || "").toLowerCase();
+      const isBoss = snapshot.isBoss === true || rank === "boss" || rank === "chefe";
+      const isMiniBoss = snapshot.isMiniBoss === true || ["miniboss", "mini-boss", "mini_chefe", "mini-chefe"].includes(rank);
+
+      if (isBoss) {
+        progress.bossDefeated = true;
+        progress.completed = true;
+        progress.completedAt = progress.completedAt || new Date().toISOString();
+      } else if (isMiniBoss) {
+        progress.miniBossDefeated = true;
+      } else if (snapshot.id && !progress.defeatedEnemyIds.includes(snapshot.id)) {
+        progress.defeatedEnemyIds.push(snapshot.id);
+      }
+      progress.lastVictoryAt = new Date().toISOString();
+
+      await persistRealmProgress(realmId);
+      refreshRealmEnemyObjectsAfterProgress(realmId);
+      interactionText.textContent = `[DEV] ${snapshot.id} marcado como derrotado.`;
+      return { ok: true, enemyId: snapshot.id, snapshot: getMathDevSnapshot() };
+    }
+
+    function devSetRhythmOverride(stacks) {
+      if (stacks === null || stacks === undefined || stacks === "natural") {
+        devMathRhythmOverride = null;
+      } else {
+        devMathRhythmOverride = Math.max(0, Math.min(3, Number(stacks) || 0));
+      }
+      updateMathBuffHud();
+      interactionText.textContent = devMathRhythmOverride === null
+        ? "[DEV] Ritmo Lógico voltou ao valor natural do save."
+        : `[DEV] Ritmo Lógico temporário: ${devMathRhythmOverride}/3.`;
+      return getMathDevSnapshot();
+    }
+
+    function devSetSpeed(multiplier) {
+      devSpeedMultiplier = Math.max(0.5, Math.min(5, Number(multiplier) || 1));
+      interactionText.textContent = `[DEV] Velocidade x${devSpeedMultiplier}.`;
+      return getMathDevSnapshot();
+    }
+
+    function devToggleColliders() {
+      keys.debugColliders = !keys.debugColliders;
+      document.body.classList.toggle("dev-colliders", keys.debugColliders && !debugMode);
+      renderColliderDebugLayer();
+      return getMathDevSnapshot();
+    }
+
+    function devPauseMovement() {
+      clearMovementKeys();
+      playerState.moving = false;
+      updatePlayerAnimation();
+    }
+
+    window.VoltzDevBridge = {
+      getSnapshot: getMathDevSnapshot,
+      pauseMovement: devPauseMovement,
+      teleportMath: devTeleportMath,
+      teleportVillage: devTeleportVillage,
+      defeatNearestEnemy: devDefeatNearestEnemy,
+      setCommonsDefeated: devSetCommonsDefeated,
+      setMiniBossDefeated: devSetMiniBossDefeated,
+      setBossDefeated: devSetBossDefeated,
+      setEquationsSolved: devSetEquationsSolved,
+      resetMathProgress: async () => {
+        await resetMathProgress();
+        refreshAfterDevProgressChange();
+        return getMathDevSnapshot();
+      },
+      setRhythmOverride: devSetRhythmOverride,
+      setSpeed: devSetSpeed,
+      toggleColliders: devToggleColliders
+    };
 
     window.completeEnemyDefeatFromBattle = completeEnemyDefeatFromBattle;
     window.resetMathProgress = resetMathProgress;
