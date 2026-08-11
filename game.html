@@ -13,6 +13,13 @@
 </head>
 
 <body>
+  <div id="authGate" class="auth-gate" role="status" aria-live="polite">
+    <div class="auth-gate-card">
+      <div class="auth-gate-icon">⚡</div>
+      <strong>VOLTZ EDUCATION</strong>
+      <span id="authGateText">Carregando sessão...</span>
+    </div>
+  </div>
   <header class="topbar">
     <div class="brand">
       <div class="brand-icon">⚡</div>
@@ -24,10 +31,20 @@
     </div>
 
     <div class="hud">
-      <div class="hud-pill">WASD / Setas: mover</div>
-      <div class="hud-pill">Shift: correr</div>
-      <div class="hud-pill">E: interagir</div>
-      <div class="hud-pill">Esc: voltar/fechar</div>
+      <div class="hud-controls">
+        <div class="hud-pill">WASD / Setas: mover</div>
+        <div class="hud-pill">Shift: correr</div>
+        <div class="hud-pill">E: interagir</div>
+        <div class="hud-pill">Esc: voltar/fechar</div>
+      </div>
+
+      <div class="profile-hud" aria-label="Perfil do aluno">
+        <strong id="profileName">Carregando...</strong>
+        <span id="profileXp">0 XP</span>
+        <span id="profileCoins">0 moedas</span>
+        <span id="profileCombo">Combo 0</span>
+        <button id="logoutButton" class="logout-button" type="button">Sair</button>
+      </div>
     </div>
   </header>
 
@@ -144,6 +161,18 @@
 
       <div id="playerLocator" class="player-locator" aria-hidden="true"></div>
 
+      <div class="debug-panel" aria-live="polite">
+        <strong>Debug do Jogador</strong><br>
+        X: <span id="debugX">0</span><br>
+        Y: <span id="debugY">0</span><br>
+        Velocidade: <span id="debugSpeed">0</span><br>
+        Direção: <span id="debugDirection">baixo</span><br>
+        Câmera X: <span id="debugCameraX">0</span><br>
+        Câmera Y: <span id="debugCameraY">0</span><br>
+        Colisão: <span id="debugCollision">livre</span><br>
+        Oculto por: <span id="debugOcclusion">nada</span>
+      </div>
+
       <div id="interactionText" class="interaction-text">
         Explore a Vila Central. Fale com o Guardião do Portal para viajar ao Reino da Matemática.
       </div>
@@ -210,12 +239,15 @@
     </section>
   </main>
 
+  <script type="module" src="assets/js/core/game-profile.js"></script>
+
   <script src="assets/js/world/village-data.js" defer></script>
   <script src="assets/js/interiors/interior-data.js" defer></script>
   <script src="assets/js/interiors/interior-system.js" defer></script>
   <script src="assets/js/interiors/library-interior.js" defer></script>
   <script src="assets/js/npc/village-npc-data.js" defer></script>
   <script src="assets/js/realms/realm-data.js" defer></script>
+  <script src="assets/js/realms/math/math-data.js" defer></script>
   <script src="assets/js/openworld.js" defer></script>
   <script src="assets/js/battle.js" defer></script>
 </body>

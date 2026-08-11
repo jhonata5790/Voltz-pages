@@ -11,9 +11,9 @@ O que mudou:
 - O jogador não anda enquanto a caixa de diálogo está aberta.
 
 Caminhos usados:
-- assets/images/npcs/professora-sintaxe.png
-- assets/images/npcs/guardiao-do-portal.png
-- assets/images/npcs/mercador-de-foco.png
-- assets/images/npcs/treinador-de-energia.png
-- assets/images/npcs/arquivista-das-questoes.png
-- assets/images/sprites/voltinho_explicando.png
+- assets/images/npcs/professora-sintaxe.webp
+- assets/images/npcs/guardiao-do-portal.webp
+- assets/images/npcs/mercador-de-foco.webp
+- assets/images/npcs/treinador-de-energia.webp
+- assets/images/npcs/arquivista-das-questoes.webp
+- assets/images/sprites/voltinho_explicando.webp

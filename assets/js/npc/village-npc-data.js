@@ -10,7 +10,7 @@ window.VoltzData.villageNpcs = [
     colorA: "#78f7ff",
     colorB: "#9257ff",
     aura: "#00eaff",
-    portrait: "assets/images/npcs/guardiao-do-portal.png",
+    portrait: "assets/images/npcs/guardiao-do-portal.webp",
     opensRealmPanel: true,
     dialogue: [
       "Bem-vindo à Vila Central, aprendiz. Eu sou o responsável por abrir o caminho entre os Reinos do Conhecimento.",
@@ -27,7 +27,7 @@ window.VoltzData.villageNpcs = [
     colorA: "#ffd166",
     colorB: "#78f7ff",
     aura: "#ffd166",
-    portrait: "assets/images/npcs/professora-sintaxe.png",
+    portrait: "assets/images/npcs/professora-sintaxe.webp",
     resetsMathProgress: true,
     dialogue: [
       "Antes de enfrentar uma questão, respire e leia com atenção. Muitas respostas se escondem no próprio enunciado.",
@@ -45,7 +45,7 @@ window.VoltzData.villageNpcs = [
     colorA: "#ff4d7d",
     colorB: "#9257ff",
     aura: "#ff4d7d",
-    portrait: "assets/images/npcs/treinador-de-energia.png",
+    portrait: "assets/images/npcs/treinador-de-energia.webp",
     dialogue: [
       "Na arena, cada resposta vira movimento. Acertou, você ataca. Errou, aprende e tenta de novo.",
       "O tempo existe para testar domínio, não para te humilhar. Quanto mais você entende, mais rápido sua energia flui.",
@@ -61,7 +61,7 @@ window.VoltzData.villageNpcs = [
     colorA: "#00eaff",
     colorB: "#ffd166",
     aura: "#ffd166",
-    portrait: "assets/images/npcs/mercador-de-foco.png",
+    portrait: "assets/images/npcs/mercador-de-foco.webp",
     dialogue: [
       "Moedas não servem só para brilhar. Com elas, você poderá comprar dicas, recuperação e bônus de jornada.",
       "Um bom aventureiro não vence só com força. Ele usa recurso, estratégia e foco.",
@@ -77,7 +77,7 @@ window.VoltzData.villageNpcs = [
     colorA: "#9257ff",
     colorB: "#78f7ff",
     aura: "#9257ff",
-    portrait: "assets/images/npcs/arquivista-das-questoes.png",
+    portrait: "assets/images/npcs/arquivista-das-questoes.webp",
     dialogue: [
       "Eu organizo as perguntas, justificativas e registros de progresso da sua jornada.",
       "Cada erro deixa uma pista. Cada acerto deixa uma marca. O arquivo nunca esquece sua evolução.",
@@ -93,7 +93,7 @@ window.VoltzData.villageNpcs = [
     colorA: "#78f7ff",
     colorB: "#00eaff",
     aura: "#78f7ff",
-    portrait: "assets/images/sprites/voltinho_explicando.png",
+    portrait: "assets/images/sprites/voltinho_explicando.webp",
     dialogue: [
       "Ei! Eu sou o Voltinho, seu guia nessa jornada pelo Reino do Conhecimento.",
       "Seu perfil vai guardar XP, moedas, progresso por reino e tudo que você conquistar.",

@@ -2007,3 +2007,125 @@
 .topbar .hud .hud-pill.official-hidden {
   display: none !important;
 }
+
+
+/* ===== Sessão, perfil e debug unificado ===== */
+.hud-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.profile-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(0, 234, 255, 0.2);
+  font-size: 0.78rem;
+}
+
+.profile-hud strong {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--white);
+}
+
+.profile-hud span {
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+.logout-button {
+  border: 1px solid rgba(255, 77, 125, 0.35);
+  background: rgba(255, 77, 125, 0.08);
+  color: var(--white);
+  border-radius: 999px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.logout-button:hover {
+  background: rgba(255, 77, 125, 0.18);
+}
+
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, rgba(0, 234, 255, 0.12), transparent 30%),
+    rgba(2, 4, 13, 0.96);
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.auth-gate.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.auth-gate-card {
+  min-width: min(360px, 86vw);
+  padding: 28px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 234, 255, 0.26);
+  background: rgba(5, 7, 19, 0.9);
+  box-shadow: 0 0 45px rgba(0, 234, 255, 0.12);
+  text-align: center;
+}
+
+.auth-gate-icon {
+  font-size: 2rem;
+}
+
+.auth-gate-card span {
+  color: var(--text);
+}
+
+.auth-gate-error .auth-gate-card {
+  border-color: rgba(255, 77, 125, 0.5);
+}
+
+/* O mesmo game.html vira ambiente de teste com ?debug=1. */
+body.debug-mode .debug-panel {
+  display: block !important;
+}
+
+body.debug-mode .zone-marker {
+  display: block !important;
+}
+
+body.debug-mode #colliderLayer {
+  display: block !important;
+}
+
+body.debug-mode .world.show-colliders .collider-debug,
+body.debug-mode .world.show-colliders .player-hitbox-debug {
+  display: grid !important;
+}
+
+@media (max-width: 1180px) {
+  .hud-controls {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .profile-hud span {
+    display: none;
+  }
+
+  .profile-hud {
+    border-left: 0;
+    padding-left: 0;
+  }
+}

@@ -357,8 +357,9 @@
         return;
       }
 
-      if (!data.user) {
-        setMessage("Conta criada. Verifique seu e-mail antes de entrar.", "success");
+      if (!data.user || !data.session) {
+        setMessage("Conta criada. Verifique seu e-mail e depois entre com sua senha.", "success");
+        setMode("login");
         return;
       }
 
@@ -394,17 +395,6 @@
 
       if (!data.user) {
         setMessage("Não foi possível carregar o usuário.", "error");
-        return;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", data.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        setMessage("Login feito, mas o perfil do aluno não foi encontrado.", "error");
         return;
       }
 

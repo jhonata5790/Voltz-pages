@@ -356,6 +356,14 @@ function clearBattleTimer() {
       clearBattleTimer();
       const type = getEnemyType(currentEnemy);
       const defeatedEnemySnapshot = { ...currentEnemy };
+      const xpReward = type.xpReward || 40;
+      const coinReward = type.coinReward || 12;
+
+      if (window.VoltzProfile?.addRewards) {
+        window.VoltzProfile
+          .addRewards(xpReward, coinReward)
+          .catch((error) => console.error("Falha ao registrar recompensas:", error));
+      }
 
       battleState.locked = true;
       battleState.active = false;
@@ -369,8 +377,8 @@ function clearBattleTimer() {
           <div class="enemy-panel-title">${escapeHtml(type.name)} derrotado!</div>
           <p>Você venceu o desafio de ${escapeHtml(type.role)}.</p>
           <div class="battle-reward-row">
-            <span>+${type.xpReward || 40} XP</span>
-            <span>+${type.coinReward || 12} moedas</span>
+            <span>+${xpReward} XP</span>
+            <span>+${coinReward} moedas</span>
           </div>
           <div class="battle-auto-return">Voltando ao mapa em 3 segundos...</div>
         </div>

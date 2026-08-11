@@ -13,6 +13,6 @@ Padrão de nomes:
 - palavras separadas por hífen
 
 Exemplos:
-assets/images/npcs/professora-sintaxe.png
-assets/images/bosses/espectro-da-gramatica.png
-assets/images/mini-bosses/ortcepse.png
+assets/images/npcs/professora-sintaxe.webp
+assets/images/bosses/espectro-da-gramatica.webp
+assets/images/mini-bosses/ortcepse.webp
