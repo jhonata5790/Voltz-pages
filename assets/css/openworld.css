@@ -3093,3 +3093,110 @@ body.debug-mode .world.show-colliders .player-hitbox-debug {
   0%, 100% { filter: brightness(0.92); opacity: 0.82; }
   50% { filter: brightness(1.12); opacity: 1; }
 }
+
+
+/* =========================================================
+   Reino da Matemática 4.0 — expansão 2×
+   O mundo passa de 2500×1600 para 5000×3200 sem dobrar o tamanho
+   dos personagens/objetos. O espaço extra fica entre as regiões.
+   ========================================================= */
+.world.scene-math {
+  width: 5000px;
+  height: 3200px;
+}
+
+.world.scene-math .map-layer {
+  background-size: 64px 64px, 64px 64px, 128px 128px;
+}
+
+.world.scene-math .center-plaza {
+  left: 2500px;
+  top: 2960px;
+  width: 460px;
+  height: 330px;
+  border-radius: 48% 52% 48% 52%;
+}
+
+/* Corredor central longo: o jogador percebe a distância entre cada ato do reino. */
+.world.scene-math .ground-path.main-vertical {
+  left: 2425px;
+  top: 300px;
+  width: 150px;
+  height: 2700px;
+  opacity: 0.75;
+}
+
+/* Avenida do Distrito das Operações. */
+.world.scene-math .ground-path.main-horizontal {
+  left: 1180px;
+  top: 2470px;
+  width: 2640px;
+  height: 165px;
+  opacity: 0.82;
+}
+
+/* Praça → Distrito. */
+.world.scene-math .ground-path.branch-south {
+  left: 2180px;
+  top: 2810px;
+  width: 640px;
+  height: 100px;
+  opacity: 0.76;
+}
+
+/* Ponte → Bosque / Campos. */
+.world.scene-math .ground-path.branch-west-bottom {
+  left: 920px;
+  top: 1900px;
+  width: 1730px;
+  height: 112px;
+  transform: rotate(-18deg);
+  opacity: 0.70;
+}
+
+.world.scene-math .ground-path.branch-east-bottom {
+  left: 2350px;
+  top: 1900px;
+  width: 1730px;
+  height: 112px;
+  transform: rotate(18deg);
+  opacity: 0.70;
+}
+
+/* Bosque / Campos → Ruínas. */
+.world.scene-math .ground-path.branch-west-top {
+  left: 1120px;
+  top: 1250px;
+  width: 1590px;
+  height: 108px;
+  transform: rotate(16deg);
+  opacity: 0.64;
+}
+
+.world.scene-math .ground-path.branch-east-top {
+  left: 2290px;
+  top: 1250px;
+  width: 1590px;
+  height: 108px;
+  transform: rotate(-16deg);
+  opacity: 0.64;
+}
+
+/* Ruínas → Fortaleza. */
+.world.scene-math .ground-path.branch-north {
+  left: 2210px;
+  top: 620px;
+  width: 580px;
+  height: 112px;
+  opacity: 0.74;
+}
+
+/* Glows redistribuídos para o novo mapa alto e largo. */
+.world.scene-math .map-glow {
+  background:
+    radial-gradient(ellipse at 50% 92%, rgba(0, 234, 255, 0.14), transparent 11%),
+    radial-gradient(ellipse at 22% 55%, rgba(255, 209, 102, 0.13), transparent 17%),
+    radial-gradient(ellipse at 78% 55%, rgba(146, 87, 255, 0.16), transparent 17%),
+    radial-gradient(ellipse at 50% 32%, rgba(255, 77, 125, 0.12), transparent 12%),
+    radial-gradient(ellipse at 50% 10%, rgba(255, 209, 102, 0.16), transparent 10%);
+}

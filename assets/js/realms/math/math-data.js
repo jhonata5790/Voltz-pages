@@ -626,20 +626,20 @@
 
   function createCommonEnemies() {
     return [
-      // Distrito das Operações — primeira etapa, ao sul da Ponte das Equações.
-      { id: "soma-01", typeId: "soma-subtracao", x: 940, y: 1135, patrol: "horizontal", rangeX: 92, rangeY: 28, speed: 0.00125, phase: 0.1, questionIndex: 0 },
-      { id: "soma-02", typeId: "soma-subtracao", x: 1250, y: 1215, patrol: "circle", rangeX: 70, rangeY: 44, speed: 0.0012, phase: 1.6, questionIndex: 1 },
-      { id: "soma-03", typeId: "soma-subtracao", x: 1560, y: 1135, patrol: "horizontal", rangeX: 92, rangeY: 28, speed: 0.0011, phase: 2.9, questionIndex: 2 },
+      // Distrito das Operações — agora com espaço para encontros separados.
+      { id: "soma-01", typeId: "soma-subtracao", x: 1700, y: 2520, patrol: "horizontal", rangeX: 150, rangeY: 34, speed: 0.00125, phase: 0.1, questionIndex: 0 },
+      { id: "soma-02", typeId: "soma-subtracao", x: 2500, y: 2640, patrol: "circle", rangeX: 120, rangeY: 72, speed: 0.0012, phase: 1.6, questionIndex: 1 },
+      { id: "soma-03", typeId: "soma-subtracao", x: 3300, y: 2520, patrol: "horizontal", rangeX: 150, rangeY: 34, speed: 0.0011, phase: 2.9, questionIndex: 2 },
 
-      // Campos dos Fatores — ramo leste da bifurcação.
-      { id: "fator-01", typeId: "multiplicacao-divisao", x: 1650, y: 790, patrol: "horizontal", rangeX: 96, rangeY: 30, speed: 0.0011, phase: 0.7, questionIndex: 0 },
-      { id: "fator-02", typeId: "multiplicacao-divisao", x: 1880, y: 865, patrol: "circle", rangeX: 72, rangeY: 48, speed: 0.00118, phase: 2.1, questionIndex: 1 },
-      { id: "fator-03", typeId: "multiplicacao-divisao", x: 2080, y: 745, patrol: "vertical", rangeX: 26, rangeY: 78, speed: 0.0012, phase: 3.2, questionIndex: 2 },
+      // Campos dos Fatores — ramo leste, amplo e mecânico.
+      { id: "fator-01", typeId: "multiplicacao-divisao", x: 3500, y: 1760, patrol: "horizontal", rangeX: 160, rangeY: 38, speed: 0.0011, phase: 0.7, questionIndex: 0 },
+      { id: "fator-02", typeId: "multiplicacao-divisao", x: 4020, y: 1950, patrol: "circle", rangeX: 126, rangeY: 82, speed: 0.00118, phase: 2.1, questionIndex: 1 },
+      { id: "fator-03", typeId: "multiplicacao-divisao", x: 4480, y: 1600, patrol: "vertical", rangeX: 34, rangeY: 140, speed: 0.0012, phase: 3.2, questionIndex: 2 },
 
-      // Bosque das Potências — ramo oeste da bifurcação.
-      { id: "raiz-01", typeId: "potencia-radiciacao", x: 430, y: 775, patrol: "circle", rangeX: 64, rangeY: 46, speed: 0.00124, phase: 0.4, questionIndex: 0 },
-      { id: "raiz-02", typeId: "potencia-radiciacao", x: 650, y: 870, patrol: "horizontal", rangeX: 92, rangeY: 28, speed: 0.00105, phase: 1.9, questionIndex: 1 },
-      { id: "raiz-03", typeId: "potencia-radiciacao", x: 855, y: 745, patrol: "circle", rangeX: 62, rangeY: 46, speed: 0.00124, phase: 2.6, questionIndex: 2 }
+      // Bosque das Potências — ramo oeste com encontros bem espaçados.
+      { id: "raiz-01", typeId: "potencia-radiciacao", x: 560, y: 1660, patrol: "circle", rangeX: 110, rangeY: 78, speed: 0.00124, phase: 0.4, questionIndex: 0 },
+      { id: "raiz-02", typeId: "potencia-radiciacao", x: 1080, y: 1940, patrol: "horizontal", rangeX: 158, rangeY: 34, speed: 0.00105, phase: 1.9, questionIndex: 1 },
+      { id: "raiz-03", typeId: "potencia-radiciacao", x: 1600, y: 1540, patrol: "circle", rangeX: 108, rangeY: 78, speed: 0.00124, phase: 2.6, questionIndex: 2 }
     ].map((enemy) => ({
       ...enemy,
       originX: enemy.x,
@@ -653,18 +653,18 @@
   const miniBoss = {
     id: "mini-chefe-equacao",
     typeId: "mini-chefe-equacao",
-    x: 1250,
-    y: 505,
+    x: 2500,
+    y: 1010,
     patrol: "circle",
-    rangeX: 88,
-    rangeY: 54,
+    rangeX: 150,
+    rangeY: 88,
     speed: 0.00102,
     phase: 0.3,
     questionIndex: 0,
-    originX: 1250,
-    originY: 505,
-    lastX: 1250,
-    lastY: 505,
+    originX: 2500,
+    originY: 1010,
+    lastX: 2500,
+    lastY: 1010,
     direction: "baixo",
     enemyRank: "miniBoss"
   };
@@ -672,18 +672,18 @@
   const boss = {
     id: "chefe-golem-calculos",
     typeId: "chefe-golem-calculos",
-    x: 1250,
-    y: 205,
+    x: 2500,
+    y: 385,
     patrol: "vertical",
     rangeX: 0,
-    rangeY: 30,
+    rangeY: 46,
     speed: 0.00088,
     phase: 1.4,
     questionIndex: 0,
-    originX: 1250,
-    originY: 205,
-    lastX: 1250,
-    lastY: 205,
+    originX: 2500,
+    originY: 385,
+    lastX: 2500,
+    lastY: 385,
     direction: "baixo",
     enemyRank: "boss"
   };
@@ -693,8 +693,8 @@
       id: "equacao-operacoes-01",
       name: "Núcleo da Ponte das Equações",
       area: "Distrito das Operações",
-      x: 1250,
-      y: 1045,
+      x: 2500,
+      y: 2285,
       formula: "18 + ? = 45",
       prompt: "Qual número estabiliza a Ponte das Equações?",
       options: ["27", "17", "36", "63"],
@@ -705,8 +705,8 @@
       id: "equacao-fatores-01",
       name: "Engrenagem-Mestra dos Fatores",
       area: "Campos dos Fatores",
-      x: 1900,
-      y: 925,
+      x: 4080,
+      y: 2070,
       formula: "6 × ? = 54",
       prompt: "Qual fator completa a engrenagem?",
       options: ["7", "8", "9", "12"],
@@ -717,8 +717,8 @@
       id: "equacao-potencias-01",
       name: "Cristal-Raiz Ancestral",
       area: "Bosque das Potências",
-      x: 600,
-      y: 925,
+      x: 920,
+      y: 2070,
       formula: "√? = 8",
       prompt: "Qual valor deve alimentar o cristal?",
       options: ["16", "32", "64", "81"],
@@ -732,157 +732,177 @@
     name: "Reino da Matemática",
     className: "scene-math",
     plazaLabel: "PRAÇA DO<br>INFINITO",
-    defaultHint: "Reino da Matemática: estabilize a lógica do mundo, domine as três zonas e avance até o guardião final.",
-    spawn: { x: 1250, y: 1450 },
+    defaultHint: "Reino da Matemática: estabilize a lógica do mundo, atravesse cada região e avance até o guardião final.",
+    spawn: { x: 2500, y: 2960 },
     zoneMarkers: [],
     buildings: [
-      { id: "arquivo-operacoes", label: "Arquivo das Operações", x: 245, y: 1085, w: 430, h: 260, roofH: 128 },
-      { id: "observatorio-operacoes", label: "Observatório dos Sinais", x: 1825, y: 1085, w: 430, h: 260, roofH: 128 },
-      { id: "torre-potencias", label: "Torre dos Expoentes", x: 160, y: 590, w: 370, h: 245, roofH: 120 },
-      { id: "forja-fatores", label: "Forja dos Fatores", x: 1970, y: 590, w: 370, h: 245, roofH: 120 },
-      { id: "ruina-melog-oeste", label: "Ruína da Igualdade", x: 725, y: 385, w: 330, h: 205, roofH: 105, solid: false },
-      { id: "ruina-melog-leste", label: "Ruína da Ordem", x: 1445, y: 385, w: 330, h: 205, roofH: 105, solid: false },
-      { id: "fortaleza-golem", label: "Fortaleza do Golem", x: 900, y: 18, w: 700, h: 260, roofH: 124, solid: false }
+      // Distrito das Operações — construções afastadas do corredor central.
+      { id: "arquivo-operacoes", label: "Arquivo das Operações", x: 650, y: 2410, w: 520, h: 300, roofH: 138 },
+      { id: "observatorio-operacoes", label: "Observatório dos Sinais", x: 3830, y: 2410, w: 520, h: 300, roofH: 138 },
+
+      // Ramos centrais — cada zona ganha sua própria silhueta.
+      { id: "torre-potencias", label: "Torre dos Expoentes", x: 280, y: 1450, w: 430, h: 290, roofH: 132 },
+      { id: "forja-fatores", label: "Forja dos Fatores", x: 4290, y: 1450, w: 430, h: 290, roofH: 132 },
+
+      // Ruínas e fortaleza ficam bem mais distantes das áreas de treino.
+      { id: "ruina-melog-oeste", label: "Ruína da Igualdade", x: 1580, y: 865, w: 420, h: 245, roofH: 112, solid: false },
+      { id: "ruina-melog-leste", label: "Ruína da Ordem", x: 3000, y: 865, w: 420, h: 245, roofH: 112, solid: false },
+      { id: "fortaleza-golem", label: "Fortaleza do Golem", x: 1875, y: 70, w: 1250, h: 470, roofH: 160, solid: false }
     ],
     decorObjects: [
-      // Pisos/landmarks principais. Eles não têm colisão: definem visualmente as zonas.
-      { id: "praca-infinito-floor", label: "Praça do Infinito", type: "infinity-plaza", x: 955, y: 1290, w: 590, h: 250, solid: false, showLabel: false },
-      { id: "zona-operacoes-floor", label: "Distrito das Operações", type: "math-zone", operation: "soma", x: 640, y: 1010, w: 1220, h: 300, solid: false, showLabel: false },
-      { id: "zona-potencias-floor", label: "Bosque das Potências", type: "math-zone", operation: "raiz", x: 310, y: 670, w: 760, h: 315, solid: false, showLabel: false },
-      { id: "zona-fatores-floor", label: "Campos dos Fatores", type: "math-zone", operation: "fator", x: 1430, y: 670, w: 760, h: 315, solid: false, showLabel: false },
-      { id: "zona-melog-floor", label: "Ruínas do Melog", type: "corruption-zone", operation: "melog", x: 930, y: 375, w: 640, h: 290, solid: false, showLabel: false },
-      { id: "zona-golem-floor", label: "Fortaleza do Golem", type: "fortress-court", operation: "golem", x: 940, y: 80, w: 620, h: 250, solid: false, showLabel: false },
+      // Grandes regiões. Os pisos são maiores, mas objetos interativos continuam em escala normal.
+      { id: "praca-infinito-floor", label: "Praça do Infinito", type: "infinity-plaza", x: 1880, y: 2760, w: 1240, h: 390, solid: false, showLabel: false },
+      { id: "zona-operacoes-floor", label: "Distrito das Operações", type: "math-zone", operation: "soma", x: 1120, y: 2310, w: 2760, h: 560, solid: false, showLabel: false },
+      { id: "zona-potencias-floor", label: "Bosque das Potências", type: "math-zone", operation: "raiz", x: 220, y: 1370, w: 1880, h: 760, solid: false, showLabel: false },
+      { id: "zona-fatores-floor", label: "Campos dos Fatores", type: "math-zone", operation: "fator", x: 2900, y: 1370, w: 1880, h: 760, solid: false, showLabel: false },
+      { id: "zona-melog-floor", label: "Ruínas do Melog", type: "corruption-zone", operation: "melog", x: 1590, y: 760, w: 1820, h: 620, solid: false, showLabel: false },
+      { id: "zona-golem-floor", label: "Fortaleza do Golem", type: "fortress-court", operation: "golem", x: 1700, y: 90, w: 1600, h: 610, solid: false, showLabel: false },
 
-      // Títulos de região — visíveis mesmo no modo oficial.
-      { id: "titulo-praca", label: "∞  PRAÇA DO INFINITO", type: "zone-title", operation: "infinito", x: 1060, y: 1510, w: 380, h: 46, solid: false, showLabel: true },
-      { id: "titulo-operacoes", label: "+ −  DISTRITO DAS OPERAÇÕES", type: "zone-title", operation: "soma", x: 1050, y: 1260, w: 400, h: 46, solid: false, showLabel: true },
-      { id: "titulo-potencias", label: "x² √  BOSQUE DAS POTÊNCIAS", type: "zone-title", operation: "raiz", x: 470, y: 965, w: 440, h: 46, solid: false, showLabel: true },
-      { id: "titulo-fatores", label: "× ÷  CAMPOS DOS FATORES", type: "zone-title", operation: "fator", x: 1595, y: 965, w: 410, h: 46, solid: false, showLabel: true },
-      { id: "titulo-melog", label: "≠  RUÍNAS DO MELOG", type: "zone-title", operation: "melog", x: 1080, y: 640, w: 340, h: 46, solid: false, showLabel: true },
-      { id: "titulo-golem", label: "∑  FORTALEZA DO GOLEM", type: "zone-title", operation: "golem", x: 1060, y: 310, w: 380, h: 46, solid: false, showLabel: true },
+      // Títulos, com bastante distância dos encontros.
+      { id: "titulo-praca", label: "∞  PRAÇA DO INFINITO", type: "zone-title", operation: "infinito", x: 2260, y: 3070, w: 480, h: 46, solid: false, showLabel: true },
+      { id: "titulo-operacoes", label: "+ −  DISTRITO DAS OPERAÇÕES", type: "zone-title", operation: "soma", x: 2240, y: 2740, w: 520, h: 46, solid: false, showLabel: true },
+      { id: "titulo-potencias", label: "x² √  BOSQUE DAS POTÊNCIAS", type: "zone-title", operation: "raiz", x: 720, y: 2100, w: 520, h: 46, solid: false, showLabel: true },
+      { id: "titulo-fatores", label: "× ÷  CAMPOS DOS FATORES", type: "zone-title", operation: "fator", x: 3760, y: 2100, w: 500, h: 46, solid: false, showLabel: true },
+      { id: "titulo-melog", label: "≠  RUÍNAS DO MELOG", type: "zone-title", operation: "melog", x: 2280, y: 1290, w: 440, h: 46, solid: false, showLabel: true },
+      { id: "titulo-golem", label: "∑  FORTALEZA DO GOLEM", type: "zone-title", operation: "golem", x: 2260, y: 635, w: 480, h: 46, solid: false, showLabel: true },
 
-      // A primeira barreira cria uma progressão física: só a equação das Operações materializa a ponte.
-      { id: "abismo-equacoes-oeste", label: "Abismo das Equações", type: "math-chasm", x: 0, y: 920, w: 1120, h: 92, solid: true, showLabel: false },
-      { id: "abismo-equacoes-leste", label: "Abismo das Equações", type: "math-chasm", x: 1380, y: 920, w: 1120, h: 92, solid: true, showLabel: false },
+      // Ponte das Equações — abismo atravessa o mapa inteiro, deixando somente o núcleo central.
+      { id: "abismo-equacoes-oeste", label: "Abismo das Equações", type: "math-chasm", x: 0, y: 2180, w: 2340, h: 116, solid: true, showLabel: false },
+      { id: "abismo-equacoes-leste", label: "Abismo das Equações", type: "math-chasm", x: 2660, y: 2180, w: 2340, h: 116, solid: true, showLabel: false },
       {
         id: "ponte-das-equacoes",
         label: "Ponte das Equações",
         type: "equation-bridge",
         operation: "soma",
-        x: 1120,
-        y: 920,
-        w: 260,
-        h: 92,
+        x: 2340,
+        y: 2180,
+        w: 320,
+        h: 116,
         solid: true,
         showLabel: false,
         progressGate: { type: "world-equation", equationId: "equacao-operacoes-01" }
       },
 
-      // Selo do Melog: os três setores precisam ser limpos antes das ruínas aceitarem o jogador.
-      { id: "corrupcao-melog-oeste", label: "Corrupção do Melog", type: "corruption-wall", operation: "melog", x: 0, y: 575, w: 1120, h: 82, solid: true, showLabel: false },
-      { id: "corrupcao-melog-leste", label: "Corrupção do Melog", type: "corruption-wall", operation: "melog", x: 1380, y: 575, w: 1120, h: 82, solid: true, showLabel: false },
+      // Selo do Melog — agora existe uma caminhada real entre os dois ramos e as ruínas.
+      { id: "corrupcao-melog-oeste", label: "Corrupção do Melog", type: "corruption-wall", operation: "melog", x: 0, y: 1320, w: 2340, h: 94, solid: true, showLabel: false },
+      { id: "corrupcao-melog-leste", label: "Corrupção do Melog", type: "corruption-wall", operation: "melog", x: 2660, y: 1320, w: 2340, h: 94, solid: true, showLabel: false },
       {
         id: "portao-melog-visual",
         label: "Selo do Melog",
         type: "gate",
         operation: "melog",
-        x: 1120,
-        y: 575,
-        w: 260,
-        h: 82,
+        x: 2340,
+        y: 1320,
+        w: 320,
+        h: 94,
         solid: true,
         showLabel: false,
         progressGate: { type: "mini-boss-unlocked" }
       },
 
-      // O Golem permanece visível ao longe, mas o acesso só existe depois de Melog.
-      { id: "muralha-golem-oeste", label: "Muralha do Teorema", type: "fortress-wall", operation: "golem", x: 0, y: 300, w: 1120, h: 72, solid: true, showLabel: false },
-      { id: "muralha-golem-leste", label: "Muralha do Teorema", type: "fortress-wall", operation: "golem", x: 1380, y: 300, w: 1120, h: 72, solid: true, showLabel: false },
+      // Portão do Teorema — corredor monumental antes do Golem.
+      { id: "muralha-golem-oeste", label: "Muralha do Teorema", type: "fortress-wall", operation: "golem", x: 0, y: 690, w: 2340, h: 86, solid: true, showLabel: false },
+      { id: "muralha-golem-leste", label: "Muralha do Teorema", type: "fortress-wall", operation: "golem", x: 2660, y: 690, w: 2340, h: 86, solid: true, showLabel: false },
       {
         id: "portao-golem-visual",
         label: "Portão do Teorema",
         type: "gate",
         operation: "golem",
-        x: 1120,
-        y: 300,
-        w: 260,
-        h: 72,
+        x: 2340,
+        y: 690,
+        w: 320,
+        h: 86,
         solid: true,
         showLabel: false,
         progressGate: { type: "boss-unlocked" }
       },
 
-      // Elementos do Distrito das Operações.
-      { id: "arena-soma", label: "Adição e Subtração", type: "math-pad", operation: "soma", x: 790, y: 1070, w: 920, h: 205, solid: false, showLabel: false },
-      { id: "linha-operacoes", label: "", type: "number-line", x: 825, y: 1028, w: 850, h: 34, solid: false, showLabel: false },
-      { id: "simbolo-operacoes-a", label: "+  18  −  7  +  24", type: "math-symbol", operation: "soma", x: 1070, y: 1070, w: 360, h: 50, solid: false, showLabel: true },
-      { id: "obelisco-op-01", label: "Obelisco +", type: "math-obelisk", operation: "soma", x: 720, y: 1145, w: 62, h: 112, solid: true, showLabel: false },
-      { id: "obelisco-op-02", label: "Obelisco −", type: "math-obelisk", operation: "soma", x: 1718, y: 1145, w: 62, h: 112, solid: true, showLabel: false },
+      // Distrito das Operações.
+      { id: "arena-soma", label: "Adição e Subtração", type: "math-pad", operation: "soma", x: 1550, y: 2390, w: 1900, h: 330, solid: false, showLabel: false },
+      { id: "linha-operacoes", label: "", type: "number-line", x: 1650, y: 2335, w: 1700, h: 38, solid: false, showLabel: false },
+      { id: "simbolo-operacoes-a", label: "+  18  −  7  +  24", type: "math-symbol", operation: "soma", x: 2320, y: 2390, w: 360, h: 50, solid: false, showLabel: true },
+      { id: "obelisco-op-01", label: "Obelisco +", type: "math-obelisk", operation: "soma", x: 1420, y: 2490, w: 62, h: 112, solid: true, showLabel: false },
+      { id: "obelisco-op-02", label: "Obelisco −", type: "math-obelisk", operation: "soma", x: 3518, y: 2490, w: 62, h: 112, solid: true, showLabel: false },
 
-      // Campos dos Fatores: repetição, agrupamento e engrenagens.
-      { id: "arena-fator", label: "Multiplicação e Divisão", type: "math-pad", operation: "fator", x: 1500, y: 715, w: 620, h: 220, solid: false, showLabel: false },
-      { id: "pilar-fator-01", label: "Fator 2", type: "factor-pillar", operation: "fator", x: 1510, y: 735, w: 76, h: 116, solid: true, showLabel: false },
-      { id: "pilar-fator-02", label: "Fator 3", type: "factor-pillar", operation: "fator", x: 2110, y: 735, w: 76, h: 116, solid: true, showLabel: false },
-      { id: "pilar-fator-03", label: "Fator 6", type: "factor-pillar", operation: "fator", x: 1780, y: 690, w: 76, h: 116, solid: true, showLabel: false },
-      { id: "simbolo-fator-a", label: "3 × 4 = 12   •   24 ÷ 6 = 4", type: "math-symbol", operation: "fator", x: 1680, y: 705, w: 360, h: 50, solid: false, showLabel: true },
+      // Campos dos Fatores.
+      { id: "arena-fator", label: "Multiplicação e Divisão", type: "math-pad", operation: "fator", x: 3240, y: 1530, w: 1500, h: 500, solid: false, showLabel: false },
+      { id: "pilar-fator-01", label: "Fator 2", type: "factor-pillar", operation: "fator", x: 3290, y: 1640, w: 76, h: 116, solid: true, showLabel: false },
+      { id: "pilar-fator-02", label: "Fator 3", type: "factor-pillar", operation: "fator", x: 4560, y: 1640, w: 76, h: 116, solid: true, showLabel: false },
+      { id: "pilar-fator-03", label: "Fator 6", type: "factor-pillar", operation: "fator", x: 3940, y: 1485, w: 76, h: 116, solid: true, showLabel: false },
+      { id: "simbolo-fator-a", label: "3 × 4 = 12   •   24 ÷ 6 = 4", type: "math-symbol", operation: "fator", x: 3760, y: 1510, w: 480, h: 50, solid: false, showLabel: true },
 
-      // Bosque das Potências: cristais e crescimento exponencial.
-      { id: "arena-raiz", label: "Potências e Raízes", type: "math-pad", operation: "raiz", x: 380, y: 715, w: 620, h: 220, solid: false, showLabel: false },
-      { id: "cristal-potencia-01", label: "Cristal 2²", type: "crystal", x: 355, y: 775, w: 62, h: 94, solid: true, showLabel: false },
-      { id: "cristal-potencia-02", label: "Cristal 2³", type: "crystal", x: 970, y: 765, w: 70, h: 108, solid: true, showLabel: false },
-      { id: "cristal-potencia-03", label: "Cristal √", type: "crystal", x: 720, y: 690, w: 58, h: 88, solid: true, showLabel: false },
-      { id: "simbolo-raiz-a", label: "2  →  2²  →  2³  →  2⁴", type: "math-symbol", operation: "raiz", x: 500, y: 705, w: 380, h: 50, solid: false, showLabel: true },
+      // Bosque das Potências.
+      { id: "arena-raiz", label: "Potências e Raízes", type: "math-pad", operation: "raiz", x: 260, y: 1530, w: 1500, h: 500, solid: false, showLabel: false },
+      { id: "cristal-potencia-01", label: "Cristal 2²", type: "crystal", x: 330, y: 1690, w: 62, h: 94, solid: true, showLabel: false },
+      { id: "cristal-potencia-02", label: "Cristal 2³", type: "crystal", x: 1660, y: 1665, w: 70, h: 108, solid: true, showLabel: false },
+      { id: "cristal-potencia-03", label: "Cristal √", type: "crystal", x: 1020, y: 1480, w: 58, h: 88, solid: true, showLabel: false },
+      { id: "simbolo-raiz-a", label: "2  →  2²  →  2³  →  2⁴", type: "math-symbol", operation: "raiz", x: 720, y: 1510, w: 480, h: 50, solid: false, showLabel: true },
 
-      // Ruínas do Melog — equações propositalmente erradas no cenário.
-      { id: "arena-melog", label: "Arena Anti-Estudo", type: "boss-pad", operation: "melog", x: 1030, y: 405, w: 440, h: 200, solid: false, showLabel: false },
-      { id: "erro-melog-01", label: "2 + 2 = 7", type: "corrupt-equation", operation: "melog", x: 820, y: 455, w: 220, h: 58, solid: false, showLabel: true },
-      { id: "erro-melog-02", label: "8 × 4 = 12", type: "corrupt-equation", operation: "melog", x: 1460, y: 455, w: 220, h: 58, solid: false, showLabel: true },
-      { id: "erro-melog-03", label: "√81 = 4", type: "corrupt-equation", operation: "melog", x: 1140, y: 390, w: 220, h: 58, solid: false, showLabel: true },
+      // Ruínas do Melog — uma área inteira contaminada, não só uma arena.
+      { id: "arena-melog", label: "Arena Anti-Estudo", type: "boss-pad", operation: "melog", x: 2050, y: 900, w: 900, h: 350, solid: false, showLabel: false },
+      { id: "erro-melog-01", label: "2 + 2 = 7", type: "corrupt-equation", operation: "melog", x: 1740, y: 1040, w: 220, h: 58, solid: false, showLabel: true },
+      { id: "erro-melog-02", label: "8 × 4 = 12", type: "corrupt-equation", operation: "melog", x: 3040, y: 1040, w: 220, h: 58, solid: false, showLabel: true },
+      { id: "erro-melog-03", label: "√81 = 4", type: "corrupt-equation", operation: "melog", x: 2390, y: 820, w: 220, h: 58, solid: false, showLabel: true },
+      { id: "erro-melog-04", label: "15 ÷ 3 = 8", type: "corrupt-equation", operation: "melog", x: 1980, y: 1185, w: 220, h: 58, solid: false, showLabel: true },
+      { id: "erro-melog-05", label: "3² = 6", type: "corrupt-equation", operation: "melog", x: 2800, y: 1185, w: 220, h: 58, solid: false, showLabel: true },
 
-      // Fortaleza do Golem — geometria limpa, simétrica e monumental.
-      { id: "santuario-golem", label: "Santuário do Golem", type: "boss-pad", operation: "golem", x: 1040, y: 105, w: 420, h: 180, solid: false, showLabel: false },
-      { id: "obelisco-golem-01", label: "Teorema I", type: "math-obelisk", operation: "golem", x: 975, y: 135, w: 66, h: 126, solid: true, showLabel: false },
-      { id: "obelisco-golem-02", label: "Teorema II", type: "math-obelisk", operation: "golem", x: 1459, y: 135, w: 66, h: 126, solid: true, showLabel: false },
-      { id: "simbolo-golem", label: "∑   ∆   √   π", type: "math-symbol", operation: "golem", x: 1110, y: 92, w: 280, h: 50, solid: false, showLabel: true },
+      // Fortaleza do Golem — geometria limpa e ampla.
+      { id: "santuario-golem", label: "Santuário do Golem", type: "boss-pad", operation: "golem", x: 2070, y: 250, w: 860, h: 350, solid: false, showLabel: false },
+      { id: "obelisco-golem-01", label: "Teorema I", type: "math-obelisk", operation: "golem", x: 1940, y: 350, w: 66, h: 126, solid: true, showLabel: false },
+      { id: "obelisco-golem-02", label: "Teorema II", type: "math-obelisk", operation: "golem", x: 2994, y: 350, w: 66, h: 126, solid: true, showLabel: false },
+      { id: "simbolo-golem", label: "∑   ∆   √   π", type: "math-symbol", operation: "golem", x: 2360, y: 205, w: 280, h: 50, solid: false, showLabel: true },
 
-      // Cristais de borda dão silhueta ao percurso sem criar um corredor totalmente fechado.
-      { id: "cristal-borda-01", label: "Cristal Limite", type: "crystal", x: 85, y: 1030, w: 66, h: 102, solid: true, showLabel: false },
-      { id: "cristal-borda-02", label: "Cristal Limite", type: "crystal", x: 2345, y: 1030, w: 66, h: 102, solid: true, showLabel: false },
-      { id: "cristal-borda-03", label: "Cristal Limite", type: "crystal", x: 90, y: 455, w: 66, h: 102, solid: true, showLabel: false },
-      { id: "cristal-borda-04", label: "Cristal Limite", type: "crystal", x: 2340, y: 455, w: 66, h: 102, solid: true, showLabel: false }
+      // Marcos de transição criam escala sem entupir as arenas.
+      { id: "marco-transicao-oeste-01", label: "Sequência 1, 2, 4, 8", type: "math-symbol", operation: "raiz", x: 1450, y: 1950, w: 300, h: 50, solid: false, showLabel: true },
+      { id: "marco-transicao-leste-01", label: "2 × 3 × 5", type: "math-symbol", operation: "fator", x: 3250, y: 1950, w: 260, h: 50, solid: false, showLabel: true },
+      { id: "marco-corredor-golem", label: "PROVE QUE COMPREENDEU", type: "math-symbol", operation: "golem", x: 2260, y: 600, w: 480, h: 50, solid: false, showLabel: true },
+
+      // Cristais de borda / orientação. Poucos, bem afastados.
+      { id: "cristal-borda-01", label: "Cristal Limite", type: "crystal", x: 120, y: 2360, w: 66, h: 102, solid: true, showLabel: false },
+      { id: "cristal-borda-02", label: "Cristal Limite", type: "crystal", x: 4810, y: 2360, w: 66, h: 102, solid: true, showLabel: false },
+      { id: "cristal-borda-03", label: "Cristal Limite", type: "crystal", x: 130, y: 1160, w: 66, h: 102, solid: true, showLabel: false },
+      { id: "cristal-borda-04", label: "Cristal Limite", type: "crystal", x: 4800, y: 1160, w: 66, h: 102, solid: true, showLabel: false },
+      { id: "cristal-borda-05", label: "Cristal Limite", type: "crystal", x: 650, y: 2920, w: 62, h: 94, solid: true, showLabel: false },
+      { id: "cristal-borda-06", label: "Cristal Limite", type: "crystal", x: 4290, y: 2920, w: 62, h: 94, solid: true, showLabel: false }
     ],
     treeObjects: [
-      // Bosque das Potências — concentração maior de árvores no ramo oeste.
-      { id: "arvore-math-01", label: "Árvore Fractal 1", x: 120, y: 675, w: 128, h: 118 },
-      { id: "arvore-math-02", label: "Árvore Fractal 2", x: 260, y: 845, w: 112, h: 104 },
-      { id: "arvore-math-03", label: "Árvore Fractal 3", x: 505, y: 620, w: 122, h: 112 },
-      { id: "arvore-math-04", label: "Árvore Fractal 4", x: 780, y: 620, w: 116, h: 108 },
-      { id: "arvore-math-05", label: "Árvore Fractal 5", x: 955, y: 845, w: 122, h: 112 },
-      { id: "arvore-math-06", label: "Árvore Fractal 6", x: 150, y: 925, w: 116, h: 108 },
+      // Bosque das Potências — árvores formam clareiras, não um amontoado.
+      { id: "arvore-math-01", label: "Árvore Fractal 1", x: 120, y: 1440, w: 128, h: 118 },
+      { id: "arvore-math-02", label: "Árvore Fractal 2", x: 260, y: 1880, w: 112, h: 104 },
+      { id: "arvore-math-03", label: "Árvore Fractal 3", x: 620, y: 1360, w: 122, h: 112 },
+      { id: "arvore-math-04", label: "Árvore Fractal 4", x: 1040, y: 1430, w: 116, h: 108 },
+      { id: "arvore-math-05", label: "Árvore Fractal 5", x: 1510, y: 1950, w: 122, h: 112 },
+      { id: "arvore-math-06", label: "Árvore Fractal 6", x: 1750, y: 1480, w: 116, h: 108 },
+      { id: "arvore-math-13", label: "Árvore Fractal 13", x: 420, y: 1580, w: 110, h: 104 },
+      { id: "arvore-math-14", label: "Árvore Fractal 14", x: 830, y: 2030, w: 124, h: 112 },
+      { id: "arvore-math-15", label: "Árvore Fractal 15", x: 1320, y: 1560, w: 118, h: 108 },
+      { id: "arvore-math-16", label: "Árvore Fractal 16", x: 1880, y: 1850, w: 112, h: 104 },
 
-      // Moldura externa / profundidade do reino.
-      { id: "arvore-math-07", label: "Cálculo-Raiz 7", x: 105, y: 1330, w: 128, h: 118 },
-      { id: "arvore-math-08", label: "Cálculo-Raiz 8", x: 330, y: 1400, w: 112, h: 104 },
-      { id: "arvore-math-09", label: "Cálculo-Raiz 9", x: 2110, y: 1390, w: 128, h: 118 },
-      { id: "arvore-math-10", label: "Cálculo-Raiz 10", x: 2315, y: 1320, w: 112, h: 104 },
-      { id: "arvore-math-11", label: "Cálculo-Raiz 11", x: 720, y: 210, w: 108, h: 104 },
-      { id: "arvore-math-12", label: "Cálculo-Raiz 12", x: 1675, y: 210, w: 108, h: 104 }
+      // Moldura externa e zonas de transição.
+      { id: "arvore-math-07", label: "Cálculo-Raiz 7", x: 180, y: 2760, w: 128, h: 118 },
+      { id: "arvore-math-08", label: "Cálculo-Raiz 8", x: 620, y: 2990, w: 112, h: 104 },
+      { id: "arvore-math-09", label: "Cálculo-Raiz 9", x: 4310, y: 2980, w: 128, h: 118 },
+      { id: "arvore-math-10", label: "Cálculo-Raiz 10", x: 4710, y: 2740, w: 112, h: 104 },
+      { id: "arvore-math-11", label: "Cálculo-Raiz 11", x: 1380, y: 470, w: 108, h: 104 },
+      { id: "arvore-math-12", label: "Cálculo-Raiz 12", x: 3510, y: 470, w: 108, h: 104 },
+      { id: "arvore-math-17", label: "Cálculo-Raiz 17", x: 740, y: 1140, w: 110, h: 104 },
+      { id: "arvore-math-18", label: "Cálculo-Raiz 18", x: 4140, y: 1140, w: 110, h: 104 }
     ],
     npcObjects: [
       {
         id: "npc-guardiao-retorno",
         name: "Guardião do Portal",
         role: "Retorno à Vila Central",
-        x: 1450,
-        y: 1435,
+        x: 2920,
+        y: 2960,
         colorA: "#78f7ff",
         colorB: "#9257ff",
         aura: "#00eaff",
         portrait: "assets/images/npcs/guardiao-do-portal.webp",
         returnToVillage: true,
         dialogue: [
-          "Você chegou pela Praça do Infinito. Dela, o Reino da Matemática inteiro se estende ao norte.",
-          "Comece pelo Distrito das Operações e estabilize a Ponte das Equações. Depois o caminho se divide entre os Campos dos Fatores e o Bosque das Potências.",
+          "Você chegou pela Praça do Infinito. O reino agora é vasto: use os caminhos e os grandes marcos para se orientar.",
+          "Comece pelo Distrito das Operações e estabilize a Ponte das Equações. Depois escolha entre os Campos dos Fatores e o Bosque das Potências.",
           "Quando quiser voltar para a Vila Central, fale comigo novamente."
         ]
       },
@@ -890,24 +910,24 @@
         id: "npc-voltinho-math",
         name: "Voltinho",
         role: "Guia da Matemática",
-        x: 1080,
-        y: 1405,
+        x: 2080,
+        y: 2910,
         colorA: "#78f7ff",
         colorB: "#00eaff",
         aura: "#78f7ff",
         portrait: "assets/images/sprites/voltinho_explicando.webp",
         dialogue: [
-          "Agora o reino reage ao que você aprende. A primeira Equação do Mundo controla a Ponte das Equações logo depois do Distrito das Operações.",
-          "Depois da ponte, escolha a ordem: Campos dos Fatores à direita ou Bosque das Potências à esquerda. As duas áreas precisam ser dominadas para enfraquecer a corrupção de Melog.",
-          "Cada Equação do Mundo estabilizada também fortalece seu Ritmo Lógico em +2 segundos por pergunta enquanto você estiver aqui."
+          "O reino ficou bem maior. Não tente correr direto ao norte: cada região tem seu próprio caminho e seus próprios mecanismos.",
+          "A primeira Equação do Mundo controla a Ponte das Equações. Depois dela, você pode explorar Fatores à direita ou Potências à esquerda na ordem que quiser.",
+          "Cada Equação do Mundo estabilizada fortalece seu Ritmo Lógico em +2 segundos por pergunta enquanto você estiver aqui."
         ]
       },
       {
         id: "terminal-progresso-math",
         name: "Terminal de Progresso",
         role: "Status do Reino",
-        x: 1250,
-        y: 1345,
+        x: 2500,
+        y: 2820,
         visualType: "terminal",
         colorA: "#78f7ff",
         colorB: "#9257ff",
@@ -919,8 +939,8 @@
         id: "portao-melog-math",
         name: "Selo das Ruínas",
         role: "Acesso ao Melog",
-        x: 1000,
-        y: 625,
+        x: 2180,
+        y: 1375,
         visualType: "gate",
         colorA: "#ff4d7d",
         colorB: "#9257ff",
@@ -932,8 +952,8 @@
         id: "portao-golem-math",
         name: "Portão do Teorema",
         role: "Acesso ao Guardião Final",
-        x: 1000,
-        y: 350,
+        x: 2180,
+        y: 745,
         visualType: "gate",
         colorA: "#ffd166",
         colorB: "#00eaff",
@@ -946,8 +966,8 @@
       {
         id: "portal-retorno-math",
         name: "Portal da Praça do Infinito",
-        x: 1250,
-        y: 1490,
+        x: 2500,
+        y: 3050,
         interactionRange: 0,
         colorA: "#ffd166",
         colorB: "#00eaff"

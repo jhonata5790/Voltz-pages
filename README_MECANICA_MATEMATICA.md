@@ -51,3 +51,14 @@ Os colliders são recalculados quando o progresso muda e também quando o save �
 ## Próxima etapa
 
 O bônus permanente do Diploma da Matemática ainda não foi implementado. Ele deve entrar junto da reformulação do desafio do Golem: a luta termina em 50% de PV, entra em diálogo e entrega o Diploma da Matemática em vez de matar o guardião.
+
+
+## Reino da Matemática 4.0 — mapa 2× maior
+
+O mapa do reino foi expandido de **2500×1600** para **5000×3200**.
+
+A expansão preserva o tamanho normal de personagens, inimigos, NPCs e objetos interativos; o espaço extra foi usado principalmente entre as regiões. Isso evita o efeito de “tudo em cima de tudo” e cria uma jornada mais clara:
+
+`Praça do Infinito → Distrito das Operações → Ponte → Bosque/Campos → Ruínas do Melog → Fortaleza do Golem`
+
+Também foram redistribuídos inimigos, Equações do Mundo, NPCs, árvores e landmarks. As três barreiras de progressão continuam físicas e persistentes no save.

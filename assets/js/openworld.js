@@ -1166,6 +1166,9 @@ const viewport = document.getElementById("gameViewport");
       currentOcclusionLabel = "nada";
 
       applySceneVisualState(scene);
+      // Cada reino pode ter dimensões próprias. Recalcula após aplicar a classe visual
+      // para câmera, limites do jogador e colisões usarem o tamanho real da cena.
+      updateWorldSizeFromCss();
       buildCollisionAndOcclusionData();
 
       const spawn = options.spawn || scene.spawn;
