@@ -27,18 +27,36 @@ O `selectRealm()` já procura automaticamente cenas registradas em `window.Voltz
 
 ## Progresso
 
-Use uma chave por reino:
+O motor agora salva progresso por reino na coluna JSONB `progresso`.
+
+Cada reino usa automaticamente uma estrutura como:
+
+```js
+{
+  defeatedEnemyIds: [],
+  miniBossDefeated: false,
+  bossDefeated: false,
+  completed: false
+}
+```
+
+Durante uma vitória, `window.VoltzProfile.completeEncounter(...)` registra **inimigo + XP + moedas + avanço do reino na mesma atualização do perfil**, evitando recompensa duplicada ou inimigo reaparecendo após recarregar.
+
+Os reinos carregados em `window.VoltzData.realms` reutilizam o mesmo sistema; não é necessário criar uma lógica de save específica para cada matéria.
+
+Para leituras/ajustes manuais ainda existem:
 
 ```js
 window.VoltzProfile.getRealmProgress("reino-gramatica");
 window.VoltzProfile.setRealmProgress("reino-gramatica", {
   defeatedEnemyIds: [],
   miniBossDefeated: false,
-  bossDefeated: false
+  bossDefeated: false,
+  completed: false
 });
 ```
 
-O objeto completo é guardado na coluna JSONB `progresso`, evitando criar dezenas de colunas novas conforme entram novas matérias.
+O inventário fica em `_inventory` e o resumo global (como reinos concluídos) em `_world`.
 
 ## Debug
 

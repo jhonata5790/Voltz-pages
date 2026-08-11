@@ -515,20 +515,17 @@ function clearBattleTimer() {
       }
     }
 
-    function showBattleVictory() {
+    async function showBattleVictory() {
       if (!currentEnemy) return;
 
       clearBattleTimer();
       const type = getEnemyType(currentEnemy);
       const defeatedEnemySnapshot = { ...currentEnemy };
+      const realmId = typeof window.getActiveRealmProgressKey === "function"
+        ? window.getActiveRealmProgressKey()
+        : (typeof window.getActiveSceneId === "function" ? window.getActiveSceneId() : "");
       const xpReward = type.xpReward || 40;
       const coinReward = type.coinReward || 12;
-
-      if (window.VoltzProfile?.addRewards) {
-        window.VoltzProfile
-          .addRewards(xpReward, coinReward)
-          .catch((error) => console.error("Falha ao registrar recompensas:", error));
-      }
 
       battleState.locked = true;
       battleState.active = false;
@@ -541,13 +538,49 @@ function clearBattleTimer() {
           <div class="enemy-panel-kicker">Vitória</div>
           <div class="enemy-panel-title">${escapeHtml(type.name)} derrotado!</div>
           <p>Você venceu o desafio de ${escapeHtml(type.role)}.</p>
-          <div class="battle-reward-row">
+          <div class="battle-reward-row" id="battleRewardRow">
             <span>+${xpReward} XP</span>
             <span>+${coinReward} moedas</span>
           </div>
-          <div class="battle-auto-return">Voltando ao mapa em 3 segundos...</div>
+          <div class="battle-auto-return" id="battleSaveStatus">Salvando progresso...</div>
         </div>
       `;
+
+      let saveResult = null;
+
+      try {
+        if (window.VoltzProfile?.completeEncounter && realmId) {
+          saveResult = await window.VoltzProfile.completeEncounter(
+            realmId,
+            defeatedEnemySnapshot,
+            { xp: xpReward, coins: coinReward }
+          );
+        } else if (window.VoltzProfile?.addRewards) {
+          await window.VoltzProfile.addRewards(xpReward, coinReward);
+          saveResult = { ok: true, persisted: true, alreadyCompleted: false };
+        }
+      } catch (error) {
+        console.error("Falha ao registrar vitória:", error);
+        saveResult = { ok: false, persisted: false, error };
+      }
+
+      const saveStatus = document.getElementById("battleSaveStatus");
+      const rewardRow = document.getElementById("battleRewardRow");
+
+      if (saveResult?.alreadyCompleted) {
+        if (rewardRow) {
+          rewardRow.innerHTML = "<span>Vitória já registrada</span>";
+        }
+        if (saveStatus) {
+          saveStatus.textContent = "Esse inimigo já estava salvo como derrotado. Voltando ao mapa em 3 segundos...";
+        }
+      } else if (saveResult?.persisted === false) {
+        if (saveStatus) {
+          saveStatus.textContent = "⚠ Não foi possível confirmar o salvamento no banco. Voltando ao mapa em 3 segundos...";
+        }
+      } else if (saveStatus) {
+        saveStatus.textContent = "✓ Progresso salvo. Voltando ao mapa em 3 segundos...";
+      }
 
       scheduleBattleAutoReturn(() => {
         closeEnemyPanel({ force: true, skipProgressUpdate: true });
@@ -556,6 +589,7 @@ function clearBattleTimer() {
         }
       });
     }
+
 
     function showBattleDefeat() {
       clearBattleTimer();

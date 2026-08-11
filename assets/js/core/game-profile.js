@@ -25,6 +25,88 @@ function getFieldName(profile, candidates) {
   return candidates.find((key) => profile && Object.prototype.hasOwnProperty.call(profile, key)) || null;
 }
 
+function cloneJson(value, fallback = {}) {
+  try {
+    return JSON.parse(JSON.stringify(value ?? fallback));
+  } catch {
+    return JSON.parse(JSON.stringify(fallback));
+  }
+}
+
+function normalizeRealmProgress(realmProgress) {
+  const source = realmProgress && typeof realmProgress === "object"
+    ? cloneJson(realmProgress)
+    : {};
+
+  const defeatedEnemyIds = Array.isArray(source.defeatedEnemyIds)
+    ? [...new Set(source.defeatedEnemyIds.filter((id) => typeof id === "string" && id.trim()))]
+    : [];
+
+  return {
+    ...source,
+    defeatedEnemyIds,
+    miniBossDefeated: Boolean(source.miniBossDefeated),
+    bossDefeated: Boolean(source.bossDefeated),
+    completed: Boolean(source.completed || source.bossDefeated)
+  };
+}
+
+function getEncounterKind(enemySnapshot) {
+  const rank = String(enemySnapshot?.enemyRank || "").toLowerCase();
+
+  if (
+    enemySnapshot?.isBoss === true ||
+    rank === "boss" ||
+    rank === "chefe" ||
+    enemySnapshot?.typeId === "chefe-golem-calculos"
+  ) {
+    return "boss";
+  }
+
+  if (
+    enemySnapshot?.isMiniBoss === true ||
+    rank === "miniboss" ||
+    rank === "mini-boss" ||
+    rank === "mini_chefe" ||
+    rank === "mini-chefe" ||
+    enemySnapshot?.typeId === "mini-chefe-equacao"
+  ) {
+    return "miniBoss";
+  }
+
+  return "common";
+}
+
+function isEncounterCompleted(realmProgress, enemySnapshot) {
+  const kind = getEncounterKind(enemySnapshot);
+
+  if (kind === "boss") return Boolean(realmProgress.bossDefeated);
+  if (kind === "miniBoss") return Boolean(realmProgress.miniBossDefeated);
+
+  return Boolean(
+    enemySnapshot?.id &&
+    realmProgress.defeatedEnemyIds.includes(enemySnapshot.id)
+  );
+}
+
+function applyEncounterCompletion(realmProgress, enemySnapshot) {
+  const next = normalizeRealmProgress(realmProgress);
+  const kind = getEncounterKind(enemySnapshot);
+
+  if (kind === "boss") {
+    next.bossDefeated = true;
+    next.completed = true;
+    next.completedAt = next.completedAt || new Date().toISOString();
+  } else if (kind === "miniBoss") {
+    next.miniBossDefeated = true;
+  } else if (enemySnapshot?.id && !next.defeatedEnemyIds.includes(enemySnapshot.id)) {
+    next.defeatedEnemyIds.push(enemySnapshot.id);
+  }
+
+  next.lastVictoryAt = new Date().toISOString();
+  return next;
+}
+
 function normalizeProfile(profile, user) {
   const metadata = user?.user_metadata || {};
   const dbFields = {
@@ -154,7 +236,7 @@ function getRealmProgress(realmId) {
   const progress = state.profile?.progresso || {};
   const realmProgress = progress[realmId];
   if (!realmProgress || typeof realmProgress !== "object") return null;
-  return JSON.parse(JSON.stringify(realmProgress));
+  return normalizeRealmProgress(realmProgress);
 }
 
 async function setRealmProgress(realmId, realmProgress) {
@@ -179,6 +261,148 @@ async function setRealmProgress(realmId, realmProgress) {
     console.error(`Não foi possível salvar o progresso de ${realmId}:`, error);
     state.profile.progresso = nextProgress;
     return state.profile;
+  }
+}
+
+
+async function resetRealmProgress(realmId) {
+  await ready;
+  if (!state.profile || !realmId) return { ok: false, persisted: false, reason: "invalid-state" };
+
+  const progressField = state.profile._dbFields?.progress || "progresso";
+  const currentProgress = state.profile.progresso && typeof state.profile.progresso === "object"
+    ? cloneJson(state.profile.progresso)
+    : {};
+
+  const currentWorld = currentProgress._world && typeof currentProgress._world === "object"
+    ? cloneJson(currentProgress._world)
+    : {};
+
+  const completedRealmIds = Array.isArray(currentWorld.completedRealmIds)
+    ? currentWorld.completedRealmIds.filter((id) => id !== realmId)
+    : [];
+
+  const nextProgress = {
+    ...currentProgress,
+    [realmId]: normalizeRealmProgress({}),
+    _world: {
+      ...currentWorld,
+      completedRealmIds,
+      lastProgressAt: new Date().toISOString()
+    }
+  };
+
+  try {
+    const updated = await updateProfileFields({ [progressField]: nextProgress });
+    if (updated) updated.progresso = nextProgress;
+    return { ok: true, persisted: true, profile: updated };
+  } catch (error) {
+    console.error(`Não foi possível reiniciar o progresso de ${realmId}:`, error);
+    state.profile.progresso = nextProgress;
+    window.dispatchEvent(new CustomEvent("voltz:profile-updated", { detail: state.profile }));
+    return { ok: true, persisted: false, profile: state.profile, error };
+  }
+}
+
+async function completeEncounter(realmId, enemySnapshot, rewards = {}) {
+  await ready;
+
+  if (!state.profile || !realmId || !enemySnapshot) {
+    return { ok: false, persisted: false, reason: "invalid-state" };
+  }
+
+  const currentProgress = state.profile.progresso && typeof state.profile.progresso === "object"
+    ? cloneJson(state.profile.progresso)
+    : {};
+
+  const currentRealmProgress = normalizeRealmProgress(currentProgress[realmId]);
+
+  // Idempotência: um inimigo já vencido nunca entrega XP/moedas pela segunda vez.
+  if (isEncounterCompleted(currentRealmProgress, enemySnapshot)) {
+    return {
+      ok: true,
+      persisted: true,
+      alreadyCompleted: true,
+      xpReward: 0,
+      coinReward: 0,
+      realmProgress: currentRealmProgress,
+      profile: state.profile
+    };
+  }
+
+  const xpReward = Math.max(0, Number(rewards.xp || rewards.xpReward || 0)) || 0;
+  const coinReward = Math.max(0, Number(rewards.coins || rewards.coinReward || 0)) || 0;
+  const nextRealmProgress = applyEncounterCompletion(currentRealmProgress, enemySnapshot);
+
+  const nextProgress = {
+    ...currentProgress,
+    [realmId]: nextRealmProgress
+  };
+
+  // Mantém também um resumo global útil para ranking/desbloqueios futuros.
+  const currentWorld = currentProgress._world && typeof currentProgress._world === "object"
+    ? cloneJson(currentProgress._world)
+    : {};
+
+  const completedRealmIds = Array.isArray(currentWorld.completedRealmIds)
+    ? [...new Set(currentWorld.completedRealmIds.filter((id) => typeof id === "string"))]
+    : [];
+
+  if (nextRealmProgress.completed && !completedRealmIds.includes(realmId)) {
+    completedRealmIds.push(realmId);
+  }
+
+  nextProgress._world = {
+    ...currentWorld,
+    completedRealmIds,
+    lastProgressAt: new Date().toISOString()
+  };
+
+  const xpField = state.profile._dbFields?.xp || "xp";
+  const coinField = state.profile._dbFields?.coins || "moedas";
+  const progressField = state.profile._dbFields?.progress || "progresso";
+
+  const nextXp = Math.max(0, Number(state.profile.xp || 0) + xpReward);
+  const nextCoins = Math.max(0, Number(state.profile.moedas || 0) + coinReward);
+
+  try {
+    const updated = await updateProfileFields({
+      [xpField]: nextXp,
+      [coinField]: nextCoins,
+      [progressField]: nextProgress
+    });
+
+    if (updated) updated.progresso = nextProgress;
+
+    return {
+      ok: true,
+      persisted: true,
+      alreadyCompleted: false,
+      xpReward,
+      coinReward,
+      realmProgress: nextRealmProgress,
+      profile: updated
+    };
+  } catch (error) {
+    console.error(`Não foi possível salvar a vitória em ${realmId}:`, error);
+
+    // Mantém a sessão coerente, mas sinaliza que o banco não confirmou.
+    state.profile.xp = nextXp;
+    state.profile.moedas = nextCoins;
+    state.profile.progresso = nextProgress;
+    renderProfileHud();
+    window.dispatchEvent(new CustomEvent("voltz:profile-updated", { detail: state.profile }));
+
+    return {
+      ok: true,
+      persisted: false,
+      alreadyCompleted: false,
+      xpReward,
+      coinReward,
+      realmProgress: nextRealmProgress,
+      profile: state.profile,
+      error
+    };
   }
 }
 
@@ -331,6 +555,8 @@ window.VoltzProfile = {
   addRewards,
   getRealmProgress,
   setRealmProgress,
+  resetRealmProgress,
+  completeEncounter,
   getInventory,
   getItemCount,
   purchaseItem,

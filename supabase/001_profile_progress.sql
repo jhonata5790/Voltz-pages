@@ -12,4 +12,4 @@ alter table public.profiles
 create index if not exists profiles_xp_idx on public.profiles (xp desc);
 
 comment on column public.profiles.progresso is
-  'Progresso por reino. Ex.: {"reino-matematica":{"defeatedEnemyIds":[],"miniBossDefeated":false,"bossDefeated":false}}';
+  'Save do jogo em JSONB: inventário (_inventory), resumo global (_world) e progresso por reino com inimigos, mini-chefe, chefe e conclusão.';
