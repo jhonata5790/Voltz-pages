@@ -2,6 +2,9 @@
   const REALM_ID = "reino-educacao-fisica";
   const SPORT_IDS = ["football", "basketball", "athletics", "volleyball", "dodgeball"];
   const CAPITAO_RUBRO_IMAGE = "assets/images/rivals/capitao-rubro.png";
+  const DODGE_CATCH_DISTANCE = 104;
+  const DODGE_CATCH_PERFECT_DISTANCE = 46;
+  const DODGE_CATCH_BUFFER_MS = 160;
 
   // Slots preparados para futuras poses. Enquanto enabled=false, o jogo usa
   // automaticamente a arte atual e não tenta carregar arquivos inexistentes.
@@ -852,6 +855,7 @@
       rubroArenaSide: "center",
       catchWindowUntil: 0,
       catchCooldownUntil: 0,
+      catchBufferedUntil: 0,
       counterAttackReady: false,
       selectedThrow: null,
       throwWindowBonus: 0,
@@ -1322,6 +1326,7 @@
     g.lastSpawn = 0;
     g.rubroArenaSide = "center";
     g.catchWindowUntil = 0;
+    g.catchBufferedUntil = 0;
     renderDodgeDefense();
   }
 
@@ -1483,46 +1488,69 @@
     }
   }
 
-  function attemptCatchDodgeball() {
+  function completeDodgeballCatch(ball, distance) {
     const g = state.current;
-    if (!g || g.phase !== "defense" || performance.now() < g.catchCooldownUntil) return false;
-    const arena = document.getElementById("dodgeArena");
-    if (!arena) return false;
-    const rect = arena.getBoundingClientRect();
-    const px = rect.width * g.player.x / 100;
-    const py = rect.height * g.player.y / 100;
-    let nearest = null;
-    let nearestDistance = Infinity;
-    for (const ball of g.balls) {
-      if (!ball.catchable) continue;
-      const distance = Math.hypot(ball.x - px, ball.y - py);
-      if (distance < nearestDistance) { nearest = ball; nearestDistance = distance; }
-    }
+    if (!g || g.phase !== "defense" || !ball || !ball.catchable) return false;
 
-    g.catchCooldownUntil = performance.now() + 260;
-    if (!nearest || nearestDistance > 70) {
-      const timer = document.getElementById("dodgeTimer");
-      if (timer) timer.textContent = "Muito cedo! Espere a bola entrar no alcance.";
-      return false;
-    }
-
-    nearest.el?.remove();
-    g.balls = g.balls.filter((ball) => ball !== nearest);
+    ball.el?.remove();
+    g.balls = g.balls.filter((candidate) => candidate !== ball);
+    g.catchBufferedUntil = 0;
+    g.catchCooldownUntil = performance.now() + 280;
     g.counterAttackReady = true;
     g.throwWindowBonus = Math.max(g.throwWindowBonus, 7);
     g.damageBonus += 1;
-    g.dialogue = nearestDistance <= 42
+
+    const perfect = distance <= DODGE_CATCH_PERFECT_DISTANCE;
+    g.dialogue = perfect
       ? "AGARROU PERFEITO! Você tomou a posse da bola no instante exato. Contra-ataque carregado."
       : "Você agarrou a bola! O turno de Rubro acabou e seu próximo arremesso recebeu Contra-ataque.";
+
     const player = document.getElementById("dodgePlayer");
+    player?.classList.remove("dodge-catch-ready");
     player?.classList.add("dodge-catch-success");
     const arenaEl = document.getElementById("dodgeArena");
     arenaEl?.classList.add("dodge-catch-flash");
     setRubroDefenseVisual("center", "recover");
     const timer = document.getElementById("dodgeTimer");
-    if (timer) timer.textContent = nearestDistance <= 42 ? "PERFECT CATCH! ⚡" : "AGARROU! · CONTRA-ATAQUE";
+    if (timer) timer.textContent = perfect ? "PERFECT CATCH! ⚡" : "AGARROU! · CONTRA-ATAQUE";
     addTimer(() => finishRubroDefenseTurn(true), 520);
     return true;
+  }
+
+  function attemptCatchDodgeball() {
+    const g = state.current;
+    const now = performance.now();
+    if (!g || g.phase !== "defense" || now < g.catchCooldownUntil) return false;
+
+    const arena = document.getElementById("dodgeArena");
+    if (!arena) return false;
+    const rect = arena.getBoundingClientRect();
+    const px = rect.width * g.player.x / 100;
+    const py = rect.height * g.player.y / 100;
+
+    let nearest = null;
+    let nearestDistance = Infinity;
+    for (const ball of g.balls) {
+      if (!ball.catchable) continue;
+      const distance = Math.hypot(ball.x - px, ball.y - py);
+      if (distance < nearestDistance) {
+        nearest = ball;
+        nearestDistance = distance;
+      }
+    }
+
+    // Input buffer: apertar Espaço pouco antes do alcance não pune o jogador.
+    // O comando fica armado por alguns milissegundos e dispara assim que a bola entra na janela.
+    if (!nearest || nearestDistance > DODGE_CATCH_DISTANCE) {
+      g.catchBufferedUntil = now + DODGE_CATCH_BUFFER_MS;
+      const player = document.getElementById("dodgePlayer");
+      player?.classList.add("dodge-catch-ready");
+      const timer = document.getElementById("dodgeTimer");
+      if (timer) timer.textContent = "AGARRÃO PREPARADO… espere a bola chegar!";
+      return false;
+    }
+
+    return completeDodgeballCatch(nearest, nearestDistance);
   }
 
   function playDodgePlayerHitEffect(style = "straight") {
@@ -1599,7 +1627,15 @@
       ball.el.style.top = `${ball.y - 12}px`;
 
       const catchDistance = Math.hypot(ball.x - playerX, ball.y - playerY);
-      ball.el.classList.toggle("catch-window", ball.catchable && catchDistance <= 78 && catchDistance > 24);
+      const catchWindowActive = ball.catchable && catchDistance <= DODGE_CATCH_DISTANCE && catchDistance > 22;
+      ball.el.classList.toggle("catch-window", catchWindowActive);
+
+      // Se o jogador apertou Espaço um pouco cedo, executa o agarrão assim que a bola
+      // entra na MESMA janela indicada pelo brilho verde.
+      if (ball.catchable && now <= g.catchBufferedUntil && catchDistance <= DODGE_CATCH_DISTANCE) {
+        completeDodgeballCatch(ball, catchDistance);
+        return false;
+      }
 
       const outside = ball.x < -90 || ball.x > rect.width + 90 || ball.y < -90 || ball.y > rect.height + 90;
       if (outside) { ball.el.remove(); return false; }
@@ -1633,8 +1669,16 @@
     if (playerEl) playerEl.classList.toggle("invulnerable", now < g.player.invulnerableUntil);
     const remaining = Math.max(0, (g.defenseEnd - now) / 1000);
     const timer = document.getElementById("dodgeTimer");
+    const catchableInRange = g.balls.some((ball) => {
+      if (!ball.catchable) return false;
+      const distance = Math.hypot(ball.x - playerX, ball.y - playerY);
+      return distance <= DODGE_CATCH_DISTANCE;
+    });
+    playerEl?.classList.toggle("dodge-catch-ready", catchableInRange || now <= g.catchBufferedUntil);
     if (timer && !timer.textContent.includes("AGARROU") && !timer.textContent.includes("PERFECT")) {
-      timer.textContent = `${remaining.toFixed(1)}s · ${g.activePattern?.label || "Esquiva"}`;
+      timer.textContent = catchableInRange
+        ? "AGARRA! [ESPAÇO]"
+        : `${remaining.toFixed(1)}s · ${g.activePattern?.label || "Esquiva"}`;
     }
     if (remaining <= 0 && !g.enemyAttackDone) finishRubroDefenseTurn(false);
   }
@@ -1652,9 +1696,10 @@
     if (!g || g.type !== "dodgeball") return false;
 
     if (g.phase === "defense") {
-      if (key === " " || key === "spacebar") {
+      const isSpace = key === " " || key === "spacebar" || key === "space" || event.code === "Space";
+      if (isSpace) {
         event.preventDefault();
-        attemptCatchDodgeball();
+        if (!event.repeat) attemptCatchDodgeball();
         return true;
       }
       return false;
@@ -1697,7 +1742,7 @@
       }
     }
 
-    if (key === "space" && g.phase === "aim") {
+    if ((key === " " || key === "spacebar" || key === "space" || event.code === "Space") && g.phase === "aim") {
       event.preventDefault();
       throwDodgeball();
       return true;

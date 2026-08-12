@@ -863,3 +863,33 @@
 @keyframes dodgePlayerHit { 0%,100%{filter:none} 35%,70%{filter:brightness(.25);transform:scale(.86)} }
 @keyframes dodgePlayerHitPower { 0%,100%{filter:none;transform:none} 20%{filter:brightness(.1);transform:translateX(-7px) scale(.76)} 40%{transform:translateX(7px) scale(.9)} 60%{filter:brightness(.2);transform:translateX(-5px)} 80%{transform:translateX(4px)} }
 @keyframes dodgeArenaHit { 0%,100%{transform:none} 30%{transform:translateX(-3px)} 60%{transform:translateX(3px)} }
+
+
+/* Agarrão — feedback alinhado com a janela real */
+.dodge-player.dodge-catch-ready:not(.dodge-catch-success) {
+  outline: 2px solid rgba(99,245,181,.78);
+  outline-offset: 5px;
+  box-shadow: 0 0 24px rgba(99,245,181,.62), inset 0 0 10px rgba(255,255,255,.15);
+  animation: dodgeCatchReadyPulse .26s ease-in-out infinite alternate;
+}
+.rubro-ball.is-catchable.catch-window::after {
+  content: "ESPAÇO";
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(3,12,14,.88);
+  border: 1px solid rgba(99,245,181,.45);
+  color: #baffdf;
+  font-size: .48rem;
+  font-weight: 1000;
+  letter-spacing: .5px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+@keyframes dodgeCatchReadyPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
