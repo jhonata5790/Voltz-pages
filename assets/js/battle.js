@@ -21,6 +21,8 @@ const battleState = {
   bagMessage: "",
   structuredReasoningUsed: false,
   eliminatedOptionLetter: "",
+  criticalReadingUsed: false,
+  criticalReadingMarkedLetter: "",
   guardianRecognitionActive: false,
   guardianDialogueIndex: 0,
   guardianSaveResult: null,
@@ -155,6 +157,8 @@ function clearBattleTimer() {
       battleState.bagMessage = "";
       battleState.structuredReasoningUsed = false;
       battleState.eliminatedOptionLetter = "";
+      battleState.criticalReadingUsed = false;
+      battleState.criticalReadingMarkedLetter = "";
       battleState.guardianRecognitionActive = false;
       battleState.guardianDialogueIndex = 0;
       battleState.guardianSaveResult = null;
@@ -185,6 +189,8 @@ function clearBattleTimer() {
       const canUseHint = !isTrainingBattle && hintCount > 0 && !battleState.hintRevealed && !battleState.locked && !battleState.hintBusy;
       const hasStructuredReasoning = Boolean(window.VoltzProfile?.hasRealmDiploma?.("reino-matematica"));
       const canUseStructuredReasoning = hasStructuredReasoning && !battleState.structuredReasoningUsed && !battleState.locked;
+      const hasCriticalReading = Boolean(window.VoltzProfile?.hasRealmDiploma?.("reino-gramatica"));
+      const canUseCriticalReading = hasCriticalReading && !battleState.criticalReadingUsed && !battleState.locked;
 
       enemyPanel.innerHTML = `
         <div class="battle-panel-inner enemy-theme-${type.id}">
@@ -252,10 +258,11 @@ function clearBattleTimer() {
                 <div class="enemy-question-options" id="enemyQuestionOptions">
                   ${Object.entries(q.options).map(([letter, value]) => {
                     const eliminated = battleState.eliminatedOptionLetter === letter;
+                    const criticalMarked = battleState.criticalReadingMarkedLetter === letter;
                     return `
-                      <button class="enemy-option-btn ${eliminated ? "eliminated" : ""}" type="button" onclick="answerEnemyQuestion('${letter}')" ${eliminated ? "disabled" : ""}>
+                      <button class="enemy-option-btn ${eliminated ? "eliminated" : ""} ${criticalMarked ? "critical-reading-marked" : ""}" type="button" onclick="answerEnemyQuestion('${letter}')" ${eliminated ? "disabled" : ""}>
                         <strong>${letter}</strong>
-                        <span>${eliminated ? "Alternativa eliminada" : escapeHtml(value)}</span>
+                        <span>${eliminated ? "Alternativa eliminada" : escapeHtml(value)}${criticalMarked ? '<em class="critical-reading-tag">⚠ incoerente</em>' : ""}</span>
                       </button>
                     `;
                   }).join("")}
@@ -311,6 +318,25 @@ function clearBattleTimer() {
                     ${canUseStructuredReasoning ? "" : "disabled"}
                   >
                     ${battleState.structuredReasoningUsed ? "Usado nesta batalha" : "Eliminar alternativa"}
+                  </button>
+                </article>
+              ` : ""}
+
+              ${hasCriticalReading ? `
+                <article class="battle-bag-item battle-bag-item-permanent">
+                  <div class="battle-bag-item-icon">📖</div>
+                  <div class="battle-bag-item-copy">
+                    <div class="battle-bag-item-name">Leitura Crítica</div>
+                    <p>Competência do Diploma de Português. Identifica uma alternativa incorreta como semanticamente incoerente sem removê-la.</p>
+                    <span class="battle-bag-item-count">Permanente · 1 uso por batalha</span>
+                  </div>
+                  <button
+                    class="battle-item-use-btn"
+                    type="button"
+                    onclick="useCriticalReading()"
+                    ${canUseCriticalReading ? "" : "disabled"}
+                  >
+                    ${battleState.criticalReadingUsed ? "Usado nesta batalha" : "Analisar alternativas"}
                   </button>
                 </article>
               ` : ""}
@@ -408,6 +434,28 @@ function clearBattleTimer() {
       battleState.structuredReasoningUsed = true;
       battleState.eliminatedOptionLetter = wrongLetters[Math.floor(Math.random() * wrongLetters.length)];
       battleState.bagMessage = "Raciocínio Estruturado eliminou uma alternativa incorreta. A competência já foi usada nesta batalha.";
+      battleState.currentTab = "question";
+      renderBattleScreen();
+      setBattleTab("question");
+    }
+
+    function useCriticalReading() {
+      if (
+        !battleState.active ||
+        battleState.locked ||
+        battleState.criticalReadingUsed ||
+        !currentEnemyQuestion ||
+        !window.VoltzProfile?.hasRealmDiploma?.("reino-gramatica")
+      ) return;
+
+      const wrongLetters = Object.keys(currentEnemyQuestion.options || {}).filter(
+        (letter) => letter !== currentEnemyQuestion.answer && letter !== battleState.eliminatedOptionLetter
+      );
+      if (!wrongLetters.length) return;
+
+      battleState.criticalReadingUsed = true;
+      battleState.criticalReadingMarkedLetter = wrongLetters[Math.floor(Math.random() * wrongLetters.length)];
+      battleState.bagMessage = "Leitura Crítica identificou uma alternativa semanticamente incoerente. Ela continua selecionável, mas agora está marcada.";
       battleState.currentTab = "question";
       renderBattleScreen();
       setBattleTab("question");
@@ -734,6 +782,7 @@ function clearBattleTimer() {
         : (typeof window.getActiveSceneId === "function" ? window.getActiveSceneId() : "");
       const xpReward = type.xpReward || 40;
       const coinReward = type.coinReward || 12;
+      const victoryDiploma = type.victoryDiploma && typeof type.victoryDiploma === "object" ? type.victoryDiploma : null;
 
       if (defeatedEnemySnapshot.trainingBattle) {
         battleState.locked = true;
@@ -764,9 +813,10 @@ function clearBattleTimer() {
       enemyPanel.innerHTML = `
         <div class="battle-result-card victory battle-auto-result">
           <div class="battle-result-icon battle-result-icon-victory">⚡</div>
-          <div class="enemy-panel-kicker">Vitória</div>
-          <div class="enemy-panel-title">${escapeHtml(type.name)} derrotado!</div>
-          <p>Você venceu o desafio de ${escapeHtml(type.role)}.</p>
+          <div class="enemy-panel-kicker">${victoryDiploma ? "Reino concluído" : "Vitória"}</div>
+          <div class="enemy-panel-title">${escapeHtml(type.name)} ${victoryDiploma ? "dissipado" : "derrotado"}!</div>
+          <p>${victoryDiploma ? `Você concluiu ${escapeHtml(type.victoryRealmLabel || "o reino")} e conquistou ${escapeHtml(victoryDiploma.name || "um novo diploma")}.` : `Você venceu o desafio de ${escapeHtml(type.role)}.`}</p>
+          ${victoryDiploma ? `<div class="guardian-ability-card"><span>📖</span><div><strong>${escapeHtml(victoryDiploma.abilityName || "Nova competência")}</strong><small>${escapeHtml(victoryDiploma.abilityDescription || "Competência permanente desbloqueada.")}</small></div></div>` : ""}
           <div class="battle-reward-row" id="battleRewardRow">
             <span>+${xpReward} XP</span>
             <span>+${coinReward} moedas</span>
@@ -778,7 +828,14 @@ function clearBattleTimer() {
       let saveResult = null;
 
       try {
-        if (window.VoltzProfile?.completeEncounter && realmId) {
+        if (victoryDiploma && window.VoltzProfile?.completeGuardianChallenge && realmId) {
+          saveResult = await window.VoltzProfile.completeGuardianChallenge(
+            realmId,
+            defeatedEnemySnapshot,
+            { xp: xpReward, coins: coinReward },
+            victoryDiploma
+          );
+        } else if (window.VoltzProfile?.completeEncounter && realmId) {
           saveResult = await window.VoltzProfile.completeEncounter(
             realmId,
             defeatedEnemySnapshot,
@@ -852,6 +909,7 @@ function clearBattleTimer() {
       battleState.hintBusy = false;
       battleState.bagMessage = "";
       battleState.eliminatedOptionLetter = "";
+      battleState.criticalReadingMarkedLetter = "";
       currentEnemyQuestion = drawNextBattleQuestion(type);
       renderBattleScreen();
       startBattleTimer();
@@ -875,6 +933,8 @@ function clearBattleTimer() {
       battleState.bagMessage = "";
       battleState.structuredReasoningUsed = false;
       battleState.eliminatedOptionLetter = "";
+      battleState.criticalReadingUsed = false;
+      battleState.criticalReadingMarkedLetter = "";
       battleState.guardianRecognitionActive = false;
       battleState.guardianDialogueIndex = 0;
       battleState.guardianSaveResult = null;
@@ -894,18 +954,56 @@ function clearBattleTimer() {
         return getBattleEnemyImage(type);
       }
 
+      if (type.family === "orthography") return getPortugueseOrthographyBattleSvg(type);
+      if (type.family === "syntax") return getPortugueseSyntaxBattleSvg(type);
+      if (type.family === "semantics") return getPortugueseSemanticsBattleSvg(type);
       if (type.id === "multiplicacao-divisao") return getFatorBattleSvg(type);
       if (type.id === "potencia-radiciacao") return getRaizBattleSvg(type);
       return getSomaBattleSvg(type);
     }
 
     function getBattleEnemyImage(type) {
-      const rankClass = type.id === "chefe-golem-calculos" ? "battle-enemy-img-boss" : "battle-enemy-img-miniboss";
+      const rankClass = type.battleImageSize === "boss" || type.id === "chefe-golem-calculos"
+        ? "battle-enemy-img-boss"
+        : "battle-enemy-img-miniboss";
       return `
         <div class="battle-enemy-image-wrap ${rankClass}">
           <img class="battle-enemy-image" src="${escapeHtml(type.battleImage)}" alt="${escapeHtml(type.name)}" />
         </div>
       `;
+    }
+
+    function getPortugueseOrthographyBattleSvg(type) {
+      return `
+        <svg class="battle-enemy-svg" viewBox="0 0 360 300" role="img" aria-label="${escapeHtml(type.name)}">
+          <ellipse cx="180" cy="252" rx="105" ry="22" fill="rgba(0,0,0,.34)"></ellipse>
+          <path d="M98 223 C78 144,95 69,180 42 C265 69,282 144,262 223 C240 264,120 264,98 223Z" fill="${type.colorA}" stroke="rgba(255,255,255,.9)" stroke-width="8"></path>
+          <text x="180" y="150" text-anchor="middle" fill="#0c0712" font-size="78" font-weight="950">Aa</text>
+          <path d="M88 75 L276 211 M91 217 L273 72" stroke="${type.colorB}" stroke-width="9" opacity=".7"></path>
+          <circle cx="145" cy="190" r="10" fill="#090611"></circle><circle cx="215" cy="190" r="10" fill="#090611"></circle>
+        </svg>`;
+    }
+
+    function getPortugueseSyntaxBattleSvg(type) {
+      return `
+        <svg class="battle-enemy-svg" viewBox="0 0 360 300" role="img" aria-label="${escapeHtml(type.name)}">
+          <ellipse cx="180" cy="252" rx="108" ry="22" fill="rgba(0,0,0,.34)"></ellipse>
+          <rect x="92" y="62" width="176" height="174" rx="35" fill="${type.colorA}" stroke="rgba(255,255,255,.9)" stroke-width="8"></rect>
+          <text x="180" y="116" text-anchor="middle" fill="${type.colorB}" font-size="58" font-weight="950">{ }</text>
+          <path d="M126 146 H235 M126 173 H211 M148 200 H241" stroke="rgba(8,5,18,.78)" stroke-width="13" stroke-linecap="round"></path>
+          <circle cx="146" cy="220" r="9" fill="#080512"></circle><circle cx="214" cy="220" r="9" fill="#080512"></circle>
+        </svg>`;
+    }
+
+    function getPortugueseSemanticsBattleSvg(type) {
+      return `
+        <svg class="battle-enemy-svg" viewBox="0 0 360 300" role="img" aria-label="${escapeHtml(type.name)}">
+          <ellipse cx="180" cy="252" rx="110" ry="22" fill="rgba(0,0,0,.34)"></ellipse>
+          <path d="M180 48 C264 48,286 102,255 144 C289 190,255 241,180 241 C105 241,71 190,105 144 C74 102,96 48,180 48Z" fill="${type.colorA}" stroke="rgba(255,255,255,.9)" stroke-width="8"></path>
+          <text x="180" y="155" text-anchor="middle" fill="#071412" font-size="72" font-weight="950">…?</text>
+          <path d="M110 181 C145 157,215 157,250 181" fill="none" stroke="${type.colorB}" stroke-width="12" stroke-linecap="round"></path>
+          <circle cx="145" cy="207" r="10" fill="#071412"></circle><circle cx="215" cy="207" r="10" fill="#071412"></circle>
+        </svg>`;
     }
 
     function getSomaBattleSvg(type) {
@@ -1006,5 +1104,6 @@ window.nextEnemyQuestion = nextEnemyQuestion;
 window.setBattleTab = setBattleTab;
 window.useBattleHint = useBattleHint;
 window.useStructuredReasoning = useStructuredReasoning;
+window.useCriticalReading = useCriticalReading;
 window.advanceGuardianDialogue = advanceGuardianDialogue;
 window.finishGuardianRecognition = finishGuardianRecognition;

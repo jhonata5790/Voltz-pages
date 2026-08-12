@@ -54,6 +54,8 @@ const viewport = document.getElementById("gameViewport");
     const equationPanel = document.getElementById("equationPanel");
     const equationPanelKicker = document.getElementById("equationPanelKicker");
     const equationPanelTitle = document.getElementById("equationPanelTitle");
+    const equationPanelSubtitle = document.getElementById("equationPanelSubtitle");
+    const equationPanelFooter = document.getElementById("equationPanelFooter");
     const equationFormula = document.getElementById("equationFormula");
     const equationPrompt = document.getElementById("equationPrompt");
     const equationOptions = document.getElementById("equationOptions");
@@ -511,6 +513,118 @@ const viewport = document.getElementById("gameViewport");
       };
     }
 
+    function getPortugueseProgressionState() {
+      const realmId = "reino-gramatica";
+      const progress = getRuntimeRealmProgress(realmId);
+      const totalCommons = getRealmCommonEnemyIds(realmId).length;
+      const defeatedCommons = getRealmDefeatedCommonCount(realmId);
+      const requiredCommons = getRealmRequiredCommonCount(realmId);
+      const requiredWordIds = getRealmRequiredEquationIds(realmId);
+      const solvedWordIds = getSolvedWorldEquationIds(realmId);
+      const solvedRequiredWords = requiredWordIds.filter((id) => solvedWordIds.includes(id)).length;
+      const openingId = getRealmProgressionRules(realmId).openingChallengeId || getRealmProgressionRules(realmId).bridgeEquationId || "palavra-ortografia-01";
+      const openingStable = solvedWordIds.includes(openingId);
+      const miniBossUnlocked = isRealmMiniBossUnlocked(realmId);
+      const bossUnlocked = isRealmBossUnlocked(realmId);
+
+      let stage = 0;
+      let label = "Reconstrua a primeira frase";
+      let objective = "Encontre a Inscrição da Passagem no Bairro Ortográfico e escolha a palavra que devolve sentido à frase.";
+
+      if (isRealmGuardianCompleted(realmId)) {
+        stage = 4;
+        label = "Reino concluído";
+        objective = "O Espectro da Gramática foi dissipado. O Diploma de Português e a competência Leitura Crítica foram conquistados.";
+      } else if (bossUnlocked) {
+        stage = 3;
+        label = "Catedral da Gramática";
+        objective = "Ortcepse foi superado. Atravesse o Portal da Gramática e enfrente o Espectro.";
+      } else if (progress.miniBossDefeated) {
+        stage = 3;
+        label = "Portal da Gramática";
+        objective = "O Arquivo Invertido foi restaurado. O caminho até a Catedral da Gramática está se abrindo.";
+      } else if (miniBossUnlocked) {
+        stage = 2;
+        label = "Arquivo Invertido";
+        objective = "As estruturas necessárias foram recuperadas. Entre no Arquivo Invertido e enfrente Ortcepse.";
+      } else if (openingStable) {
+        stage = 1;
+        label = "Reconstrua o reino";
+        const missingCommons = Math.max(0, requiredCommons - defeatedCommons);
+        const missingWords = Math.max(0, requiredWordIds.length - solvedRequiredWords);
+        const parts = [];
+        if (missingCommons) parts.push(`supere mais ${missingCommons} inimigo${missingCommons === 1 ? "" : "s"}`);
+        if (missingWords) parts.push(`reconstrua mais ${missingWords} Palavra${missingWords === 1 ? "" : "s"} do Mundo`);
+        objective = parts.length
+          ? `Explore Semântica e Sintaxe: ${parts.join(" e ")}.`
+          : "Os requisitos foram cumpridos. O Selo do Arquivo Invertido está cedendo.";
+      }
+
+      return {
+        stage,
+        label,
+        objective,
+        totalCommons,
+        defeatedCommons,
+        requiredCommons,
+        requiredWordIds,
+        solvedRequiredWords,
+        openingStable,
+        miniBossUnlocked,
+        bossUnlocked
+      };
+    }
+
+    function getPortugueseProgressMessage() {
+      const state = getPortugueseProgressionState();
+      if (isRealmGuardianCompleted("reino-gramatica")) {
+        return "Reino de Português concluído. O Diploma de Português e Leitura Crítica foram registrados.";
+      }
+      if (state.bossUnlocked) return "Ortcepse foi superado. A Catedral da Gramática está aberta e o Espectro aguarda ao norte.";
+      if (state.miniBossUnlocked) return `Arquivo Invertido liberado: ${state.defeatedCommons}/${state.requiredCommons} inimigos e ${state.solvedRequiredWords}/${state.requiredWordIds.length} Palavras do Mundo.`;
+      if (!state.openingStable) return "Reconstrua a Inscrição da Passagem no Bairro Ortográfico para abrir o caminho até Semântica e Sintaxe.";
+      return state.objective;
+    }
+
+    function updatePortugueseProgressHud() {
+      if (!mathProgressHud) return;
+      const active = currentScene?.id === "reino-gramatica";
+      if (!active) {
+        mathProgressHud.classList.remove("portuguese-progress");
+        return;
+      }
+
+      const state = getPortugueseProgressionState();
+      const progress = getRuntimeRealmProgress("reino-gramatica");
+      const wordsMet = state.solvedRequiredWords >= state.requiredWordIds.length;
+      const commonsMet = state.defeatedCommons >= state.requiredCommons;
+      const stepsComplete = [
+        state.openingStable,
+        commonsMet && wordsMet,
+        progress.miniBossDefeated,
+        isRealmGuardianCompleted("reino-gramatica")
+      ].filter(Boolean).length;
+      const progressPercent = Math.round((stepsComplete / 4) * 100);
+      const statusIcon = (done, available = false) => done ? "✓" : (available ? "!" : "•");
+
+      mathProgressHud.classList.add("visible", "portuguese-progress");
+      mathProgressHud.innerHTML = `
+        <div class="math-progress-head">
+          <span>Jornada de Português</span>
+          <strong>Etapa ${Math.min(state.stage + 1, 4)}/4</strong>
+        </div>
+        <div class="math-progress-stage">${escapeHtml(state.label)}</div>
+        <div class="math-progress-objective">${escapeHtml(state.objective)}</div>
+        <div class="math-progress-track"><span style="width:${progressPercent}%"></span></div>
+        <div class="math-progress-checks">
+          <span class="${state.openingStable ? "done" : ""}">${statusIcon(state.openingStable)} Passagem</span>
+          <span class="${commonsMet ? "done" : ""}">${statusIcon(commonsMet)} Inimigos ${Math.min(state.defeatedCommons, state.requiredCommons)}/${state.requiredCommons}</span>
+          <span class="${wordsMet ? "done" : ""}">${statusIcon(wordsMet)} Palavras ${state.solvedRequiredWords}/${state.requiredWordIds.length}</span>
+          <span class="${progress.miniBossDefeated ? "done" : state.miniBossUnlocked ? "available" : ""}">${statusIcon(progress.miniBossDefeated, state.miniBossUnlocked)} Ortcepse</span>
+          <span class="${isRealmGuardianCompleted("reino-gramatica") ? "done" : state.bossUnlocked ? "available" : ""}">${statusIcon(isRealmGuardianCompleted("reino-gramatica"), state.bossUnlocked)} Espectro</span>
+        </div>`;
+    }
+
     function getMathProgressMessage() {
       const state = getMathProgressionState();
       const rhythm = getMathLogicalRhythmState();
@@ -607,6 +721,13 @@ const viewport = document.getElementById("gameViewport");
         return getMathProgressMessage();
       }
 
+      if (realmId === "reino-gramatica") {
+        if (isBoss) return "O Espectro da Gramática foi dissipado. O Reino de Português está concluído!";
+        if (isMiniBoss) return "Ortcepse foi superado! O Portal da Gramática abriu o caminho para o Espectro.";
+        if (isRealmMiniBossUnlocked(realmId)) return "Linguagem suficiente foi restaurada. O Selo do Arquivo Invertido se rompeu e Ortcepse apareceu!";
+        return getPortugueseProgressMessage();
+      }
+
       return getGenericRealmProgressMessage(realmId);
     }
 
@@ -657,6 +778,8 @@ const viewport = document.getElementById("gameViewport");
 
         if (realmId === "reino-matematica") {
           interactionText.textContent = message || getMathProgressMessage();
+        } else if (realmId === "reino-gramatica") {
+          interactionText.textContent = message || getPortugueseProgressMessage();
         } else {
           interactionText.textContent = message || getGenericRealmProgressMessage(realmId);
         }
@@ -882,7 +1005,19 @@ const viewport = document.getElementById("gameViewport");
         "corruption-wall",
         "fortress-court",
         "fortress-wall",
-        "zone-title"
+        "zone-title",
+        "language-plaza",
+        "language-zone",
+        "language-corruption-zone",
+        "language-sanctum",
+        "language-pad",
+        "language-boss-pad",
+        "language-inscription",
+        "corrupt-word",
+        "language-rift",
+        "language-corruption-wall",
+        "language-sanctum-wall",
+        "word-gate"
       ].includes(decor.type)) {
         return Math.round(decor.y + decor.h * 0.52);
       }
@@ -912,14 +1047,14 @@ const viewport = document.getElementById("gameViewport");
       return Array.isArray(progress.solvedWorldEquationIds) ? progress.solvedWorldEquationIds : [];
     }
 
-    function isWorldEquationSolved(equationId) {
-      return getSolvedWorldEquationIds().includes(equationId);
+    function isWorldEquationSolved(equationId, realmId = currentScene?.id || "reino-matematica") {
+      return getSolvedWorldEquationIds(realmId).includes(equationId);
     }
 
     function getMathLogicalRhythmState() {
       const total = mathRealmData.worldEquations?.length || 0;
       const solved = mathRealmData.worldEquations
-        ? mathRealmData.worldEquations.filter((equation) => isWorldEquationSolved(equation.id)).length
+        ? mathRealmData.worldEquations.filter((equation) => isWorldEquationSolved(equation.id, "reino-matematica")).length
         : 0;
       const naturalStacks = Math.min(3, solved);
       const stacks = devMathRhythmOverride === null
@@ -943,8 +1078,12 @@ const viewport = document.getElementById("gameViewport");
       if (!mathProgressHud) return;
 
       const active = currentScene?.id === "reino-matematica";
-      mathProgressHud.classList.toggle("visible", active);
-      if (!active) return;
+      if (!active) {
+        if (currentScene?.id !== "reino-gramatica") mathProgressHud.classList.remove("visible");
+        return;
+      }
+      mathProgressHud.classList.remove("portuguese-progress");
+      mathProgressHud.classList.add("visible");
 
       const state = getMathProgressionState();
       const equationTotal = state.requiredEquationIds.length;
@@ -980,6 +1119,7 @@ const viewport = document.getElementById("gameViewport");
 
     function updateMathBuffHud() {
       updateMathProgressHud();
+      updatePortugueseProgressHud();
       if (!mathBuffHud) return;
 
       const active = currentScene?.id === "reino-matematica";
@@ -997,7 +1137,8 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function updateNearbyWorldEquation() {
-      nearbyWorldEquation = currentScene?.id === "reino-matematica"
+      const activeRealm = getLoadedRealmData(currentScene?.id);
+      nearbyWorldEquation = activeRealm && worldEquationObjects.length
         ? getNearestWorldEquationInRange()
         : null;
 
@@ -1021,21 +1162,26 @@ const viewport = document.getElementById("gameViewport");
       if (!equationPanel || !currentWorldEquation) return;
 
       const equation = currentWorldEquation;
-      const solved = isWorldEquationSolved(equation.id);
-      const rhythm = getMathLogicalRhythmState();
+      const realmData = getLoadedRealmData(currentScene?.id);
+      const mechanic = realmData?.worldMechanic || {};
+      const isMathRealm = currentScene?.id === "reino-matematica";
+      const solved = isWorldEquationSolved(equation.id, currentScene?.id);
+      const rhythm = isMathRealm ? getMathLogicalRhythmState() : null;
 
-      if (equationPanelKicker) equationPanelKicker.textContent = equation.area || "Equação do Mundo";
-      if (equationPanelTitle) equationPanelTitle.textContent = equation.name || "Equação do Mundo";
+      if (equationPanelKicker) equationPanelKicker.textContent = equation.area || mechanic.name || "Mecanismo do Mundo";
+      if (equationPanelTitle) equationPanelTitle.textContent = equation.name || mechanic.name || "Mecanismo do Mundo";
+      if (equationPanelSubtitle) equationPanelSubtitle.textContent = mechanic.panelSubtitle || "Complete o mecanismo para estabilizar esta parte do reino.";
+      if (equationPanelFooter) equationPanelFooter.textContent = mechanic.footer || "Cada Equação do Mundo estabilizada concede +2 segundos por pergunta enquanto você estiver neste reino.";
       if (equationFormula) equationFormula.textContent = equation.formula || "?";
       if (equationPrompt) {
         equationPrompt.textContent = solved
-          ? `Mecanismo estabilizado. Ritmo Lógico ativo: +${rhythm.bonusSeconds}s por pergunta neste reino.`
-          : (equation.prompt || "Complete a equação para estabilizar esta parte do reino.");
+          ? (isMathRealm ? `Mecanismo estabilizado. Ritmo Lógico ativo: +${rhythm.bonusSeconds}s por pergunta neste reino.` : (mechanic.solvedPrompt || "Mecanismo restaurado."))
+          : (equation.prompt || "Complete o mecanismo para estabilizar esta parte do reino.");
       }
 
       if (equationOptions) {
         if (solved) {
-          equationOptions.innerHTML = `<div class="equation-solved-seal">✓ EQUAÇÃO ESTABILIZADA</div>`;
+          equationOptions.innerHTML = `<div class="equation-solved-seal">${escapeHtml(mechanic.solvedSeal || "✓ EQUAÇÃO ESTABILIZADA")}</div>`;
         } else {
           equationOptions.innerHTML = currentWorldEquationChoices.map((choice, index) => {
             const letter = ["A", "B", "C", "D"][index] || String(index + 1);
@@ -1065,7 +1211,8 @@ const viewport = document.getElementById("gameViewport");
       playerState.moving = false;
       renderWorldEquationPanel();
       equationPanel.classList.add("visible");
-      interactionText.textContent = `${equation.name}: resolva a equação para estabilizar o mundo.`;
+      const mechanic = getLoadedRealmData(currentScene?.id)?.worldMechanic || {};
+      interactionText.textContent = `${equation.name}: ${mechanic.name ? `reconstrua esta ${mechanic.name.toLowerCase()}` : "resolva o mecanismo"} para estabilizar o mundo.`;
       return true;
     }
 
@@ -1088,8 +1235,11 @@ const viewport = document.getElementById("gameViewport");
       if (!worldEquationPanelOpen || !currentWorldEquation) return;
 
       const equation = currentWorldEquation;
-      if (isWorldEquationSolved(equation.id)) {
-        renderWorldEquationPanel("Esta Equação do Mundo já está estável.");
+      const realmId = currentScene?.id;
+      const realmData = getLoadedRealmData(realmId);
+      const mechanic = realmData?.worldMechanic || {};
+      if (isWorldEquationSolved(equation.id, realmId)) {
+        renderWorldEquationPanel(mechanic.solvedPrompt || "Este mecanismo do mundo já está estável.");
         return;
       }
 
@@ -1100,12 +1250,12 @@ const viewport = document.getElementById("gameViewport");
         buttons.forEach((button) => { button.disabled = false; });
         if (equationFeedback) {
           equationFeedback.className = "equation-feedback visible wrong";
-          equationFeedback.textContent = "Ainda não. Releia a igualdade e tente descobrir qual valor mantém os dois lados equivalentes.";
+          equationFeedback.textContent = mechanic.wrongMessage || "Ainda não. Releia o desafio e tente novamente.";
         }
         return;
       }
 
-      const progress = getRuntimeRealmProgress("reino-matematica");
+      const progress = getRuntimeRealmProgress(realmId);
       progress.solvedWorldEquationIds = Array.isArray(progress.solvedWorldEquationIds)
         ? progress.solvedWorldEquationIds
         : [];
@@ -1113,16 +1263,21 @@ const viewport = document.getElementById("gameViewport");
       if (!progress.solvedWorldEquationIds.includes(equation.id)) {
         progress.solvedWorldEquationIds.push(equation.id);
         progress.lastWorldEquationAt = new Date().toISOString();
-        await persistRealmProgress("reino-matematica");
+        await persistRealmProgress(realmId);
       }
 
-      const rhythm = getMathLogicalRhythmState();
-      renderWorldEquationPanel(`${equation.explanation} Ritmo Lógico ${rhythm.stacks}/3: +${rhythm.bonusSeconds}s por pergunta.`);
+      if (realmId === "reino-matematica") {
+        const rhythm = getMathLogicalRhythmState();
+        renderWorldEquationPanel(`${equation.explanation} Ritmo Lógico ${rhythm.stacks}/3: +${rhythm.bonusSeconds}s por pergunta.`);
+        interactionText.textContent = `Equação estabilizada! Ritmo Lógico ${rhythm.stacks}/3 (+${rhythm.bonusSeconds}s por pergunta neste reino).`;
+      } else {
+        renderWorldEquationPanel(`${equation.explanation} ${mechanic.successSuffix || "O mundo respondeu à escolha correta."}`);
+        interactionText.textContent = `${mechanic.name || "Mecanismo do Mundo"} reconstruída! ${getPortugueseProgressMessage()}`;
+      }
       updateMathBuffHud();
       buildCollisionAndOcclusionData();
       renderDepthLayer();
       updateNearbyWorldEquation();
-      interactionText.textContent = `Equação estabilizada! Ritmo Lógico ${rhythm.stacks}/3 (+${rhythm.bonusSeconds}s por pergunta neste reino).`;
     }
 
     function getPortalSortY(portal) {
@@ -1355,7 +1510,7 @@ const viewport = document.getElementById("gameViewport");
         worldInventoryAbilities.innerHTML = abilities.length
           ? abilities.map((diploma) => `
               <article class="world-inventory-card ability">
-                <div class="world-inventory-card-icon">🧠</div>
+                <div class="world-inventory-card-icon">${diploma.abilityId === "leitura-critica" ? "📖" : "🧠"}</div>
                 <div class="world-inventory-card-body">
                   <div class="world-inventory-card-topline">
                     <strong>${escapeHtml(diploma.abilityName || "Competência")}</strong>
@@ -1389,6 +1544,11 @@ const viewport = document.getElementById("gameViewport");
         pieces.push(`Equações ${equations}/3`);
         pieces.push(progress.miniBossDefeated ? "Melog ✓" : "Melog —");
         pieces.push(progress.guardianChallengeCompleted || progress.bossDefeated ? "Golem ✓" : "Golem —");
+      } else if (realm.id === "reino-gramatica") {
+        pieces.push(`Inimigos ${defeated}/9`);
+        pieces.push(`Palavras ${equations}/3`);
+        pieces.push(progress.miniBossDefeated ? "Ortcepse ✓" : "Ortcepse —");
+        pieces.push(progress.guardianChallengeCompleted || progress.bossDefeated ? "Espectro ✓" : "Espectro —");
       } else {
         pieces.push(realm.unlocked ? "Disponível" : "Ainda não liberado");
       }
@@ -2004,6 +2164,47 @@ const viewport = document.getElementById("gameViewport");
 
     function enemySvg(enemy) {
       const type = getEnemyType(enemy);
+
+      if (currentScene?.id === "reino-gramatica" && type.battleImage) {
+        return `<img class="enemy-map-image" src="${escapeHtml(type.battleImage)}" alt="${escapeHtml(type.name)}" />`;
+      }
+
+      if (type.family === "orthography") {
+        return `
+          <svg class="enemy-svg enemy-svg-orthography" viewBox="0 0 130 150" role="img" aria-label="${type.name}">
+            <ellipse cx="65" cy="132" rx="36" ry="10" fill="rgba(0,0,0,.34)"></ellipse>
+            <ellipse cx="65" cy="78" rx="48" ry="54" fill="${type.aura}"></ellipse>
+            <path d="M34 119 C24 87,31 51,65 35 C99 51,106 87,96 119 C83 136,47 136,34 119Z" fill="${type.colorA}" stroke="rgba(255,255,255,.8)" stroke-width="4"></path>
+            <text x="65" y="83" text-anchor="middle" fill="#080512" font-size="42" font-weight="950">Aa</text>
+            <path d="M27 52 L104 108 M31 111 L103 47" stroke="${type.colorB}" stroke-width="4" opacity=".7"></path>
+            <circle cx="48" cy="101" r="5" fill="#080512"></circle><circle cx="82" cy="101" r="5" fill="#080512"></circle>
+          </svg>`;
+      }
+
+      if (type.family === "syntax") {
+        return `
+          <svg class="enemy-svg enemy-svg-syntax" viewBox="0 0 130 150" role="img" aria-label="${type.name}">
+            <ellipse cx="65" cy="132" rx="38" ry="11" fill="rgba(0,0,0,.35)"></ellipse>
+            <ellipse cx="65" cy="78" rx="49" ry="55" fill="${type.aura}"></ellipse>
+            <path d="M29 48 H101 V121 H29Z" rx="16" fill="${type.colorA}" stroke="rgba(255,255,255,.8)" stroke-width="4"></path>
+            <path d="M42 66 H88 M42 82 H73 M56 98 H93" stroke="${type.colorB}" stroke-width="7" stroke-linecap="round"></path>
+            <text x="65" y="40" text-anchor="middle" fill="${type.colorB}" font-size="29" font-weight="950">{ }</text>
+            <circle cx="48" cy="113" r="5" fill="#080512"></circle><circle cx="82" cy="113" r="5" fill="#080512"></circle>
+          </svg>`;
+      }
+
+      if (type.family === "semantics") {
+        return `
+          <svg class="enemy-svg enemy-svg-semantics" viewBox="0 0 130 150" role="img" aria-label="${type.name}">
+            <ellipse cx="65" cy="132" rx="38" ry="11" fill="rgba(0,0,0,.35)"></ellipse>
+            <ellipse cx="65" cy="78" rx="50" ry="56" fill="${type.aura}"></ellipse>
+            <path d="M65 31 C100 31,111 57,97 80 C111 103,96 128,65 128 C34 128,19 103,33 80 C19 57,30 31,65 31Z" fill="${type.colorA}" stroke="rgba(255,255,255,.82)" stroke-width="4"></path>
+            <text x="65" y="78" text-anchor="middle" fill="#071412" font-size="31" font-weight="950">…?</text>
+            <path d="M34 93 C51 83,79 83,96 93" stroke="${type.colorB}" stroke-width="6" fill="none" stroke-linecap="round"></path>
+            <circle cx="49" cy="108" r="5" fill="#071412"></circle><circle cx="81" cy="108" r="5" fill="#071412"></circle>
+          </svg>`;
+      }
+
       const isSoma = enemy.typeId === "soma-subtracao";
       const isFator = enemy.typeId === "multiplicacao-divisao";
 
@@ -2133,6 +2334,18 @@ const viewport = document.getElementById("gameViewport");
         return getMathGuardianCompletedDialogue();
       }
 
+      if (npc && npc.dynamicDialogue === "portuguese-progress") {
+        return getPortugueseProgressDialogue();
+      }
+
+      if (npc && npc.dynamicDialogue === "portuguese-mini-gate") {
+        return getPortugueseMiniGateDialogue();
+      }
+
+      if (npc && npc.dynamicDialogue === "portuguese-boss-gate") {
+        return getPortugueseBossGateDialogue();
+      }
+
       if (Array.isArray(npc.dialogue)) {
         return npc.dialogue;
       }
@@ -2253,6 +2466,36 @@ const viewport = document.getElementById("gameViewport");
         "Raciocínio Estruturado pode ser usado uma vez por batalha para eliminar uma alternativa incorreta.",
         "Continue aprendendo. Conhecimento que não avança acaba virando pedra."
       ];
+    }
+
+    function getPortugueseProgressDialogue() {
+      const state = getPortugueseProgressionState();
+      const progress = getRuntimeRealmProgress("reino-gramatica");
+      if (isRealmGuardianCompleted("reino-gramatica")) return [
+        "Status do Reino de Português: concluído.",
+        "Ortcepse foi superado e o Espectro da Gramática foi dissipado.",
+        "Diploma de Português: conquistado. Competência permanente: Leitura Crítica."
+      ];
+      if (state.bossUnlocked) return ["Etapa final: Catedral da Gramática.", "Ortcepse foi superado. O Portal da Gramática está aberto ao norte.", "O Espectro aguarda na nave central."];
+      if (state.miniBossUnlocked) return ["Etapa 3/4: Arquivo Invertido.", `Requisitos cumpridos: ${state.defeatedCommons}/${state.requiredCommons} inimigos e ${state.solvedRequiredWords}/${state.requiredWordIds.length} Palavras do Mundo.`, "Ortcepse está logo adiante."];
+      if (!state.openingStable) return ["Etapa 1/4: reconstrua a Inscrição da Passagem.", "A frase quebrada no Bairro Ortográfico controla o caminho para os dois ramos do reino.", "Leia o contexto antes de escolher a palavra."];
+      return ["Etapa 2/4: restaure Semântica e Sintaxe.", `Inimigos: ${Math.min(state.defeatedCommons, state.requiredCommons)}/${state.requiredCommons} necessários (${state.defeatedCommons}/${state.totalCommons} no mapa). Palavras do Mundo: ${state.solvedRequiredWords}/${state.requiredWordIds.length}.`, state.objective];
+    }
+
+    function getPortugueseMiniGateDialogue() {
+      const state = getPortugueseProgressionState();
+      const progress = getRuntimeRealmProgress("reino-gramatica");
+      if (progress.miniBossDefeated || isRealmGuardianCompleted("reino-gramatica")) return ["O Selo do Arquivo Invertido foi rompido.", "As letras voltaram à ordem e o caminho aponta para a Catedral da Gramática."];
+      if (state.miniBossUnlocked) return ["O selo perdeu sua força.", `Você cumpriu os requisitos: ${state.defeatedCommons}/${state.requiredCommons} inimigos e ${state.solvedRequiredWords}/${state.requiredWordIds.length} Palavras do Mundo.`, "Ortcepse está no interior do arquivo."];
+      return ["Uma rasura cobre o caminho para o Arquivo Invertido.", `Requisitos: inimigos ${Math.min(state.defeatedCommons, state.requiredCommons)}/${state.requiredCommons} · Palavras ${state.solvedRequiredWords}/${state.requiredWordIds.length}.`, "Reconstrua linguagem suficiente para que o reino consiga ler esse caminho novamente."];
+    }
+
+    function getPortugueseBossGateDialogue() {
+      const progress = getRuntimeRealmProgress("reino-gramatica");
+      if (isRealmGuardianCompleted("reino-gramatica")) return ["A Catedral da Gramática está silenciosa.", "O Espectro foi dissipado e o reino já reconhece seu Diploma de Português."];
+      if (isRealmBossUnlocked("reino-gramatica")) return ["O Portal da Gramática está aberto.", "Sem Ortcepse invertendo as estruturas, o caminho até o Espectro finalmente pode ser lido.", "Atravesse e conclua o Reino de Português."];
+      if (progress.miniBossDefeated) return ["O arquivo voltou à ordem, e o portal está reorganizando suas inscrições.", "O caminho final está quase legível."];
+      return ["A Catedral pode ser vista daqui, mas o texto do portal está completamente invertido.", "Ortcepse precisa ser superado antes que o caminho faça sentido."];
     }
 
     function renderDialogueLine() {
@@ -2498,7 +2741,8 @@ const viewport = document.getElementById("gameViewport");
 
       const worldEquationHtml = worldEquationObjects.map((equation) => {
         const sortY = getWorldEquationSortY(equation);
-        const solved = isWorldEquationSolved(equation.id);
+        const solved = isWorldEquationSolved(equation.id, currentScene?.id);
+        const worldMechanic = getLoadedRealmData(currentScene?.id)?.worldMechanic || {};
 
         return `
           <div
@@ -2513,7 +2757,7 @@ const viewport = document.getElementById("gameViewport");
                 <span class="world-equation-symbol">${solved ? "✓" : "?"}</span>
                 <strong>${escapeHtml(equation.formula)}</strong>
               </div>
-              <span class="world-equation-label">${solved ? "Equação Estável" : equation.name}</span>
+              <span class="world-equation-label">${solved ? (worldMechanic.solvedSeal || "Equação Estável") : equation.name}</span>
             </div>
           </div>
         `;
@@ -3375,6 +3619,15 @@ const viewport = document.getElementById("gameViewport");
       golem: { x: 2500, y: 470, label: "Fortaleza do Golem" }
     };
 
+    const portugueseDevTeleportPoints = {
+      praca: { x: 2500, y: 2960, label: "Praça da Palavra" },
+      ortografia: { x: 2500, y: 2530, label: "Bairro Ortográfico" },
+      semantica: { x: 1120, y: 1870, label: "Jardim da Semântica" },
+      sintaxe: { x: 3880, y: 1870, label: "Distrito Sintático" },
+      ortcepse: { x: 2500, y: 1110, label: "Arquivo Invertido" },
+      espectro: { x: 2500, y: 470, label: "Catedral da Gramática" }
+    };
+
     function refreshAfterDevProgressChange() {
       if (currentScene?.id === "reino-matematica") {
         refreshRealmEnemyObjectsAfterProgress("reino-matematica");
@@ -3461,6 +3714,20 @@ const viewport = document.getElementById("gameViewport");
       const point = mathDevTeleportPoints[zoneId] || mathDevTeleportPoints.praca;
       if (currentScene?.id !== "reino-matematica") {
         const scene = getSceneForRealm("reino-matematica");
+        if (!scene) return false;
+        changeScene(scene, { spawn: { x: point.x, y: point.y } });
+      } else {
+        devTeleportPosition(point.x, point.y);
+      }
+      interactionText.textContent = `[DEV] Teleporte: ${point.label}.`;
+      return true;
+    }
+
+    function devTeleportPortuguese(zoneId) {
+      devCloseBlockingPanels();
+      const point = portugueseDevTeleportPoints[zoneId] || portugueseDevTeleportPoints.praca;
+      if (currentScene?.id !== "reino-gramatica") {
+        const scene = getSceneForRealm("reino-gramatica");
         if (!scene) return false;
         changeScene(scene, { spawn: { x: point.x, y: point.y } });
       } else {
@@ -3659,6 +3926,7 @@ const viewport = document.getElementById("gameViewport");
       getSnapshot: getMathDevSnapshot,
       pauseMovement: devPauseMovement,
       teleportMath: devTeleportMath,
+      teleportPortuguese: devTeleportPortuguese,
       teleportVillage: devTeleportVillage,
       defeatNearestEnemy: devDefeatNearestEnemy,
       setCommonsDefeated: devSetCommonsDefeated,

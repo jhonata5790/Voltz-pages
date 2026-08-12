@@ -7,6 +7,7 @@
   <title>Voltz Education — Jogo</title>
 
   <link rel="stylesheet" href="assets/css/openworld.css" />
+  <link rel="stylesheet" href="assets/css/realms/portuguese.css" />
   <link rel="stylesheet" href="assets/css/interiors/interior-system.css" />
   <link rel="stylesheet" href="assets/css/interiors/library-interior.css" />
   <link rel="stylesheet" href="assets/css/interiors/hall-of-fame-interior.css" />
@@ -373,8 +374,8 @@
           <div>
             <div id="equationPanelKicker" class="equation-panel-kicker">Equação do Mundo</div>
             <div id="equationPanelTitle" class="equation-panel-title">Mecanismo Matemático</div>
-            <p class="equation-panel-subtitle">
-              Complete a igualdade para estabilizar esta parte do Reino da Matemática.
+            <p id="equationPanelSubtitle" class="equation-panel-subtitle">
+              Resolva o mecanismo para estabilizar esta parte do reino.
             </p>
           </div>
           <button class="equation-close-btn" type="button" onclick="closeWorldEquationPanel()">Fechar ✕</button>
@@ -387,8 +388,8 @@
           <div id="equationFeedback" class="equation-feedback"></div>
         </div>
 
-        <div class="equation-panel-footer">
-          Cada Equação do Mundo estabilizada concede <strong>+2 segundos</strong> por pergunta enquanto você estiver neste reino.
+        <div id="equationPanelFooter" class="equation-panel-footer">
+          Resolva mecanismos do mundo para avançar na jornada.
         </div>
       </div>
 
@@ -398,7 +399,7 @@
             <div class="realm-panel-kicker">Portal dos Reinos</div>
             <div class="realm-panel-title">Escolha um Reino</div>
             <p class="realm-panel-subtitle">
-              Cada reino representa uma matéria. Nesta versão, o Reino da Matemática é o primeiro destino liberado; os outros reinos aparecem como visual futuro.
+              Cada reino representa uma matéria. Matemática e Português já estão disponíveis; os demais continuam em desenvolvimento.
             </p>
           </div>
 
@@ -426,6 +427,7 @@
   <script src="assets/js/npc/village-npc-data.js" defer></script>
   <script src="assets/js/realms/realm-data.js" defer></script>
   <script src="assets/js/realms/math/math-data.js" defer></script>
+  <script src="assets/js/realms/portuguese/portuguese-data.js" defer></script>
   <script src="assets/js/openworld.js" defer></script>
   <script src="assets/js/battle.js" defer></script>
   <script src="assets/js/dev-menu.js" defer></script>

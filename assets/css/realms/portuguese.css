@@ -1,0 +1,216 @@
+/* =========================================================
+   Reino de Português — identidade visual
+   ========================================================= */
+.world.scene-portuguese {
+  width: 5000px;
+  height: 3200px;
+  background:
+    radial-gradient(circle at 50% 88%, rgba(255,123,213,.14), transparent 13%),
+    radial-gradient(circle at 22% 55%, rgba(93,226,194,.12), transparent 19%),
+    radial-gradient(circle at 78% 55%, rgba(157,120,255,.14), transparent 19%),
+    linear-gradient(145deg, #171122 0%, #1c1730 48%, #101a2a 100%);
+}
+
+.world.scene-portuguese .map-layer {
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(255,145,200,.03), transparent 62%);
+  background-size: 64px 64px, 64px 64px, 128px 128px;
+}
+
+.world.scene-portuguese .map-glow {
+  background:
+    radial-gradient(ellipse at 50% 92%, rgba(255,123,213,.16), transparent 11%),
+    radial-gradient(ellipse at 22% 55%, rgba(93,226,194,.15), transparent 18%),
+    radial-gradient(ellipse at 78% 55%, rgba(157,120,255,.18), transparent 18%),
+    radial-gradient(ellipse at 50% 32%, rgba(160,155,170,.14), transparent 13%),
+    radial-gradient(ellipse at 50% 10%, rgba(184,92,255,.2), transparent 11%);
+}
+
+.world.scene-portuguese .center-plaza {
+  left: 2500px;
+  top: 2960px;
+  width: 460px;
+  height: 330px;
+  border-radius: 48% 52% 48% 52%;
+  color: #ffd8ef;
+  background:
+    repeating-conic-gradient(from 5deg, rgba(255,123,213,.12) 0 12deg, rgba(93,226,194,.07) 12deg 24deg),
+    radial-gradient(circle, rgba(255,123,213,.24), rgba(157,120,255,.12) 58%, rgba(5,7,19,.7));
+  border-color: rgba(255,145,200,.38);
+  box-shadow: 0 0 38px rgba(255,123,213,.16);
+}
+
+.world.scene-portuguese .ground-path {
+  background:
+    linear-gradient(90deg, rgba(255,123,213,.09), rgba(93,226,194,.065)),
+    rgba(255,255,255,.03);
+  border-color: rgba(255,145,200,.14);
+  box-shadow: 0 0 26px rgba(255,123,213,.07);
+}
+
+.world.scene-portuguese .ground-path.main-vertical { left: 2425px; top: 300px; width: 150px; height: 2700px; opacity: .75; }
+.world.scene-portuguese .ground-path.main-horizontal { left: 1180px; top: 2470px; width: 2640px; height: 165px; opacity: .82; }
+.world.scene-portuguese .ground-path.branch-south { left: 2180px; top: 2810px; width: 640px; height: 100px; opacity: .76; }
+.world.scene-portuguese .ground-path.branch-west-bottom { left: 920px; top: 1900px; width: 1730px; height: 112px; transform: rotate(-18deg); opacity: .7; }
+.world.scene-portuguese .ground-path.branch-east-bottom { left: 2350px; top: 1900px; width: 1730px; height: 112px; transform: rotate(18deg); opacity: .7; }
+.world.scene-portuguese .ground-path.branch-west-top { left: 1120px; top: 1250px; width: 1590px; height: 108px; transform: rotate(16deg); opacity: .64; }
+.world.scene-portuguese .ground-path.branch-east-top { left: 2290px; top: 1250px; width: 1590px; height: 108px; transform: rotate(-16deg); opacity: .64; }
+.world.scene-portuguese .ground-path.branch-north { left: 2210px; top: 620px; width: 580px; height: 112px; opacity: .74; }
+
+.world.scene-portuguese .building-roof {
+  background:
+    linear-gradient(135deg, rgba(255,123,213,.2), rgba(157,120,255,.13)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 8px, transparent 8px 18px),
+    rgba(9,7,22,.9);
+  border-color: rgba(255,145,200,.23);
+  box-shadow: 0 0 30px rgba(255,123,213,.08), inset 0 0 30px rgba(0,0,0,.38);
+}
+
+.world.scene-portuguese .building-base {
+  background: linear-gradient(180deg, rgba(157,120,255,.075), rgba(93,226,194,.05)), rgba(7,8,22,.7);
+  border-color: rgba(157,120,255,.14);
+}
+
+.world.scene-portuguese .depth-tree .tree-canopy {
+  filter: hue-rotate(285deg) saturate(.72) brightness(.92) drop-shadow(0 0 10px rgba(255,123,213,.08));
+}
+.world.scene-portuguese .depth-tree:nth-of-type(3n) .tree-canopy {
+  filter: hue-rotate(140deg) saturate(.65) brightness(.92) drop-shadow(0 0 10px rgba(93,226,194,.09));
+}
+
+.decor-language-plaza,
+.decor-language-zone,
+.decor-language-corruption-zone,
+.decor-language-sanctum,
+.decor-language-pad,
+.decor-language-boss-pad {
+  position: absolute;
+  inset: 0;
+  border-radius: 44px;
+  border: 2px solid rgba(255,255,255,.1);
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.06), transparent 65%);
+  box-shadow: inset 0 0 46px rgba(255,255,255,.035);
+}
+
+.decor-language-zone.operation-ortografia,
+.decor-language-pad.operation-ortografia { border-color: rgba(255,123,213,.27); background: radial-gradient(circle, rgba(255,123,213,.12), transparent 64%), rgba(255,123,213,.025); }
+.decor-language-zone.operation-semantica,
+.decor-language-pad.operation-semantica { border-color: rgba(93,226,194,.27); background: radial-gradient(circle, rgba(93,226,194,.12), transparent 64%), rgba(93,226,194,.025); }
+.decor-language-zone.operation-sintaxe,
+.decor-language-pad.operation-sintaxe { border-color: rgba(157,120,255,.3); background: radial-gradient(circle, rgba(157,120,255,.14), transparent 64%), rgba(157,120,255,.03); }
+.decor-language-corruption-zone,
+.decor-language-boss-pad.operation-ortcepse { border-color: rgba(150,145,160,.28); background: repeating-linear-gradient(135deg, rgba(255,255,255,.025) 0 7px, transparent 7px 18px), radial-gradient(circle, rgba(110,105,120,.16), transparent 64%); animation: portugueseCorruptionPulse 2.4s ease-in-out infinite; }
+.decor-language-sanctum,
+.decor-language-boss-pad.operation-espectro { border-color: rgba(184,92,255,.34); background: radial-gradient(circle, rgba(184,92,255,.18), transparent 62%), rgba(80,20,110,.035); }
+
+.world.scene-portuguese .decor-zone-title .decor-label {
+  background: rgba(7,7,20,.74);
+  border-color: rgba(255,145,200,.18);
+}
+.world.scene-portuguese .decor-zone-title.operation-palavra .decor-label,
+.world.scene-portuguese .decor-zone-title.operation-ortografia .decor-label { color: #ffb5dc; border-color: rgba(255,123,213,.28); }
+.world.scene-portuguese .decor-zone-title.operation-semantica .decor-label { color: #8df1d7; border-color: rgba(93,226,194,.28); }
+.world.scene-portuguese .decor-zone-title.operation-sintaxe .decor-label { color: #c7b3ff; border-color: rgba(157,120,255,.3); }
+.world.scene-portuguese .decor-zone-title.operation-ortcepse .decor-label { color: #d5d0dd; border-color: rgba(170,165,180,.28); }
+.world.scene-portuguese .decor-zone-title.operation-espectro .decor-label { color: #e0a8ff; border-color: rgba(184,92,255,.34); }
+
+.decor-language-inscription,
+.decor-corrupt-word {
+  position:absolute;
+  inset:0;
+  border-radius: 16px;
+  background: rgba(5,7,19,.76);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 0 18px rgba(255,123,213,.06);
+}
+.decor-language-inscription .decor-label { color:#ffd8ef; background:transparent; border:0; box-shadow:none; letter-spacing:1.5px; font-size:.95rem; }
+.decor-language-inscription.operation-semantica .decor-label { color:#8df1d7; }
+.decor-language-inscription.operation-sintaxe .decor-label { color:#c7b3ff; }
+.decor-language-inscription.operation-espectro .decor-label { color:#e3b4ff; }
+.decor-corrupt-word { transform: rotate(-1.5deg); border-color: rgba(180,175,190,.22); animation: wordGlitch 1.8s steps(2,end) infinite; }
+.decor-corrupt-word .decor-label { color:#d6d1df; background:transparent; border:0; box-shadow:none; letter-spacing:4px; text-decoration: line-through; }
+
+.decor-letter-pillar,
+.decor-syntax-pillar,
+.decor-word-crystal {
+  position:absolute;
+  inset:0;
+  border-radius: 14px 14px 5px 5px;
+  border:2px solid rgba(255,255,255,.18);
+  background: linear-gradient(180deg, rgba(255,145,200,.28), rgba(26,17,48,.9));
+  box-shadow:0 10px 20px rgba(0,0,0,.32), inset 0 0 22px rgba(255,255,255,.05);
+}
+.decor-syntax-pillar { background: linear-gradient(180deg, rgba(157,120,255,.35), rgba(27,19,58,.92)); }
+.decor-word-crystal { clip-path: polygon(50% 0, 100% 28%, 82% 100%, 18% 100%, 0 28%); background: linear-gradient(180deg, rgba(93,226,194,.42), rgba(16,54,57,.86)); animation: wordCrystalFloat 2.2s ease-in-out infinite; }
+.decor-letter-pillar::after,
+.decor-syntax-pillar::after {
+  content: attr(data-label);
+}
+
+.decor-language-rift,
+.decor-language-corruption-wall,
+.decor-language-sanctum-wall,
+.decor-word-gate {
+  position:absolute;
+  inset:0;
+  border:1px solid rgba(255,255,255,.08);
+}
+.decor-language-rift { background: repeating-linear-gradient(110deg, rgba(255,123,213,.08) 0 12px, rgba(6,7,20,.94) 12px 28px); box-shadow: inset 0 0 30px rgba(0,0,0,.68); }
+.decor-language-corruption-wall { background: repeating-linear-gradient(90deg, rgba(120,115,130,.14) 0 25px, rgba(5,7,19,.92) 25px 48px); }
+.decor-language-sanctum-wall { background: linear-gradient(180deg, rgba(184,92,255,.14), rgba(5,7,19,.94)); border-color: rgba(184,92,255,.18); }
+.decor-word-gate { background: linear-gradient(180deg, rgba(255,123,213,.22), rgba(157,120,255,.12)); border:2px solid rgba(255,145,200,.36); box-shadow:0 0 26px rgba(255,123,213,.12); }
+.decor-word-gate.gate-locked::after { content:"FRASE INCOMPLETA"; position:absolute; inset:0; display:grid; place-items:center; color:#ffd0e9; font-size:.7rem; font-weight:950; letter-spacing:2px; background:rgba(7,7,20,.32); }
+.decor-word-gate.gate-open { opacity:.18; border-style:dashed; pointer-events:none; }
+.decor-word-gate.gate-open::after { content:"SENTIDO RESTAURADO"; position:absolute; inset:0; display:grid; place-items:center; color:#8df1d7; font-size:.68rem; font-weight:950; letter-spacing:1.6px; }
+
+.world.scene-portuguese .decor-gate.operation-ortcepse { border-color: rgba(160,155,170,.28); background: rgba(80,76,88,.13); }
+.world.scene-portuguese .decor-gate.operation-espectro { border-color: rgba(184,92,255,.38); background: rgba(184,92,255,.09); }
+
+.enemy-type-erro-ortografico .enemy-shell { filter: drop-shadow(0 0 14px rgba(255,123,213,.5)) drop-shadow(0 0 24px rgba(140,247,255,.18)); }
+.enemy-type-fragmento-sintatico .enemy-shell { filter: drop-shadow(0 0 14px rgba(157,120,255,.55)) drop-shadow(0 0 24px rgba(255,222,122,.16)); }
+.enemy-type-eco-semantico .enemy-shell { filter: drop-shadow(0 0 14px rgba(93,226,194,.52)) drop-shadow(0 0 24px rgba(255,145,200,.17)); }
+.enemy-map-image { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 15px rgba(184,92,255,.44)); animation: enemyWalkFloat 1.5s ease-in-out infinite; }
+.enemy-rank-miniBoss .enemy-map-image { transform: scale(1.18); }
+.enemy-rank-boss .enemy-map-image { transform: scale(1.38); }
+
+.math-progress-hud.portuguese-progress {
+  border-color: rgba(255,123,213,.32);
+  background: radial-gradient(circle at 12% 8%, rgba(255,123,213,.14), transparent 42%), rgba(5,7,19,.88);
+  box-shadow: 0 0 28px rgba(255,123,213,.1);
+}
+.math-progress-hud.portuguese-progress .math-progress-head span { color:#ffb5dc; }
+.math-progress-hud.portuguese-progress .math-progress-track span { background: linear-gradient(90deg,#ff7bd5,#9d78ff,#5de2c2); }
+
+.enemy-option-btn.critical-reading-marked {
+  border-color: rgba(255,123,213,.62) !important;
+  background: linear-gradient(135deg, rgba(255,123,213,.15), rgba(157,120,255,.08)) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,123,213,.16), 0 0 18px rgba(255,123,213,.08);
+}
+.enemy-option-btn .critical-reading-tag {
+  display:inline-flex;
+  margin-left:8px;
+  padding:2px 6px;
+  border-radius:999px;
+  color:#ffb5dc;
+  border:1px solid rgba(255,123,213,.35);
+  font-size:.61rem;
+  font-style:normal;
+  font-weight:900;
+  letter-spacing:.4px;
+}
+
+@keyframes portugueseCorruptionPulse { 0%,100%{filter:brightness(.9);opacity:.84} 50%{filter:brightness(1.12);opacity:1} }
+@keyframes wordGlitch { 0%,100%{transform:translate(0) rotate(-1deg)} 35%{transform:translate(2px,-1px) rotate(1deg)} 65%{transform:translate(-2px,1px) rotate(-2deg)} }
+@keyframes wordCrystalFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+.world.scene-portuguese .world-equation-core {
+  border-color: rgba(255,123,213,.42);
+  background: radial-gradient(circle, rgba(255,123,213,.2), rgba(157,120,255,.14) 56%, rgba(6,7,20,.92));
+  box-shadow: 0 0 24px rgba(255,123,213,.16), inset 0 0 18px rgba(93,226,194,.06);
+}
+.world.scene-portuguese .world-equation-ring { border-color: rgba(93,226,194,.38); }
+.world.scene-portuguese .world-equation-symbol { color:#ffb5dc; }
+.world.scene-portuguese .world-equation-label { border-color: rgba(255,123,213,.28); color:#ffe4f3; }
+.world.scene-portuguese .depth-world-equation.solved .world-equation-core { border-color: rgba(93,226,194,.55); box-shadow:0 0 28px rgba(93,226,194,.18); }

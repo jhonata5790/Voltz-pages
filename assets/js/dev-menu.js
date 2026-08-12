@@ -44,6 +44,18 @@
       </section>
 
       <section class="dev-section">
+        <div class="dev-section-title">Teleporte Português · sessão</div>
+        <div class="dev-grid dev-grid-3">
+          <button class="dev-btn session" data-action="teleport-port" data-value="praca">Praça da Palavra</button>
+          <button class="dev-btn session" data-action="teleport-port" data-value="ortografia">Bairro Ortográfico</button>
+          <button class="dev-btn session" data-action="teleport-port" data-value="semantica">Jardim Semântica</button>
+          <button class="dev-btn session" data-action="teleport-port" data-value="sintaxe">Distrito Sintático</button>
+          <button class="dev-btn session" data-action="teleport-port" data-value="ortcepse">Arquivo Ortcepse</button>
+          <button class="dev-btn session" data-action="teleport-port" data-value="espectro">Catedral Espectro</button>
+        </div>
+      </section>
+
+      <section class="dev-section">
         <div class="dev-section-title">Buffs · sessão</div>
         <div class="dev-grid dev-grid-3">
           <button class="dev-btn session" data-action="rhythm" data-value="3">Ritmo Lógico 3/3</button>
@@ -190,6 +202,7 @@
     try {
       switch (action) {
         case "teleport": api.teleportMath(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
+        case "teleport-port": api.teleportPortuguese(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
         case "village": api.teleportVillage(); setLog("Teleporte executado: Vila Central."); break;
         case "nearest": {
           const result = await api.defeatNearestEnemy();

@@ -23,11 +23,11 @@ window.VoltzData.realmOptions = [
   },
   {
     id: "reino-gramatica",
-    name: "Reino da Gramática",
+    name: "Reino de Português",
     icon: "📘",
-    unlocked: false,
-    status: "Visual futuro",
-    description: "Área futura de Português, interpretação, classes gramaticais e construção de frases."
+    unlocked: true,
+    status: "Disponível",
+    description: "Segundo reino jogável. Reconstrua palavras, sentidos e estruturas para impedir que a linguagem se desfaça."
   },
   {
     id: "reino-ciencias",
