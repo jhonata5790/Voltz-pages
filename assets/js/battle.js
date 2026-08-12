@@ -730,6 +730,90 @@ function clearBattleTimer() {
       showBattleNextButton("Próxima pergunta");
     }
 
+
+    async function devDealBattleDamage(amount = 100) {
+      if (!enemyPanelOpen || !currentEnemy) {
+        return { ok: false, reason: "no-battle", message: "Nenhuma batalha está aberta." };
+      }
+
+      if (!battleState.active || battleState.resultMode || battleState.guardianRecognitionActive) {
+        return { ok: false, reason: "battle-finished", message: "A batalha já está em resolução." };
+      }
+
+      const damage = Math.max(1, Math.floor(Number(amount) || 100));
+      const type = getEnemyType(currentEnemy);
+      const rawNextHp = Math.max(0, battleState.enemyHp - damage);
+      const guardianRecognitionTriggered = shouldTriggerGuardianRecognition(type, rawNextHp);
+      const thresholdHp = getGuardianThresholdHp(type);
+
+      battleState.enemyHp =
+        guardianRecognitionTriggered && thresholdHp !== null
+          ? thresholdHp
+          : rawNextHp;
+
+      updateBattleHud();
+      triggerBattleEffect(
+        "enemy-hit",
+        guardianRecognitionTriggered ? `${Math.round((thresholdHp / battleState.enemyMaxHp) * 100)}%` : `-${damage} DEV`
+      );
+
+      if (guardianRecognitionTriggered) {
+        battleState.locked = true;
+        battleState.resultMode = true;
+        window.setTimeout(() => beginGuardianRecognition(type), 250);
+        return {
+          ok: true,
+          damage,
+          enemyHp: battleState.enemyHp,
+          guardianRecognitionTriggered: true,
+          defeated: false,
+          message: `${type.name} atingiu o limite do desafio do guardião.`
+        };
+      }
+
+      if (battleState.enemyHp <= 0) {
+        await showBattleVictory();
+        return {
+          ok: true,
+          damage,
+          enemyHp: 0,
+          guardianRecognitionTriggered: false,
+          defeated: true,
+          message: `${type.name} foi vencido pelo Golpe DEV.`
+        };
+      }
+
+      return {
+        ok: true,
+        damage,
+        enemyHp: battleState.enemyHp,
+        guardianRecognitionTriggered: false,
+        defeated: false,
+        message: `${type.name} sofreu ${damage} de dano DEV.`
+      };
+    }
+
+    function devHealPlayer(amount = 100) {
+      if (!enemyPanelOpen || !currentEnemy || !battleState.active || battleState.resultMode) {
+        return { ok: false, reason: "no-active-battle", message: "Nenhuma batalha ativa para curar." };
+      }
+
+      const heal = Math.max(1, Math.floor(Number(amount) || 100));
+      const before = battleState.playerHp;
+      battleState.playerHp = Math.min(battleState.playerMaxHp, battleState.playerHp + heal);
+      const restored = battleState.playerHp - before;
+
+      updateBattleHud();
+      return {
+        ok: true,
+        restored,
+        playerHp: battleState.playerHp,
+        message: restored > 0
+          ? `Jogador recuperou ${restored} PV.`
+          : "Jogador já está com PV máximo."
+      };
+    }
+
     function showBattleFeedback(kind, text) {
       const feedback = document.getElementById("enemyFeedback");
       if (!feedback) return;
@@ -1107,3 +1191,18 @@ window.useStructuredReasoning = useStructuredReasoning;
 window.useCriticalReading = useCriticalReading;
 window.advanceGuardianDialogue = advanceGuardianDialogue;
 window.finishGuardianRecognition = finishGuardianRecognition;
+
+
+window.VoltzBattleDev = Object.freeze({
+  dealDamage: devDealBattleDamage,
+  healPlayer: devHealPlayer,
+  getSnapshot: () => ({
+    active: Boolean(enemyPanelOpen && battleState.active),
+    resultMode: battleState.resultMode,
+    enemyName: currentEnemy ? getEnemyType(currentEnemy)?.name || currentEnemy.id : "",
+    enemyHp: battleState.enemyHp,
+    enemyMaxHp: battleState.enemyMaxHp,
+    playerHp: battleState.playerHp,
+    playerMaxHp: battleState.playerMaxHp
+  })
+});

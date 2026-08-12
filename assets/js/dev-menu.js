@@ -81,6 +81,16 @@
         </div>
       </section>
 
+
+      <section class="dev-section">
+        <div class="dev-section-title">Batalha · sessão</div>
+        <div class="dev-grid dev-grid-3">
+          <button class="dev-btn session" data-action="battle-damage" data-value="100">⚔ Golpe DEV −100 PV</button>
+          <button class="dev-btn session" data-action="battle-heal" data-value="100">❤ Curar jogador</button>
+        </div>
+        <div class="dev-section-note">Não salva trapaça separada: o golpe apenas usa o fluxo normal de vitória/conclusão da batalha.</div>
+      </section>
+
       <section class="dev-section">
         <div class="dev-section-title">Recursos · SAVE</div>
         <div class="dev-grid dev-grid-3">
@@ -140,7 +150,13 @@
       <div class="dev-stat"><span>Equações</span><strong>${snap.solvedEquations}/${snap.totalEquations}</strong></div>
       <div class="dev-stat"><span>Ritmo</span><strong>${snap.rhythmStacks}/3${snap.rhythmDevOverride ? " DEV" : ""}</strong></div>
       <div class="dev-stat"><span>Velocidade</span><strong>×${snap.speedMultiplier}</strong></div>
-      <div class="dev-stat"><span>Colisores</span><strong>${snap.colliders ? "ON" : "OFF"}</strong></div>`;
+      <div class="dev-stat"><span>Colisores</span><strong>${snap.colliders ? "ON" : "OFF"}</strong></div>
+      ${(() => {
+        const battle = window.VoltzBattleDev?.getSnapshot?.();
+        return battle?.active
+          ? `<div class="dev-stat"><span>Batalha</span><strong>${escapeDev(battle.enemyName)} · ${battle.enemyHp}/${battle.enemyMaxHp} PV</strong></div>`
+          : `<div class="dev-stat"><span>Batalha</span><strong>—</strong></div>`;
+      })()}`;
   }
 
   function escapeDev(value) {
@@ -212,6 +228,22 @@
           } else {
             setLog(`✓ Inimigo ${result.enemyId} derrotado e confirmado no Supabase.`);
           }
+          break;
+        }
+        case "battle-damage": {
+          const result = await window.VoltzBattleDev?.dealDamage?.(Number(value) || 100);
+          if (!result?.ok) throw new Error(result?.message || "Nenhuma batalha ativa.");
+          setLog(result.guardianRecognitionTriggered
+            ? `✓ ${result.message} O diálogo especial será iniciado.`
+            : result.defeated
+              ? `✓ ${result.message}`
+              : `⚔ ${result.message} PV restante: ${result.enemyHp}.`);
+          break;
+        }
+        case "battle-heal": {
+          const result = window.VoltzBattleDev?.healPlayer?.(Number(value) || 100);
+          if (!result?.ok) throw new Error(result?.message || "Nenhuma batalha ativa.");
+          setLog(`❤ ${result.message} PV atual: ${result.playerHp}.`);
           break;
         }
         case "colliders": api.toggleColliders(); setLog("Visualização de colisores alternada."); break;
