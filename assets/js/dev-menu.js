@@ -79,6 +79,14 @@
       </section>
 
       <section class="dev-section">
+        <div class="dev-section-title">Diagnóstico do SAVE</div>
+        <div class="dev-grid dev-grid-3">
+          <button class="dev-btn session" data-action="inspect-save">Comparar local × Supabase</button>
+          <button class="dev-btn session" data-action="reload-save">Recarregar SAVE do Supabase</button>
+        </div>
+      </section>
+
+      <section class="dev-section">
         <div class="dev-section-title">Reset · SAVE</div>
         <div class="dev-grid">
           <button class="dev-btn danger" data-action="reset-math">RESETAR REINO DA MATEMÁTICA</button>
@@ -185,19 +193,66 @@
         case "nearest": {
           const result = await api.defeatNearestEnemy();
           if (!result?.ok) throw new Error("Nenhum inimigo está próximo. Chegue perto de um e tente de novo.");
-          setLog(`Inimigo ${result.enemyId} marcado como derrotado.`);
+          if (result.persisted === false) {
+            setLog(`⚠ ${result.enemyId} mudou apenas LOCALMENTE. Supabase NÃO confirmou o save: ${result.error?.message || "ver console"}`, true);
+          } else {
+            setLog(`✓ Inimigo ${result.enemyId} derrotado e confirmado no Supabase.`);
+          }
           break;
         }
         case "colliders": api.toggleColliders(); setLog("Visualização de colisores alternada."); break;
         case "rhythm": api.setRhythmOverride(value === "natural" ? "natural" : Number(value)); setLog(value === "natural" ? "Ritmo Lógico voltou ao save." : `Ritmo Lógico temporário ${value}/3.`); break;
         case "speed": api.setSpeed(Number(value)); setLog(`Velocidade temporária ×${value}.`); break;
-        case "commons": await api.setCommonsDefeated(value === "1"); setLog(value === "1" ? "SAVE: todos os inimigos comuns derrotados." : "SAVE: inimigos comuns restaurados."); break;
-        case "melog": await api.setMiniBossDefeated(value === "1"); setLog(value === "1" ? "SAVE: Melog derrotado." : "SAVE: Melog restaurado."); break;
-        case "golem": await api.setBossDefeated(value === "1"); setLog(value === "1" ? "SAVE: guardião concluído." : "SAVE: Golem restaurado."); break;
-        case "equations": await api.setEquationsSolved(value === "1"); setLog(value === "1" ? "SAVE: Equações do Mundo estabilizadas." : "SAVE: Equações do Mundo restauradas."); break;
+        case "commons": {
+          const result = await api.setCommonsDefeated(value === "1");
+          setLog(result?.savePersisted === false ? "⚠ Alteração dos comuns ficou apenas LOCAL. Supabase não confirmou." : (value === "1" ? "✓ SAVE confirmado: comuns derrotados." : "✓ SAVE confirmado: comuns restaurados."), result?.savePersisted === false);
+          break;
+        }
+        case "melog": {
+          const result = await api.setMiniBossDefeated(value === "1");
+          setLog(result?.savePersisted === false ? "⚠ Alteração do Melog ficou apenas LOCAL. Supabase não confirmou." : (value === "1" ? "✓ SAVE confirmado: Melog derrotado." : "✓ SAVE confirmado: Melog restaurado."), result?.savePersisted === false);
+          break;
+        }
+        case "golem": {
+          const result = await api.setBossDefeated(value === "1");
+          setLog(result?.savePersisted === false ? "⚠ Alteração do Golem ficou apenas LOCAL. Supabase não confirmou." : (value === "1" ? "✓ SAVE confirmado: guardião concluído." : "✓ SAVE confirmado: Golem restaurado."), result?.savePersisted === false);
+          break;
+        }
+        case "equations": {
+          const result = await api.setEquationsSolved(value === "1");
+          setLog(result?.savePersisted === false ? "⚠ Alteração das equações ficou apenas LOCAL. Supabase não confirmou." : (value === "1" ? "✓ SAVE confirmado: Equações estabilizadas." : "✓ SAVE confirmado: Equações restauradas."), result?.savePersisted === false);
+          break;
+        }
         case "xp": await profile()?.addRewards?.(500, 0); setLog("SAVE: +500 XP."); break;
         case "coins": await profile()?.addRewards?.(0, 500); setLog("SAVE: +500 moedas."); break;
         case "hints": await profile()?.addItem?.("dica-foco", 5); setLog("SAVE: +5 Dicas de Foco."); break;
+        case "inspect-save": {
+          const result = await profile()?.inspectSave?.("reino-matematica");
+          if (!result?.ok) {
+            throw new Error(`Falha ao ler o Supabase: ${result?.error?.message || result?.reason || "erro desconhecido"}`);
+          }
+
+          const localEnemies = result.local?.defeatedEnemyIds?.length || 0;
+          const remoteEnemies = result.remote?.defeatedEnemyIds?.length || 0;
+          const localEq = result.local?.solvedWorldEquationIds?.length || 0;
+          const remoteEq = result.remote?.solvedWorldEquationIds?.length || 0;
+
+          if (result.matches && result.localXp === result.remoteXp && result.localCoins === result.remoteCoins) {
+            setLog(`✓ SAVE CONFIRMADO NO SUPABASE · inimigos ${remoteEnemies} · equações ${remoteEq} · XP ${result.remoteXp} · moedas ${result.remoteCoins}`);
+          } else {
+            setLog(
+              `⚠ DIVERGÊNCIA LOCAL × SUPABASE · inimigos ${localEnemies}/${remoteEnemies} · equações ${localEq}/${remoteEq} · XP ${result.localXp}/${result.remoteXp} · moedas ${result.localCoins}/${result.remoteCoins}`,
+              true
+            );
+          }
+          break;
+        }
+        case "reload-save": {
+          const result = await profile()?.refreshProfileFromServer?.();
+          if (!result?.ok) throw new Error(result?.error?.message || "Não foi possível recarregar o perfil.");
+          setLog("SAVE recarregado diretamente do Supabase. O mapa foi sincronizado com o banco.");
+          break;
+        }
         case "reset-math": {
           if (!window.confirm("Resetar TODO o progresso salvo do Reino da Matemática? XP/moedas/inventário não serão apagados.")) break;
           await api.resetMathProgress();

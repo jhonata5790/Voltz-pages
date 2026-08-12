@@ -277,11 +277,23 @@ async function setRealmProgress(realmId, realmProgress) {
   try {
     const updated = await updateProfileFields({ [progressField]: nextProgress });
     if (updated) updated.progresso = nextProgress;
-    return updated;
+    return {
+      ok: true,
+      persisted: true,
+      profile: updated,
+      realmProgress: normalizedRealmProgress
+    };
   } catch (error) {
     console.error(`Não foi possível salvar o progresso de ${realmId}:`, error);
     state.profile.progresso = nextProgress;
-    return state.profile;
+    window.dispatchEvent(new CustomEvent("voltz:profile-updated", { detail: state.profile }));
+    return {
+      ok: true,
+      persisted: false,
+      profile: state.profile,
+      realmProgress: normalizedRealmProgress,
+      error
+    };
   }
 }
 
@@ -543,6 +555,80 @@ async function consumeItem(itemId, quantity = 1) {
   return { ok: true, count: getItemCount(itemId) };
 }
 
+
+async function inspectSave(realmId = "reino-matematica") {
+  await ready;
+
+  if (!state.user || !state.profile) {
+    return { ok: false, reason: "profile-not-ready" };
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", state.user.id)
+    .single();
+
+  if (error) {
+    return { ok: false, reason: "supabase-read", error };
+  }
+
+  const remoteProfile = normalizeProfile(data, state.user);
+  const localRealm = normalizeRealmProgress(state.profile.progresso?.[realmId] || {});
+  const remoteRealm = normalizeRealmProgress(remoteProfile.progresso?.[realmId] || {});
+
+  const stable = (value) => JSON.stringify(value, Object.keys(value || {}).sort());
+  const localComparable = {
+    defeatedEnemyIds: [...localRealm.defeatedEnemyIds].sort(),
+    solvedWorldEquationIds: [...localRealm.solvedWorldEquationIds].sort(),
+    miniBossDefeated: localRealm.miniBossDefeated,
+    bossDefeated: localRealm.bossDefeated,
+    completed: localRealm.completed
+  };
+  const remoteComparable = {
+    defeatedEnemyIds: [...remoteRealm.defeatedEnemyIds].sort(),
+    solvedWorldEquationIds: [...remoteRealm.solvedWorldEquationIds].sort(),
+    miniBossDefeated: remoteRealm.miniBossDefeated,
+    bossDefeated: remoteRealm.bossDefeated,
+    completed: remoteRealm.completed
+  };
+
+  return {
+    ok: true,
+    realmId,
+    matches: stable(localComparable) === stable(remoteComparable),
+    local: localComparable,
+    remote: remoteComparable,
+    localXp: Number(state.profile.xp || 0),
+    remoteXp: Number(remoteProfile.xp || 0),
+    localCoins: Number(state.profile.moedas || 0),
+    remoteCoins: Number(remoteProfile.moedas || 0)
+  };
+}
+
+async function refreshProfileFromServer() {
+  await ready;
+  if (!state.user) return { ok: false, reason: "profile-not-ready" };
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", state.user.id)
+    .single();
+
+  if (error) {
+    return { ok: false, error };
+  }
+
+  state.profile = normalizeProfile(data, state.user);
+  renderProfileHud();
+  window.dispatchEvent(new CustomEvent("voltz:profile-updated", {
+    detail: state.profile
+  }));
+
+  return { ok: true, profile: state.profile };
+}
+
 async function logout() {
   try {
     await supabase.auth.signOut();
@@ -595,6 +681,8 @@ window.VoltzProfile = {
   purchaseItem,
   addItem,
   consumeItem,
+  inspectSave,
+  refreshProfileFromServer,
   logout
 };
 

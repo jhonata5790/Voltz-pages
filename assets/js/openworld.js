@@ -211,9 +211,15 @@ const viewport = document.getElementById("gameViewport");
 
       return window.VoltzProfile
         .setRealmProgress(progressKey, getRealmProgressSnapshot(realmId))
+        .then((result) => {
+          if (result?.persisted === false) {
+            console.warn(`[SAVE] ${realmId} ficou apenas na memória; Supabase não confirmou a escrita.`, result.error);
+          }
+          return result;
+        })
         .catch((error) => {
-          console.error(`Falha ao salvar progresso de ${realmId}:`, error);
-          return null;
+          console.error(`Falha inesperada ao salvar progresso de ${realmId}:`, error);
+          return { ok: false, persisted: false, error };
         });
     }
 
@@ -2627,10 +2633,20 @@ const viewport = document.getElementById("gameViewport");
     }
 
     async function persistMathDevProgress(message) {
-      await persistRealmProgress("reino-matematica");
+      const saveResult = await persistRealmProgress("reino-matematica");
       refreshAfterDevProgressChange();
-      if (message) interactionText.textContent = `[DEV] ${message}`;
-      return getMathDevSnapshot();
+
+      if (saveResult?.persisted === false) {
+        interactionText.textContent = `[DEV] ⚠ Alteração apenas local. Supabase NÃO confirmou o save.`;
+      } else if (message) {
+        interactionText.textContent = `[DEV] ${message}`;
+      }
+
+      return {
+        ...getMathDevSnapshot(),
+        savePersisted: saveResult?.persisted !== false,
+        saveError: saveResult?.error?.message || ""
+      };
     }
 
     function getMathDevSnapshot() {
@@ -2783,10 +2799,18 @@ const viewport = document.getElementById("gameViewport");
       }
       progress.lastVictoryAt = new Date().toISOString();
 
-      await persistRealmProgress(realmId);
+      const saveResult = await persistRealmProgress(realmId);
       refreshRealmEnemyObjectsAfterProgress(realmId);
-      interactionText.textContent = `[DEV] ${snapshot.id} marcado como derrotado.`;
-      return { ok: true, enemyId: snapshot.id, snapshot: getMathDevSnapshot() };
+      interactionText.textContent = saveResult?.persisted === false
+        ? `[DEV] ⚠ ${snapshot.id} alterado apenas localmente. Supabase NÃO confirmou o save.`
+        : `[DEV] ${snapshot.id} marcado como derrotado e salvo.`;
+      return {
+        ok: true,
+        enemyId: snapshot.id,
+        persisted: saveResult?.persisted !== false,
+        error: saveResult?.error,
+        snapshot: getMathDevSnapshot()
+      };
     }
 
     function devSetRhythmOverride(stacks) {
@@ -2863,6 +2887,16 @@ const viewport = document.getElementById("gameViewport");
       updateMathBuffHud();
       updateNearbyWorldEquation();
     }, { once: true });
+
+    // Mantém o estado do mapa alinhado ao perfil após qualquer escrita/leitura do Supabase.
+    // Isso também evita uma segunda gravação redundante após a vitória em batalha.
+    window.addEventListener("voltz:profile-updated", () => {
+      syncAllRealmProgressFromProfile();
+      refreshRealmEnemyObjectsAfterProgress(currentScene?.id);
+      updateMathBuffHud();
+      updateNearbyWorldEquation();
+      updateHint();
+    });
     window.addEventListener("voltz:profile-updated", () => {
       syncAllRealmProgressFromProfile();
       refreshRealmEnemyObjectsAfterProgress(currentScene?.id);
