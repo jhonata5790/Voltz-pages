@@ -181,7 +181,8 @@ function clearBattleTimer() {
       const q = currentEnemyQuestion;
       const questionNumber = battleState.questionNumber;
       const hintCount = Math.max(0, Number(window.VoltzProfile?.getItemCount?.("dica-foco") || 0));
-      const canUseHint = hintCount > 0 && !battleState.hintRevealed && !battleState.locked && !battleState.hintBusy;
+      const isTrainingBattle = Boolean(currentEnemy?.trainingBattle);
+      const canUseHint = !isTrainingBattle && hintCount > 0 && !battleState.hintRevealed && !battleState.locked && !battleState.hintBusy;
       const hasStructuredReasoning = Boolean(window.VoltzProfile?.hasRealmDiploma?.("reino-matematica"));
       const canUseStructuredReasoning = hasStructuredReasoning && !battleState.structuredReasoningUsed && !battleState.locked;
 
@@ -191,7 +192,7 @@ function clearBattleTimer() {
             <div>
               <div class="enemy-panel-kicker">${escapeHtml(type.role)}</div>
               <div class="enemy-panel-title">${escapeHtml(type.name)}</div>
-              <div class="enemy-panel-subtitle">${escapeHtml(type.description)}</div>
+              <div class="enemy-panel-subtitle">${escapeHtml(type.description)}${isTrainingBattle ? " · Treino sem recompensas e sem alteração de progresso." : ""}</div>
             </div>
 
             <button class="enemy-close-btn" type="button" onclick="closeEnemyPanel()">Voltar ao mapa</button>
@@ -287,9 +288,11 @@ function clearBattleTimer() {
                     ? "Usando..."
                     : battleState.hintRevealed
                       ? "Dica já usada"
-                      : hintCount > 0
-                        ? "Usar dica"
-                        : "Sem dicas"}
+                      : isTrainingBattle
+                        ? "Protegido no treino"
+                        : hintCount > 0
+                          ? "Usar dica"
+                          : "Sem dicas"}
                 </button>
               </article>
 
@@ -313,9 +316,11 @@ function clearBattleTimer() {
               ` : ""}
 
               <div id="battleBagMessage" class="battle-bag-message ${battleState.bagMessage ? "visible" : ""}">
-                ${escapeHtml(battleState.bagMessage || (hintCount > 0
-                  ? "Use a Dica de Foco apenas quando precisar. O item é consumido imediatamente."
-                  : "Sua mochila não tem dicas. Compre novas unidades com o Mercador de Foco na Loja Voltz."))}
+                ${escapeHtml(battleState.bagMessage || (isTrainingBattle
+                  ? "Arena de Treino: consumíveis ficam protegidos e não podem ser gastos nesta simulação."
+                  : hintCount > 0
+                    ? "Use a Dica de Foco apenas quando precisar. O item é consumido imediatamente."
+                    : "Sua mochila não tem dicas. Compre novas unidades com o Mercador de Foco na Loja Voltz."))}
               </div>
             </div>
           </div>
@@ -327,6 +332,13 @@ function clearBattleTimer() {
     }
 
     async function useBattleHint() {
+      if (currentEnemy?.trainingBattle) {
+        battleState.bagMessage = "Treino da Arena não consome Dicas de Foco. Seus itens continuam guardados.";
+        battleState.currentTab = "bag";
+        renderBattleScreen();
+        return;
+      }
+
       if (
         !battleState.active ||
         battleState.locked ||
@@ -722,6 +734,27 @@ function clearBattleTimer() {
         : (typeof window.getActiveSceneId === "function" ? window.getActiveSceneId() : "");
       const xpReward = type.xpReward || 40;
       const coinReward = type.coinReward || 12;
+
+      if (defeatedEnemySnapshot.trainingBattle) {
+        battleState.locked = true;
+        battleState.active = false;
+        battleState.resultMode = true;
+        enemyQuestionAnswered = false;
+
+        enemyPanel.innerHTML = `
+          <div class="battle-result-card victory battle-auto-result">
+            <div class="battle-result-icon battle-result-icon-victory">◇</div>
+            <div class="enemy-panel-kicker">Simulação concluída</div>
+            <div class="enemy-panel-title">Treino finalizado!</div>
+            <p>Você venceu o ${escapeHtml(type.name)}. Nenhum XP, moeda, consumível ou progresso do mundo foi alterado.</p>
+            <div class="battle-auto-return">Reiniciando o Núcleo de Treino e voltando à Arena em 3 segundos...</div>
+          </div>`;
+
+        scheduleBattleAutoReturn(() => {
+          closeEnemyPanel({ force: true, skipProgressUpdate: true });
+        });
+        return;
+      }
 
       battleState.locked = true;
       battleState.active = false;

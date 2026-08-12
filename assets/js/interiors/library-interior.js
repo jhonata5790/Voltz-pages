@@ -176,7 +176,44 @@
 
     buildings: [],
     treeObjects: [],
-    npcObjects: [],
+    npcObjects: [
+      {
+        id: "npc-professora-sintaxe",
+        name: "Professora Sintaxe",
+        role: "Biblioteca de Dicas",
+        x: 610,
+        y: 365,
+        colorA: "#ffd166",
+        colorB: "#78f7ff",
+        aura: "#ffd166",
+        portrait: "assets/images/npcs/professora-sintaxe.webp",
+        opensLibraryArchive: true,
+        dialogue: [
+          "Bem-vindo à Biblioteca de Dicas. Aqui os erros viram material de estudo em vez de só uma tela de derrota.",
+          "O acervo separa orientação de Matemática, combate, recursos e estrutura dos Reinos.",
+          "As explicações depois de cada resposta continuam gratuitas. Dicas de Foco são recursos comprados e ficam na sua mochila.",
+          "Vou abrir o Acervo de Consulta para você."
+        ]
+      },
+      {
+        id: "npc-console-reinicio-matematica",
+        name: "Console de Reinício",
+        role: "Sistema da Biblioteca",
+        visualType: "terminal",
+        x: 610,
+        y: 560,
+        colorA: "#78f7ff",
+        colorB: "#9257ff",
+        aura: "#78f7ff",
+        portrait: "assets/images/sprites/voltinho_preocupado.webp",
+        resetsMathProgress: true,
+        dialogue: [
+          "ATENÇÃO: este console existe para repetir a jornada do Reino da Matemática.",
+          "Se você avançar até o fim desta mensagem, inimigos, Equações do Mundo, Melog, Golem e Diploma da Matemática serão reiniciados para uma nova tentativa.",
+          "O XP e as moedas que você já conquistou não são removidos. Esta é a última etapa antes do reinício."
+        ]
+      }
+    ],
     portalObjects: [],
     enemyObjects: []
   });

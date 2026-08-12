@@ -43,6 +43,13 @@ const viewport = document.getElementById("gameViewport");
     const hallFameList = document.getElementById("hallFameList");
     const hallFameCurrent = document.getElementById("hallFameCurrent");
     const hallFameStatus = document.getElementById("hallFameStatus");
+    const studentTerminalPanel = document.getElementById("studentTerminalPanel");
+    const studentTerminalSummary = document.getElementById("studentTerminalSummary");
+    const studentTerminalRealms = document.getElementById("studentTerminalRealms");
+    const studentTerminalAbilities = document.getElementById("studentTerminalAbilities");
+    const libraryArchivePanel = document.getElementById("libraryArchivePanel");
+    const libraryTopicGrid = document.getElementById("libraryTopicGrid");
+    const libraryProgressNote = document.getElementById("libraryProgressNote");
 
     const equationPanel = document.getElementById("equationPanel");
     const equationPanelKicker = document.getElementById("equationPanelKicker");
@@ -711,6 +718,8 @@ const viewport = document.getElementById("gameViewport");
     let worldInventoryOpen = false;
     let hallFamePanelOpen = false;
     let hallFameLoading = false;
+    let studentTerminalOpen = false;
+    let libraryArchiveOpen = false;
     let shopPurchaseBusy = false;
     let worldEquationPanelOpen = false;
     let nearbyWorldEquation = null;
@@ -1366,6 +1375,169 @@ const viewport = document.getElementById("gameViewport");
     }
 
 
+
+    function getStudentRealmProgressSummary(realm) {
+      const profile = window.VoltzProfile?.state?.profile;
+      const progress = profile?.progresso?.[realm.id] || {};
+      const completed = Boolean(progress.completed || progress.guardianChallengeCompleted || progress.bossDefeated);
+      const defeated = Array.isArray(progress.defeatedEnemyIds) ? progress.defeatedEnemyIds.length : 0;
+      const equations = Array.isArray(progress.solvedWorldEquationIds) ? progress.solvedWorldEquationIds.length : 0;
+      const pieces = [];
+
+      if (realm.id === "reino-matematica") {
+        pieces.push(`Inimigos ${defeated}/9`);
+        pieces.push(`Equações ${equations}/3`);
+        pieces.push(progress.miniBossDefeated ? "Melog ✓" : "Melog —");
+        pieces.push(progress.guardianChallengeCompleted || progress.bossDefeated ? "Golem ✓" : "Golem —");
+      } else {
+        pieces.push(realm.unlocked ? "Disponível" : "Ainda não liberado");
+      }
+
+      return { completed, pieces };
+    }
+
+    function renderStudentTerminal() {
+      if (!studentTerminalPanel) return;
+      const profile = window.VoltzProfile?.state?.profile;
+      const progress = profile?.progresso || {};
+      const worldProgress = progress._world && typeof progress._world === "object" ? progress._world : {};
+      const diplomas = Object.values(window.VoltzProfile?.getDiplomas?.() || {}).filter((item) => item && typeof item === "object");
+      const abilities = diplomas.filter((item) => item.abilityName || item.abilityId);
+      const completedRealmIds = Array.isArray(worldProgress.completedRealmIds) ? worldProgress.completedRealmIds : [];
+      const gameCompletions = Math.max(0, Number(worldProgress.gameCompletions || 0));
+
+      if (studentTerminalSummary) {
+        studentTerminalSummary.innerHTML = `
+          <div class="student-terminal-stat"><span>Aluno</span><strong>${escapeHtml(profile?.nome || "Aluno")}</strong></div>
+          <div class="student-terminal-stat"><span>XP</span><strong>${Math.max(0, Number(profile?.xp || 0)).toLocaleString("pt-BR")}</strong></div>
+          <div class="student-terminal-stat"><span>Moedas</span><strong>${Math.max(0, Number(profile?.moedas || 0)).toLocaleString("pt-BR")}</strong></div>
+          <div class="student-terminal-stat"><span>Diplomas</span><strong>${diplomas.length}</strong></div>
+          <div class="student-terminal-stat"><span>Reinos concluídos</span><strong>${completedRealmIds.length}</strong></div>
+          <div class="student-terminal-stat"><span>Jogo zerado</span><strong>${gameCompletions}×</strong></div>`;
+      }
+
+      if (studentTerminalRealms) {
+        studentTerminalRealms.innerHTML = realmOptions.map((realm) => {
+          const summary = getStudentRealmProgressSummary(realm);
+          const status = summary.completed ? "Concluído" : realm.unlocked ? "Em andamento" : "Bloqueado";
+          return `
+            <article class="student-realm-card ${summary.completed ? "completed" : ""} ${!realm.unlocked ? "locked" : ""}">
+              <div class="student-realm-top">
+                <div class="student-realm-name">${escapeHtml(realm.icon || "◇")} ${escapeHtml(realm.name)}</div>
+                <span class="student-realm-status">${status}</span>
+              </div>
+              <p>${escapeHtml(realm.description || "Reino do Conhecimento.")}</p>
+              <div class="student-realm-progress">${summary.pieces.map((piece) => `<span>${escapeHtml(piece)}</span>`).join("")}</div>
+            </article>`;
+        }).join("");
+      }
+
+      if (studentTerminalAbilities) {
+        studentTerminalAbilities.innerHTML = abilities.length
+          ? abilities.map((item) => `
+              <article class="student-ability-card">
+                <strong>🧠 ${escapeHtml(item.abilityName || "Competência")}</strong>
+                <p>${escapeHtml(item.abilityDescription || "Competência permanente desbloqueada por um diploma.")}</p>
+              </article>`).join("")
+          : `<div class="student-terminal-empty">Conclua um Reino e conquiste seu diploma para desbloquear competências permanentes.</div>`;
+      }
+    }
+
+    function openStudentTerminalPanel() {
+      if (!studentTerminalPanel || enemyPanelOpen) return;
+      if (worldInventoryOpen) closeWorldInventory();
+      if (shopPanelOpen) closeShopPanel();
+      if (realmPanelOpen) closeRealmPanel();
+      if (hallFamePanelOpen) closeHallOfFamePanel();
+      if (libraryArchiveOpen) closeLibraryArchivePanel();
+      if (worldEquationPanelOpen) closeWorldEquationPanel();
+      studentTerminalOpen = true;
+      stopPlayerForOverlay();
+      renderStudentTerminal();
+      studentTerminalPanel.classList.add("visible");
+      studentTerminalPanel.setAttribute("aria-hidden", "false");
+      interactionText.textContent = "Terminal do Aluno aberto.";
+    }
+
+    function closeStudentTerminalPanel() {
+      if (!studentTerminalOpen) return;
+      studentTerminalOpen = false;
+      studentTerminalPanel?.classList.remove("visible");
+      studentTerminalPanel?.setAttribute("aria-hidden", "true");
+      updateHint();
+    }
+
+    function renderLibraryArchive() {
+      if (!libraryArchivePanel) return;
+      const mathProgressProfile = window.VoltzProfile?.getRealmProgress?.("reino-matematica") || {};
+      const defeated = Array.isArray(mathProgressProfile.defeatedEnemyIds) ? mathProgressProfile.defeatedEnemyIds.length : 0;
+      const equations = Array.isArray(mathProgressProfile.solvedWorldEquationIds) ? mathProgressProfile.solvedWorldEquationIds.length : 0;
+      const diploma = window.VoltzProfile?.hasRealmDiploma?.("reino-matematica");
+      const topics = [
+        {
+          icon: "➗", title: "Matemática",
+          text: "O Reino da Matemática exige exploração e domínio progressivo, não apenas uma sequência de perguntas.",
+          bullets: ["Estabilize as Equações do Mundo.", "Derrote pelo menos 6 inimigos comuns.", "Supere Melog e depois demonstre aprendizado ao Golem."]
+        },
+        {
+          icon: "⚔️", title: "Combate",
+          text: "Acertos causam dano; erros e tempo esgotado reduzem sua energia. A explicação aparece depois da resposta.",
+          bullets: ["Leia o enunciado antes de olhar as alternativas.", "Use o tempo para raciocinar, não para chutar.", "Na Arena, treino não altera o save."]
+        },
+        {
+          icon: "🎒", title: "Recursos",
+          text: "A Mochila guarda consumíveis e competências permanentes.",
+          bullets: ["Dica de Foco: comprada na Loja Voltz por 15 moedas.", "Raciocínio Estruturado: competência permanente do Diploma da Matemática.", "Consumíveis não podem ser gastos na Arena."]
+        },
+        {
+          icon: "🌌", title: "Reinos",
+          text: "Cada matéria será um Reino próprio com identidade visual, progressão e um diploma temático.",
+          bullets: ["Matemática é o primeiro Reino jogável.", "Os próximos aparecem no Portal como destinos futuros.", "O Terminal do Aluno reúne seu progresso em todos eles."]
+        }
+      ];
+
+      if (libraryTopicGrid) {
+        libraryTopicGrid.innerHTML = topics.map((topic) => `
+          <article class="library-topic-card">
+            <strong>${topic.icon} ${escapeHtml(topic.title)}</strong>
+            <p>${escapeHtml(topic.text)}</p>
+            <ul>${topic.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}</ul>
+          </article>`).join("");
+      }
+      if (libraryProgressNote) {
+        libraryProgressNote.innerHTML = `Seu registro atual em Matemática: <strong>${defeated}/9 inimigos</strong> · <strong>${equations}/3 Equações do Mundo</strong> · Diploma ${diploma ? "conquistado ✓" : "ainda não conquistado"}.`;
+      }
+    }
+
+    function openLibraryArchivePanel() {
+      if (!libraryArchivePanel || enemyPanelOpen) return;
+      if (worldInventoryOpen) closeWorldInventory();
+      if (shopPanelOpen) closeShopPanel();
+      if (realmPanelOpen) closeRealmPanel();
+      if (hallFamePanelOpen) closeHallOfFamePanel();
+      if (studentTerminalOpen) closeStudentTerminalPanel();
+      if (worldEquationPanelOpen) closeWorldEquationPanel();
+      libraryArchiveOpen = true;
+      stopPlayerForOverlay();
+      renderLibraryArchive();
+      libraryArchivePanel.classList.add("visible");
+      libraryArchivePanel.setAttribute("aria-hidden", "false");
+      interactionText.textContent = "Acervo de Consulta aberto.";
+    }
+
+    function closeLibraryArchivePanel() {
+      if (!libraryArchiveOpen) return;
+      libraryArchiveOpen = false;
+      libraryArchivePanel?.classList.remove("visible");
+      libraryArchivePanel?.setAttribute("aria-hidden", "true");
+      updateHint();
+    }
+
+    window.openStudentTerminalPanel = openStudentTerminalPanel;
+    window.closeStudentTerminalPanel = closeStudentTerminalPanel;
+    window.openLibraryArchivePanel = openLibraryArchivePanel;
+    window.closeLibraryArchivePanel = closeLibraryArchivePanel;
+
     function hallEscape(value) {
       return escapeHtml(String(value ?? ""));
     }
@@ -1483,6 +1655,9 @@ const viewport = document.getElementById("gameViewport");
       if (dialogueOpen) closeDialogue();
       if (realmPanelOpen) closeRealmPanel();
       if (shopPanelOpen) closeShopPanel();
+      if (hallFamePanelOpen) closeHallOfFamePanel();
+      if (studentTerminalOpen) closeStudentTerminalPanel();
+      if (libraryArchiveOpen) closeLibraryArchivePanel();
       if (worldEquationPanelOpen) closeWorldEquationPanel();
 
       worldInventoryOpen = true;
@@ -1620,6 +1795,8 @@ const viewport = document.getElementById("gameViewport");
 
       if (worldEquationPanelOpen) closeWorldEquationPanel();
       if (hallFamePanelOpen) closeHallOfFamePanel();
+      if (studentTerminalOpen) closeStudentTerminalPanel();
+      if (libraryArchiveOpen) closeLibraryArchivePanel();
       nearbyNpc = null;
       nearbyWorldEquation = null;
       nearbyEnemy = null;
@@ -1724,6 +1901,9 @@ const viewport = document.getElementById("gameViewport");
 
 
     function getEnemyType(enemy) {
+      if (enemy?.typeOverride && typeof enemy.typeOverride === "object") {
+        return enemy.typeOverride;
+      }
       const realmData = getLoadedRealmData(currentScene?.id);
       const typeRegistry = realmData?.enemyTypes || enemyTypes;
       return typeRegistry[enemy.typeId] || Object.values(typeRegistry)[0] || enemyTypes["soma-subtracao"];
@@ -2127,6 +2307,8 @@ const viewport = document.getElementById("gameViewport");
       const shouldOpenRealmPanel = Boolean(currentDialogueNpc && currentDialogueNpc.opensRealmPanel);
       const shouldOpenShop = Boolean(currentDialogueNpc && currentDialogueNpc.opensShop);
       const shouldOpenHallOfFame = Boolean(currentDialogueNpc && currentDialogueNpc.opensHallOfFame);
+      const shouldOpenStudentTerminal = Boolean(currentDialogueNpc && currentDialogueNpc.opensStudentTerminal);
+      const shouldOpenLibraryArchive = Boolean(currentDialogueNpc && currentDialogueNpc.opensLibraryArchive);
       const shouldReturnToVillage = Boolean(currentDialogueNpc && currentDialogueNpc.returnToVillage);
       const shouldResetMath = Boolean(currentDialogueNpc && currentDialogueNpc.resetsMathProgress);
       closeDialogue();
@@ -2145,6 +2327,14 @@ const viewport = document.getElementById("gameViewport");
 
       if (shouldOpenHallOfFame) {
         openHallOfFamePanel();
+      }
+
+      if (shouldOpenStudentTerminal) {
+        openStudentTerminalPanel();
+      }
+
+      if (shouldOpenLibraryArchive) {
+        openLibraryArchivePanel();
       }
 
       if (shouldReturnToVillage) {
@@ -2633,7 +2823,7 @@ const viewport = document.getElementById("gameViewport");
     function updateMovement() {
       updateVisualTransition();
 
-      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldInventoryOpen || hallFamePanelOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) {
+      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldInventoryOpen || hallFamePanelOpen || studentTerminalOpen || libraryArchiveOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) {
         playerState.moving = false;
         updatePlayerPosition();
         updatePlayerAnimation();
@@ -3046,6 +3236,22 @@ const viewport = document.getElementById("gameViewport");
           nextEnemyQuestion();
         }
 
+        return;
+      }
+
+      if (studentTerminalOpen) {
+        if (key === "escape" && !event.repeat) {
+          event.preventDefault();
+          closeStudentTerminalPanel();
+        }
+        return;
+      }
+
+      if (libraryArchiveOpen) {
+        if (key === "escape" && !event.repeat) {
+          event.preventDefault();
+          closeLibraryArchivePanel();
+        }
         return;
       }
 
@@ -3505,5 +3711,7 @@ const viewport = document.getElementById("gameViewport");
       updateHint();
       if (shopPanelOpen) renderShopPanel(shopMessage?.textContent || "");
       if (worldInventoryOpen) renderWorldInventory();
+      if (studentTerminalOpen) renderStudentTerminal();
+      if (libraryArchiveOpen) renderLibraryArchive();
     });
     gameLoop();

@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="assets/css/interiors/interior-system.css" />
   <link rel="stylesheet" href="assets/css/interiors/library-interior.css" />
   <link rel="stylesheet" href="assets/css/interiors/hall-of-fame-interior.css" />
+  <link rel="stylesheet" href="assets/css/interiors/shop-interior.css" />
+  <link rel="stylesheet" href="assets/css/interiors/arena-interior.css" />
+  <link rel="stylesheet" href="assets/css/interiors/terminal-interior.css" />
   <link rel="stylesheet" href="assets/css/battle.css" />
   <link rel="stylesheet" href="assets/css/dev-menu.css" />
 </head>
@@ -268,6 +271,40 @@
 
 
 
+
+      <div id="studentTerminalPanel" class="student-terminal-panel" aria-live="polite" aria-hidden="true">
+        <div class="student-terminal-header">
+          <div>
+            <div class="student-terminal-kicker">Dados pessoais de jornada</div>
+            <div class="student-terminal-title">Terminal do Aluno</div>
+            <p class="student-terminal-subtitle">Seu perfil, conquistas e progresso por Reino. Estes dados pertencem à sua sessão; o Hall da Fama recebe apenas o resumo necessário ao ranking.</p>
+          </div>
+          <button class="student-terminal-close" type="button" onclick="closeStudentTerminalPanel()">Fechar ✕</button>
+        </div>
+        <div id="studentTerminalSummary" class="student-terminal-summary"></div>
+        <section class="student-terminal-section">
+          <div class="student-terminal-section-head"><strong>Reinos do Conhecimento</strong><small>Progresso individual</small></div>
+          <div id="studentTerminalRealms" class="student-realm-grid"></div>
+        </section>
+        <section class="student-terminal-section">
+          <div class="student-terminal-section-head"><strong>Competências permanentes</strong><small>Concedidas pelos diplomas</small></div>
+          <div id="studentTerminalAbilities" class="student-ability-grid"></div>
+        </section>
+      </div>
+
+      <div id="libraryArchivePanel" class="library-archive-panel" aria-live="polite" aria-hidden="true">
+        <div class="library-archive-header">
+          <div>
+            <div class="library-archive-kicker">Biblioteca de Dicas</div>
+            <div class="library-archive-title">Acervo de Consulta</div>
+            <p class="library-archive-subtitle">Orientação rápida sobre estudo, combate, recursos e a estrutura dos Reinos do Conhecimento.</p>
+          </div>
+          <button class="library-archive-close" type="button" onclick="closeLibraryArchivePanel()">Fechar ✕</button>
+        </div>
+        <div id="libraryTopicGrid" class="library-topic-grid"></div>
+        <div id="libraryProgressNote" class="library-progress-note"></div>
+      </div>
+
       <div id="hallFamePanel" class="hall-fame-panel" aria-live="polite" aria-hidden="true">
         <div class="hall-fame-header">
           <div>
@@ -382,6 +419,9 @@
   <script src="assets/js/interiors/interior-data.js" defer></script>
   <script src="assets/js/interiors/interior-system.js" defer></script>
   <script src="assets/js/interiors/library-interior.js" defer></script>
+  <script src="assets/js/interiors/shop-interior.js" defer></script>
+  <script src="assets/js/interiors/arena-interior.js" defer></script>
+  <script src="assets/js/interiors/terminal-interior.js" defer></script>
   <script src="assets/js/interiors/hall-of-fame-interior.js" defer></script>
   <script src="assets/js/npc/village-npc-data.js" defer></script>
   <script src="assets/js/realms/realm-data.js" defer></script>
