@@ -38,6 +38,7 @@ const viewport = document.getElementById("gameViewport");
     const equationPrompt = document.getElementById("equationPrompt");
     const equationOptions = document.getElementById("equationOptions");
     const equationFeedback = document.getElementById("equationFeedback");
+    const mathProgressHud = document.getElementById("mathProgressHud");
     const mathBuffHud = document.getElementById("mathBuffHud");
 
     const enemyPanel = document.getElementById("enemyPanel");
@@ -155,6 +156,7 @@ const viewport = document.getElementById("gameViewport");
         defeatedEnemyIds: [],
         miniBossDefeated: false,
         bossDefeated: false,
+        guardianChallengeCompleted: false,
         completed: false
       };
     }
@@ -174,7 +176,8 @@ const viewport = document.getElementById("gameViewport");
           : [],
         miniBossDefeated: Boolean(source.miniBossDefeated),
         bossDefeated: Boolean(source.bossDefeated),
-        completed: Boolean(source.completed || source.bossDefeated)
+        guardianChallengeCompleted: Boolean(source.guardianChallengeCompleted || source.bossDefeated),
+        completed: Boolean(source.completed || source.guardianChallengeCompleted || source.bossDefeated)
       };
     }
 
@@ -271,27 +274,68 @@ const viewport = document.getElementById("gameViewport");
       return commonIds.length > 0 && commonIds.every((id) => isRealmEnemyDefeated(realmId, id));
     }
 
+    function isRealmGuardianCompleted(realmId) {
+      const progress = getRuntimeRealmProgress(realmId);
+      return Boolean(progress.guardianChallengeCompleted || progress.bossDefeated);
+    }
+
+    function getRealmProgressionRules(realmId) {
+      return getLoadedRealmData(realmId)?.progression || {};
+    }
+
+    function getRealmRequiredCommonCount(realmId) {
+      const total = getRealmCommonEnemyIds(realmId).length;
+      const configured = Number(getRealmProgressionRules(realmId).commonEnemiesRequiredForMiniBoss);
+      if (!Number.isFinite(configured)) return total;
+      return Math.max(0, Math.min(total, Math.floor(configured)));
+    }
+
+    function getRealmRequiredEquationIds(realmId) {
+      const configured = getRealmProgressionRules(realmId).requiredEquationIdsForMiniBoss;
+      return Array.isArray(configured)
+        ? [...new Set(configured.filter((id) => typeof id === "string" && id.trim()))]
+        : [];
+    }
+
+    function getRealmSolvedEquationCount(realmId) {
+      const progress = getRuntimeRealmProgress(realmId);
+      const solved = Array.isArray(progress.solvedWorldEquationIds) ? progress.solvedWorldEquationIds : [];
+      return getRealmRequiredEquationIds(realmId).filter((id) => solved.includes(id)).length;
+    }
+
+    function areRealmMiniBossRequirementsMet(realmId) {
+      const requiredCommons = getRealmRequiredCommonCount(realmId);
+      const defeatedCommons = getRealmDefeatedCommonCount(realmId);
+      const requiredEquations = getRealmRequiredEquationIds(realmId);
+      const solvedEquations = getRuntimeRealmProgress(realmId).solvedWorldEquationIds || [];
+
+      const commonsMet = defeatedCommons >= requiredCommons;
+      const equationsMet = requiredEquations.every((id) => solvedEquations.includes(id));
+      return commonsMet && equationsMet;
+    }
+
     function isRealmMiniBossUnlocked(realmId) {
       const realmData = getLoadedRealmData(realmId);
       const progress = getRuntimeRealmProgress(realmId);
 
       return Boolean(
         realmData?.miniBoss &&
-        areAllRealmCommonsDefeated(realmId) &&
+        areRealmMiniBossRequirementsMet(realmId) &&
         !progress.miniBossDefeated &&
-        !progress.bossDefeated
+        !isRealmGuardianCompleted(realmId)
       );
     }
 
     function isRealmBossUnlocked(realmId) {
       const realmData = getLoadedRealmData(realmId);
       const progress = getRuntimeRealmProgress(realmId);
+      const rules = getRealmProgressionRules(realmId);
 
-      if (!realmData?.boss || progress.bossDefeated || !areAllRealmCommonsDefeated(realmId)) {
-        return false;
-      }
+      if (!realmData?.boss || isRealmGuardianCompleted(realmId)) return false;
+      if (!areRealmMiniBossRequirementsMet(realmId)) return false;
 
-      return realmData.miniBoss ? progress.miniBossDefeated : true;
+      const requiresMiniBoss = rules.requireMiniBossForBoss !== false && Boolean(realmData.miniBoss);
+      return requiresMiniBoss ? progress.miniBossDefeated : true;
     }
 
     function getRealmEnemyObjectsByProgress(realmId) {
@@ -387,28 +431,87 @@ const viewport = document.getElementById("gameViewport");
       return getRealmEnemyObjectsByProgress("reino-matematica");
     }
 
-    function getMathProgressMessage() {
-      const total = getMathCommonEnemyIds().length;
-      const defeated = getDefeatedCommonCount();
-      const rhythm = getMathLogicalRhythmState();
+    function getMathProgressionState() {
+      const totalCommons = getMathCommonEnemyIds().length;
+      const defeatedCommons = getDefeatedCommonCount();
+      const requiredCommons = getRealmRequiredCommonCount("reino-matematica");
+      const requiredEquationIds = getRealmRequiredEquationIds("reino-matematica");
+      const solvedEquationIds = getSolvedWorldEquationIds("reino-matematica");
+      const solvedRequiredEquations = requiredEquationIds.filter((id) => solvedEquationIds.includes(id)).length;
+      const bridgeEquationId = getRealmProgressionRules("reino-matematica").bridgeEquationId || "equacao-operacoes-01";
+      const bridgeStable = solvedEquationIds.includes(bridgeEquationId);
+      const miniBossUnlocked = isMathMiniBossUnlocked();
+      const bossUnlocked = isMathBossUnlocked();
 
-      if (mathProgress.bossDefeated) {
-        return "Reino da Matemática concluído. A Fortaleza do Golem reconheceu seu progresso e o estado do reino foi salvo.";
+      let stage = 0;
+      let label = "Estabilize a Ponte";
+      let objective = "Encontre o Núcleo da Ponte no Distrito das Operações e resolva a primeira Equação do Mundo.";
+
+      if (isRealmGuardianCompleted("reino-matematica")) {
+        stage = 4;
+        label = "Reino concluído";
+        objective = "O teste final foi concluído. O Diploma da Matemática foi conquistado e Raciocínio Estruturado está disponível.";
+      } else if (bossUnlocked) {
+        stage = 3;
+        label = "Fortaleza do Golem";
+        objective = "O Portão do Teorema está aberto. Siga até o Golem dos Cálculos.";
+      } else if (mathProgress.miniBossDefeated) {
+        stage = 3;
+        label = "Portão do Teorema";
+        objective = "Melog foi superado. Atravesse o caminho que leva à Fortaleza do Golem.";
+      } else if (miniBossUnlocked) {
+        stage = 2;
+        label = "Ruínas do Melog";
+        objective = "O selo das ruínas se rompeu. Encontre Melog e restaure a lógica da região.";
+      } else if (bridgeStable) {
+        stage = 1;
+        label = "Restaure as zonas";
+        const missingCommons = Math.max(0, requiredCommons - defeatedCommons);
+        const missingEquations = Math.max(0, requiredEquationIds.length - solvedRequiredEquations);
+        const parts = [];
+        if (missingCommons) parts.push(`derrote mais ${missingCommons} inimigo${missingCommons === 1 ? "" : "s"}`);
+        if (missingEquations) parts.push(`estabilize mais ${missingEquations} Equação${missingEquations === 1 ? "" : "ões"} do Mundo`);
+        objective = parts.length
+          ? `Explore Fatores e Potências: ${parts.join(" e ")}.`
+          : "Os requisitos foram cumpridos. O selo das Ruínas do Melog está cedendo.";
       }
 
-      if (isMathBossUnlocked()) {
+      return {
+        stage,
+        label,
+        objective,
+        totalCommons,
+        defeatedCommons,
+        requiredCommons,
+        requiredEquationIds,
+        solvedRequiredEquations,
+        bridgeStable,
+        miniBossUnlocked,
+        bossUnlocked
+      };
+    }
+
+    function getMathProgressMessage() {
+      const state = getMathProgressionState();
+      const rhythm = getMathLogicalRhythmState();
+
+      if (isRealmGuardianCompleted("reino-matematica")) {
+        return "Reino da Matemática concluído. O Golem reconheceu seu aprendizado e entregou o Diploma da Matemática.";
+      }
+
+      if (state.bossUnlocked) {
         return "Melog foi superado. O Portão do Teorema abriu o caminho até a Fortaleza do Golem.";
       }
 
-      if (isMathMiniBossUnlocked()) {
-        return "As três zonas foram limpas. A corrupção cedeu e as Ruínas do Melog estão acessíveis.";
+      if (state.miniBossUnlocked) {
+        return `Requisitos cumpridos: ${state.defeatedCommons}/${state.requiredCommons} inimigos e ${state.solvedRequiredEquations}/${state.requiredEquationIds.length} Equações do Mundo. As Ruínas do Melog estão acessíveis.`;
       }
 
-      if (!isWorldEquationSolved("equacao-operacoes-01")) {
+      if (!state.bridgeStable) {
         return `Ritmo Lógico ${rhythm.stacks}/3. Estabilize a Equação do Mundo no Distrito das Operações para materializar a Ponte das Equações.`;
       }
 
-      return `Inimigos básicos derrotados: ${defeated}/${total}. Ritmo Lógico ${rhythm.stacks}/3. Explore o Bosque das Potências e os Campos dos Fatores.`;
+      return `${state.objective} Ritmo Lógico ${rhythm.stacks}/3.`;
     }
 
     function getGenericRealmProgressMessage(realmId) {
@@ -418,7 +521,7 @@ const viewport = document.getElementById("gameViewport");
       const defeated = getRealmDefeatedCommonCount(realmId);
       const realmName = realmData?.scene?.name || realmData?.name || "Reino";
 
-      if (progress.bossDefeated) {
+      if (isRealmGuardianCompleted(realmId)) {
         return `${realmName} concluído. Seu progresso foi salvo.`;
       }
 
@@ -427,10 +530,12 @@ const viewport = document.getElementById("gameViewport");
       }
 
       if (isRealmMiniBossUnlocked(realmId)) {
-        return `Todos os inimigos básicos foram derrotados. O mini-chefe de ${realmName} apareceu!`;
+        const required = getRealmRequiredCommonCount(realmId);
+        return `Requisitos cumpridos (${defeated}/${required} inimigos necessários). O mini-chefe de ${realmName} apareceu!`;
       }
 
-      return `Inimigos básicos derrotados: ${defeated}/${total}.`;
+      const required = getRealmRequiredCommonCount(realmId);
+      return `Inimigos básicos derrotados: ${defeated}/${total} · requisito: ${Math.min(defeated, required)}/${required}.`;
     }
 
     function registerEnemyDefeat(enemySnapshot) {
@@ -452,8 +557,8 @@ const viewport = document.getElementById("gameViewport");
       let changed = false;
 
       if (isBoss) {
-        if (!progress.bossDefeated) {
-          progress.bossDefeated = true;
+        if (!isRealmGuardianCompleted(realmId)) {
+          progress.guardianChallengeCompleted = true;
           progress.completed = true;
           progress.completedAt = progress.completedAt || new Date().toISOString();
           changed = true;
@@ -474,10 +579,10 @@ const viewport = document.getElementById("gameViewport");
       }
 
       if (realmId === "reino-matematica") {
-        if (isBoss) return "Guardião superado! O Reino da Matemática foi concluído.";
-        if (isMiniBoss) return "Melog eliminado! O Golem dos Cálculos liberou o teste final.";
+        if (isBoss) return "Teste do guardião concluído! O Reino da Matemática reconheceu seu aprendizado.";
+        if (isMiniBoss) return "Melog foi superado! O Portão do Teorema abriu o caminho para o Golem dos Cálculos.";
         if (isMathMiniBossUnlocked()) {
-          return "Todos os inimigos básicos foram derrotados. Melog apareceu na Arena Anti-Estudo!";
+          return "Os requisitos foram cumpridos. O Selo das Ruínas se rompeu e Melog despertou!";
         }
         return getMathProgressMessage();
       }
@@ -528,6 +633,7 @@ const viewport = document.getElementById("gameViewport");
       const finish = () => {
         const message = registerEnemyDefeat(enemySnapshot);
         refreshRealmEnemyObjectsAfterProgress(realmId);
+        updateMathBuffHud();
 
         if (realmId === "reino-matematica") {
           interactionText.textContent = message || getMathProgressMessage();
@@ -714,12 +820,12 @@ const viewport = document.getElementById("gameViewport");
         return Boolean(
           isRealmMiniBossUnlocked(realmId) ||
           progress.miniBossDefeated ||
-          progress.bossDefeated
+          isRealmGuardianCompleted(realmId)
         );
       }
 
       if (gate.type === "boss-unlocked") {
-        return Boolean(isRealmBossUnlocked(realmId) || progress.bossDefeated);
+        return Boolean(isRealmBossUnlocked(realmId) || isRealmGuardianCompleted(realmId));
       }
 
       return false;
@@ -808,7 +914,47 @@ const viewport = document.getElementById("gameViewport");
       return getMathLogicalRhythmState().bonusSeconds;
     }
 
+    function updateMathProgressHud() {
+      if (!mathProgressHud) return;
+
+      const active = currentScene?.id === "reino-matematica";
+      mathProgressHud.classList.toggle("visible", active);
+      if (!active) return;
+
+      const state = getMathProgressionState();
+      const equationTotal = state.requiredEquationIds.length;
+      const commonsMet = state.defeatedCommons >= state.requiredCommons;
+      const equationsMet = state.solvedRequiredEquations >= equationTotal;
+      const stepsComplete = [
+        state.bridgeStable,
+        commonsMet && equationsMet,
+        mathProgress.miniBossDefeated,
+        isRealmGuardianCompleted("reino-matematica")
+      ].filter(Boolean).length;
+      const progressPercent = Math.round((stepsComplete / 4) * 100);
+
+      const statusIcon = (done, available = false) => done ? "✓" : (available ? "!" : "•");
+
+      mathProgressHud.innerHTML = `
+        <div class="math-progress-head">
+          <span>Jornada da Matemática</span>
+          <strong>Etapa ${Math.min(state.stage + 1, 4)}/4</strong>
+        </div>
+        <div class="math-progress-stage">${escapeHtml(state.label)}</div>
+        <div class="math-progress-objective">${escapeHtml(state.objective)}</div>
+        <div class="math-progress-track"><span style="width:${progressPercent}%"></span></div>
+        <div class="math-progress-checks">
+          <span class="${state.bridgeStable ? "done" : ""}">${statusIcon(state.bridgeStable)} Ponte</span>
+          <span class="${commonsMet ? "done" : ""}">${statusIcon(commonsMet)} Inimigos ${Math.min(state.defeatedCommons, state.requiredCommons)}/${state.requiredCommons}</span>
+          <span class="${equationsMet ? "done" : ""}">${statusIcon(equationsMet)} Equações ${state.solvedRequiredEquations}/${equationTotal}</span>
+          <span class="${mathProgress.miniBossDefeated ? "done" : state.miniBossUnlocked ? "available" : ""}">${statusIcon(mathProgress.miniBossDefeated, state.miniBossUnlocked)} Melog</span>
+          <span class="${isRealmGuardianCompleted("reino-matematica") ? "done" : state.bossUnlocked ? "available" : ""}">${statusIcon(isRealmGuardianCompleted("reino-matematica"), state.bossUnlocked)} Golem</span>
+        </div>
+      `;
+    }
+
     function updateMathBuffHud() {
+      updateMathProgressHud();
       if (!mathBuffHud) return;
 
       const active = currentScene?.id === "reino-matematica";
@@ -1169,12 +1315,31 @@ const viewport = document.getElementById("gameViewport");
       keys.run = false;
     }
 
+    function shouldShowNpcForProgress(realmId, npc) {
+      if (!npc) return false;
+      if (npc.showWhenGuardianCompleted) return isRealmGuardianCompleted(realmId);
+      if (npc.hideWhenGuardianCompleted) return !isRealmGuardianCompleted(realmId);
+      return true;
+    }
+
+    function getNpcObjectsForScene(scene) {
+      return cloneData(scene?.npcObjects || []).filter((npc) => shouldShowNpcForProgress(scene?.id, npc));
+    }
+
+    function refreshConditionalNpcObjectsAfterProgress(realmId) {
+      if (!currentScene || currentScene.id !== realmId) return;
+      npcObjects = getNpcObjectsForScene(currentScene);
+      buildCollisionAndOcclusionData();
+      renderDepthLayer();
+      updateNearbyNpc();
+    }
+
     function changeScene(scene, options = {}) {
       currentScene = scene;
       buildings = cloneData(scene.buildings);
       decorObjects = cloneData(scene.decorObjects);
       treeObjects = cloneData(scene.treeObjects);
-      npcObjects = cloneData(scene.npcObjects);
+      npcObjects = getNpcObjectsForScene(scene);
       portalObjects = cloneData(scene.portalObjects);
       worldEquationObjects = cloneData(scene.worldEquations || []);
       enemyObjects = getEnemyObjectsForScene(scene);
@@ -1509,6 +1674,10 @@ const viewport = document.getElementById("gameViewport");
         return getGolemGateDialogue();
       }
 
+      if (npc && npc.dynamicDialogue === "math-guardian-completed") {
+        return getMathGuardianCompletedDialogue();
+      }
+
       if (Array.isArray(npc.dialogue)) {
         return npc.dialogue;
       }
@@ -1517,80 +1686,85 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function getMathProgressDialogue() {
-      const total = getMathCommonEnemyIds().length;
-      const defeated = getDefeatedCommonCount();
+      const state = getMathProgressionState();
       const rhythm = getMathLogicalRhythmState();
-      const bridgeStable = isWorldEquationSolved("equacao-operacoes-01");
 
-      if (mathProgress.bossDefeated) {
+      if (isRealmGuardianCompleted("reino-matematica")) {
         return [
           "Status do Reino da Matemática: concluído.",
-          "A Praça do Infinito, as três zonas de estudo, as Ruínas do Melog e a Fortaleza do Golem registram sua passagem.",
+          "A Praça do Infinito, as zonas de estudo, as Ruínas do Melog e a Fortaleza do Golem registram sua passagem.",
+          "Diploma da Matemática: conquistado. Competência permanente: Raciocínio Estruturado.",
           `Ritmo Lógico estabilizado em ${rhythm.stacks}/3 nesta jornada.`
         ];
       }
 
-      if (isMathBossUnlocked()) {
+      if (state.bossUnlocked) {
         return [
-          "Status: Fortaleza do Golem acessível.",
+          "Etapa 4/4: Fortaleza do Golem.",
           "Melog foi superado e o Portão do Teorema se abriu ao norte.",
-          "O Golem dos Cálculos aguarda no último pátio."
+          "O Golem dos Cálculos aguarda no último pátio para o teste final."
         ];
       }
 
-      if (isMathMiniBossUnlocked()) {
+      if (state.miniBossUnlocked) {
         return [
-          "Status: Ruínas do Melog acessíveis.",
-          `Todos os ${total} inimigos básicos foram derrotados. A corrupção que selava o norte perdeu força.`,
-          "Atravesse o selo e encontre Melog nas ruínas."
+          "Etapa 3/4: Ruínas do Melog.",
+          `Requisitos cumpridos: ${state.defeatedCommons}/${state.requiredCommons} inimigos necessários e ${state.solvedRequiredEquations}/${state.requiredEquationIds.length} Equações do Mundo.`,
+          "O selo se rompeu. Atravesse as ruínas e enfrente Melog."
         ];
       }
 
-      if (!bridgeStable) {
+      if (!state.bridgeStable) {
         return [
-          `Status: ${defeated}/${total} inimigos básicos derrotados. Ritmo Lógico ${rhythm.stacks}/3.`,
-          "A Ponte das Equações ainda está instável e impede o acesso à bifurcação do reino.",
-          "Resolva o Núcleo da Ponte no Distrito das Operações para materializar o caminho."
+          "Etapa 1/4: estabilize a Ponte das Equações.",
+          `Ritmo Lógico atual: ${rhythm.stacks}/3.`,
+          "Resolva o Núcleo da Ponte no Distrito das Operações para alcançar os dois ramos centrais do reino."
         ];
       }
 
       return [
-        `Status: ${defeated}/${total} inimigos básicos derrotados. Ritmo Lógico ${rhythm.stacks}/3.`,
-        "A Ponte das Equações está estável. À esquerda fica o Bosque das Potências; à direita, os Campos dos Fatores.",
-        "Limpe as três zonas para enfraquecer o selo das Ruínas do Melog."
+        "Etapa 2/4: restaure as zonas de estudo.",
+        `Inimigos: ${Math.min(state.defeatedCommons, state.requiredCommons)}/${state.requiredCommons} necessários (${state.defeatedCommons}/${state.totalCommons} no mapa). Equações: ${state.solvedRequiredEquations}/${state.requiredEquationIds.length}.`,
+        state.objective
       ];
     }
 
     function getMelogGateDialogue() {
-      if (mathProgress.miniBossDefeated || mathProgress.bossDefeated) {
+      const state = getMathProgressionState();
+
+      if (mathProgress.miniBossDefeated || isRealmGuardianCompleted("reino-matematica")) {
         return [
-          "O selo das Ruínas está quebrado.",
+          "O Selo das Ruínas está quebrado.",
           "A corrupção de Melog perdeu força e o caminho agora aponta para a Fortaleza do Golem."
         ];
       }
 
-      if (isMathMiniBossUnlocked()) {
+      if (state.miniBossUnlocked) {
         return [
-          "O selo das Ruínas se desfez.",
-          "A lógica das três zonas foi restaurada o bastante para atravessar a corrupção.",
+          "O Selo das Ruínas se desfez.",
+          `Você cumpriu os requisitos: ${state.defeatedCommons}/${state.requiredCommons} inimigos necessários e ${state.solvedRequiredEquations}/${state.requiredEquationIds.length} Equações do Mundo.`,
           "Melog está logo adiante."
         ];
       }
 
-      const total = getMathCommonEnemyIds().length;
-      const defeated = getDefeatedCommonCount();
+      const missingEnemies = Math.max(0, state.requiredCommons - state.defeatedCommons);
+      const missingEquations = Math.max(0, state.requiredEquationIds.length - state.solvedRequiredEquations);
+      const requirements = [];
+      if (missingEnemies) requirements.push(`derrote mais ${missingEnemies} inimigo${missingEnemies === 1 ? "" : "s"}`);
+      if (missingEquations) requirements.push(`estabilize mais ${missingEquations} Equação${missingEquations === 1 ? "" : "ões"} do Mundo`);
+
       return [
         "A corrupção bloqueia fisicamente o caminho para as Ruínas do Melog.",
-        `Progresso atual: ${defeated}/${total} inimigos básicos derrotados.`,
-        "Restaure as três zonas do reino para enfraquecer este selo."
+        `Requisitos: inimigos ${Math.min(state.defeatedCommons, state.requiredCommons)}/${state.requiredCommons} · Equações ${state.solvedRequiredEquations}/${state.requiredEquationIds.length}.`,
+        requirements.length ? `Para romper o selo, ${requirements.join(" e ")}.` : "O selo está prestes a ceder."
       ];
     }
 
     function getGolemGateDialogue() {
-      if (mathProgress.bossDefeated) {
+      if (isRealmGuardianCompleted("reino-matematica")) {
         return [
           "O Portão do Teorema permanece aberto.",
-          "A Fortaleza do Golem já reconheceu que você concluiu o teste desta jornada."
+          "A Fortaleza do Golem já reconheceu que você concluiu o teste desta jornada e recebeu seu diploma."
         ];
       }
 
@@ -1613,6 +1787,16 @@ const viewport = document.getElementById("gameViewport");
         "O Portão do Teorema está selado.",
         "A Fortaleza do Golem pode ser vista daqui, mas nenhum caminho atravessa a muralha enquanto Melog corromper o reino.",
         "Primeiro avance pelas Ruínas do Melog."
+      ];
+    }
+
+    function getMathGuardianCompletedDialogue() {
+      return [
+        "Seu teste terminou, aluno.",
+        "Você não me derrotou. Demonstrou compreensão suficiente para seguir adiante.",
+        "O Diploma da Matemática agora faz parte da sua jornada.",
+        "Raciocínio Estruturado pode ser usado uma vez por batalha para eliminar uma alternativa incorreta.",
+        "Continue aprendendo. Conhecimento que não avança acaba virando pedra."
       ];
     }
 
@@ -1710,6 +1894,15 @@ const viewport = document.getElementById("gameViewport");
     }
 
     function npcSvg(npc) {
+      if (npc.visualType === "guardian" && npc.portrait) {
+        return `
+          <div class="npc-guardian-image-wrap" role="img" aria-label="${escapeHtml(npc.name)}">
+            <div class="npc-guardian-aura"></div>
+            <img class="npc-guardian-image" src="${escapeHtml(npc.portrait)}" alt="${escapeHtml(npc.name)}" />
+          </div>
+        `;
+      }
+
       if (npc.visualType === "terminal") {
         return `
           <svg class="npc-svg npc-svg-terminal" viewBox="0 0 120 150" role="img" aria-label="${npc.name}">
@@ -2662,6 +2855,8 @@ const viewport = document.getElementById("gameViewport");
         commonTotal: commonIds.length,
         miniBossDefeated: Boolean(progress.miniBossDefeated),
         bossDefeated: Boolean(progress.bossDefeated),
+        guardianChallengeCompleted: isRealmGuardianCompleted("reino-matematica"),
+        diploma: Boolean(window.VoltzProfile?.hasRealmDiploma?.("reino-matematica")),
         completed: Boolean(progress.completed),
         solvedEquations: getSolvedWorldEquationIds("reino-matematica").length,
         totalEquations: mathRealmData.worldEquations?.length || 0,
@@ -2721,26 +2916,43 @@ const viewport = document.getElementById("gameViewport");
 
     async function devSetCommonsDefeated(value) {
       devCloseBlockingPanels();
+
+      if (!value && window.VoltzProfile?.resetGuardianChallenge) {
+        await window.VoltzProfile.resetGuardianChallenge("reino-matematica");
+        syncAllRealmProgressFromProfile();
+      }
+
       const progress = getRuntimeRealmProgress("reino-matematica");
       progress.defeatedEnemyIds = value ? getMathCommonEnemyIds() : [];
       if (!value) {
         progress.miniBossDefeated = false;
         progress.bossDefeated = false;
+        progress.guardianChallengeCompleted = false;
         progress.completed = false;
         delete progress.completedAt;
       }
-      return persistMathDevProgress(value ? "Todos os inimigos comuns marcados como derrotados." : "Inimigos comuns restaurados.");
+      return persistMathDevProgress(value ? "Todos os inimigos comuns marcados como derrotados." : "Inimigos comuns restaurados e diploma removido.");
     }
 
     async function devSetMiniBossDefeated(value) {
       devCloseBlockingPanels();
+
+      if (!value && window.VoltzProfile?.resetGuardianChallenge) {
+        await window.VoltzProfile.resetGuardianChallenge("reino-matematica");
+        syncAllRealmProgressFromProfile();
+      }
+
       const progress = getRuntimeRealmProgress("reino-matematica");
       if (value) {
+        // Atalho de teste: marcar Melog derrotado também satisfaz os requisitos
+        // anteriores para que o Portão do Teorema abra imediatamente.
         progress.defeatedEnemyIds = getMathCommonEnemyIds();
+        progress.solvedWorldEquationIds = (mathRealmData.worldEquations || []).map((equation) => equation.id);
         progress.miniBossDefeated = true;
       } else {
         progress.miniBossDefeated = false;
         progress.bossDefeated = false;
+        progress.guardianChallengeCompleted = false;
         progress.completed = false;
         delete progress.completedAt;
       }
@@ -2750,18 +2962,39 @@ const viewport = document.getElementById("gameViewport");
     async function devSetBossDefeated(value) {
       devCloseBlockingPanels();
       const progress = getRuntimeRealmProgress("reino-matematica");
+
       if (value) {
         progress.defeatedEnemyIds = getMathCommonEnemyIds();
+        progress.solvedWorldEquationIds = (mathRealmData.worldEquations || []).map((equation) => equation.id);
         progress.miniBossDefeated = true;
-        progress.bossDefeated = true;
-        progress.completed = true;
-        progress.completedAt = progress.completedAt || new Date().toISOString();
-      } else {
-        progress.bossDefeated = false;
-        progress.completed = false;
-        delete progress.completedAt;
+        await persistRealmProgress("reino-matematica");
+
+        const guardianType = enemyTypes["chefe-golem-calculos"] || {};
+        const result = await window.VoltzProfile?.completeGuardianChallenge?.(
+          "reino-matematica",
+          createMathBoss(),
+          { xp: 0, coins: 0 },
+          guardianType.guardianChallenge?.diploma || {}
+        );
+        syncAllRealmProgressFromProfile();
+        refreshAfterDevProgressChange();
+        refreshConditionalNpcObjectsAfterProgress("reino-matematica");
+        return {
+          ...getMathDevSnapshot(),
+          savePersisted: result?.persisted !== false,
+          saveError: result?.error?.message || ""
+        };
       }
-      return persistMathDevProgress(value ? "Golem/guardião marcado como concluído." : "Desafio do Golem restaurado.");
+
+      const result = await window.VoltzProfile?.resetGuardianChallenge?.("reino-matematica");
+      syncAllRealmProgressFromProfile();
+      refreshAfterDevProgressChange();
+      refreshConditionalNpcObjectsAfterProgress("reino-matematica");
+      return {
+        ...getMathDevSnapshot(),
+        savePersisted: result?.persisted !== false,
+        saveError: result?.error?.message || ""
+      };
     }
 
     async function devSetEquationsSolved(value) {
@@ -2789,9 +3022,23 @@ const viewport = document.getElementById("gameViewport");
       const isMiniBoss = snapshot.isMiniBoss === true || ["miniboss", "mini-boss", "mini_chefe", "mini-chefe"].includes(rank);
 
       if (isBoss) {
-        progress.bossDefeated = true;
-        progress.completed = true;
-        progress.completedAt = progress.completedAt || new Date().toISOString();
+        const type = getEnemyType(snapshot);
+        const result = await window.VoltzProfile?.completeGuardianChallenge?.(
+          realmId,
+          snapshot,
+          { xp: 0, coins: 0 },
+          type.guardianChallenge?.diploma || {}
+        );
+        syncAllRealmProgressFromProfile();
+        refreshRealmEnemyObjectsAfterProgress(realmId);
+        refreshConditionalNpcObjectsAfterProgress(realmId);
+        return {
+          ok: true,
+          enemyId: snapshot.id,
+          persisted: result?.persisted !== false,
+          error: result?.error,
+          snapshot: getMathDevSnapshot()
+        };
       } else if (isMiniBoss) {
         progress.miniBossDefeated = true;
       } else if (snapshot.id && !progress.defeatedEnemyIds.includes(snapshot.id)) {
@@ -2888,23 +3135,14 @@ const viewport = document.getElementById("gameViewport");
       updateNearbyWorldEquation();
     }, { once: true });
 
-    // Mantém o estado do mapa alinhado ao perfil após qualquer escrita/leitura do Supabase.
-    // Isso também evita uma segunda gravação redundante após a vitória em batalha.
+    // Mantém mapa, HUD, inimigos e NPCs condicionais alinhados ao perfil salvo.
     window.addEventListener("voltz:profile-updated", () => {
       syncAllRealmProgressFromProfile();
       refreshRealmEnemyObjectsAfterProgress(currentScene?.id);
+      refreshConditionalNpcObjectsAfterProgress(currentScene?.id);
       updateMathBuffHud();
       updateNearbyWorldEquation();
       updateHint();
-    });
-    window.addEventListener("voltz:profile-updated", () => {
-      syncAllRealmProgressFromProfile();
-      refreshRealmEnemyObjectsAfterProgress(currentScene?.id);
-      updateMathBuffHud();
-      if (currentScene?.id === "reino-matematica") {
-        renderDepthLayer();
-        updateNearbyWorldEquation();
-      }
       if (shopPanelOpen) renderShopPanel(shopMessage?.textContent || "");
     });
     gameLoop();

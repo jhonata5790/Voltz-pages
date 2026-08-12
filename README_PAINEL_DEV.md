@@ -16,3 +16,9 @@ Ferramenta interna para acelerar testes do jogo.
 O botão de reset da Matemática apaga apenas o progresso do reino; XP, moedas e inventário continuam intactos.
 
 > O código `menu` serve apenas para esconder a ferramenta da interface normal. Como o projeto é front-end e público, isso não é um mecanismo de segurança.
+
+
+## Diploma da Matemática
+
+- **Concluir Golem + Diploma** marca o desafio do guardião como concluído e concede o Diploma da Matemática sem dar XP/moedas de teste.
+- **Restaurar Golem** remove o diploma e reabre o desafio.

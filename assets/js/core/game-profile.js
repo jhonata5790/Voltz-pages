@@ -51,8 +51,10 @@ function normalizeRealmProgress(realmProgress) {
     defeatedEnemyIds,
     solvedWorldEquationIds,
     miniBossDefeated: Boolean(source.miniBossDefeated),
+    // bossDefeated é mantido apenas para compatibilidade com saves antigos.
     bossDefeated: Boolean(source.bossDefeated),
-    completed: Boolean(source.completed || source.bossDefeated)
+    guardianChallengeCompleted: Boolean(source.guardianChallengeCompleted || source.bossDefeated),
+    completed: Boolean(source.completed || source.guardianChallengeCompleted || source.bossDefeated)
   };
 }
 
@@ -85,7 +87,7 @@ function getEncounterKind(enemySnapshot) {
 function isEncounterCompleted(realmProgress, enemySnapshot) {
   const kind = getEncounterKind(enemySnapshot);
 
-  if (kind === "boss") return Boolean(realmProgress.bossDefeated);
+  if (kind === "boss") return Boolean(realmProgress.guardianChallengeCompleted || realmProgress.bossDefeated);
   if (kind === "miniBoss") return Boolean(realmProgress.miniBossDefeated);
 
   return Boolean(
@@ -99,7 +101,7 @@ function applyEncounterCompletion(realmProgress, enemySnapshot) {
   const kind = getEncounterKind(enemySnapshot);
 
   if (kind === "boss") {
-    next.bossDefeated = true;
+    next.guardianChallengeCompleted = true;
     next.completed = true;
     next.completedAt = next.completedAt || new Date().toISOString();
   } else if (kind === "miniBoss") {
@@ -298,6 +300,193 @@ async function setRealmProgress(realmId, realmProgress) {
 }
 
 
+function getRealmDiploma(realmId) {
+  if (!realmId) return null;
+  const world = state.profile?.progresso?._world;
+  const diplomas = world && typeof world === "object" && world.diplomas && typeof world.diplomas === "object"
+    ? world.diplomas
+    : {};
+  const diploma = diplomas[realmId];
+  return diploma && typeof diploma === "object" ? cloneJson(diploma) : null;
+}
+
+function hasRealmDiploma(realmId) {
+  if (getRealmDiploma(realmId)) return true;
+
+  // Compatibilidade: saves antigos que já marcavam o chefe como concluído
+  // também recebem o benefício correspondente ao reino.
+  const legacy = getRealmProgress(realmId);
+  return Boolean(legacy?.guardianChallengeCompleted || legacy?.bossDefeated);
+}
+
+async function completeGuardianChallenge(realmId, guardianSnapshot, rewards = {}, diploma = {}) {
+  await ready;
+
+  if (!state.profile || !realmId || !guardianSnapshot) {
+    return { ok: false, persisted: false, reason: "invalid-state" };
+  }
+
+  const currentProgress = state.profile.progresso && typeof state.profile.progresso === "object"
+    ? cloneJson(state.profile.progresso)
+    : {};
+  const currentRealmProgress = normalizeRealmProgress(currentProgress[realmId]);
+  const existingDiploma = getRealmDiploma(realmId);
+
+  if (currentRealmProgress.guardianChallengeCompleted || currentRealmProgress.bossDefeated) {
+    return {
+      ok: true,
+      persisted: true,
+      alreadyCompleted: true,
+      xpReward: 0,
+      coinReward: 0,
+      realmProgress: currentRealmProgress,
+      diploma: existingDiploma,
+      profile: state.profile
+    };
+  }
+
+  const now = new Date().toISOString();
+  const nextRealmProgress = normalizeRealmProgress({
+    ...currentRealmProgress,
+    guardianChallengeCompleted: true,
+    completed: true,
+    completedAt: currentRealmProgress.completedAt || now,
+    guardianRecognizedAt: now,
+    lastVictoryAt: now
+  });
+
+  const currentWorld = currentProgress._world && typeof currentProgress._world === "object"
+    ? cloneJson(currentProgress._world)
+    : {};
+  const completedRealmIds = Array.isArray(currentWorld.completedRealmIds)
+    ? [...new Set(currentWorld.completedRealmIds.filter((id) => typeof id === "string"))]
+    : [];
+  if (!completedRealmIds.includes(realmId)) completedRealmIds.push(realmId);
+
+  const currentDiplomas = currentWorld.diplomas && typeof currentWorld.diplomas === "object"
+    ? cloneJson(currentWorld.diplomas)
+    : {};
+  const grantedDiploma = {
+    id: diploma.id || `diploma-${realmId}`,
+    realmId,
+    name: diploma.name || `Diploma de ${realmId}`,
+    abilityId: diploma.abilityId || "",
+    abilityName: diploma.abilityName || "",
+    abilityDescription: diploma.abilityDescription || "",
+    earnedAt: now
+  };
+
+  const nextProgress = {
+    ...currentProgress,
+    [realmId]: nextRealmProgress,
+    _world: {
+      ...currentWorld,
+      completedRealmIds,
+      diplomas: {
+        ...currentDiplomas,
+        [realmId]: grantedDiploma
+      },
+      lastProgressAt: now
+    }
+  };
+
+  const xpReward = Math.max(0, Number(rewards.xp || rewards.xpReward || 0)) || 0;
+  const coinReward = Math.max(0, Number(rewards.coins || rewards.coinReward || 0)) || 0;
+  const xpField = state.profile._dbFields?.xp || "xp";
+  const coinField = state.profile._dbFields?.coins || "moedas";
+  const progressField = state.profile._dbFields?.progress || "progresso";
+  const nextXp = Math.max(0, Number(state.profile.xp || 0) + xpReward);
+  const nextCoins = Math.max(0, Number(state.profile.moedas || 0) + coinReward);
+
+  try {
+    const updated = await updateProfileFields({
+      [xpField]: nextXp,
+      [coinField]: nextCoins,
+      [progressField]: nextProgress
+    });
+    if (updated) updated.progresso = nextProgress;
+    return {
+      ok: true,
+      persisted: true,
+      alreadyCompleted: false,
+      xpReward,
+      coinReward,
+      realmProgress: nextRealmProgress,
+      diploma: grantedDiploma,
+      profile: updated
+    };
+  } catch (error) {
+    console.error(`Não foi possível concluir o desafio do guardião em ${realmId}:`, error);
+    state.profile.xp = nextXp;
+    state.profile.moedas = nextCoins;
+    state.profile.progresso = nextProgress;
+    renderProfileHud();
+    window.dispatchEvent(new CustomEvent("voltz:profile-updated", { detail: state.profile }));
+    return {
+      ok: true,
+      persisted: false,
+      alreadyCompleted: false,
+      xpReward,
+      coinReward,
+      realmProgress: nextRealmProgress,
+      diploma: grantedDiploma,
+      profile: state.profile,
+      error
+    };
+  }
+}
+
+async function resetGuardianChallenge(realmId) {
+  await ready;
+  if (!state.profile || !realmId) return { ok: false, persisted: false, reason: "invalid-state" };
+
+  const progressField = state.profile._dbFields?.progress || "progresso";
+  const currentProgress = state.profile.progresso && typeof state.profile.progresso === "object"
+    ? cloneJson(state.profile.progresso)
+    : {};
+  const realmProgress = normalizeRealmProgress(currentProgress[realmId]);
+  const currentWorld = currentProgress._world && typeof currentProgress._world === "object"
+    ? cloneJson(currentProgress._world)
+    : {};
+  const diplomas = currentWorld.diplomas && typeof currentWorld.diplomas === "object"
+    ? cloneJson(currentWorld.diplomas)
+    : {};
+  delete diplomas[realmId];
+
+  const nextRealmProgress = {
+    ...realmProgress,
+    guardianChallengeCompleted: false,
+    bossDefeated: false,
+    completed: false
+  };
+  delete nextRealmProgress.completedAt;
+  delete nextRealmProgress.guardianRecognizedAt;
+
+  const nextProgress = {
+    ...currentProgress,
+    [realmId]: normalizeRealmProgress(nextRealmProgress),
+    _world: {
+      ...currentWorld,
+      completedRealmIds: Array.isArray(currentWorld.completedRealmIds)
+        ? currentWorld.completedRealmIds.filter((id) => id !== realmId)
+        : [],
+      diplomas,
+      lastProgressAt: new Date().toISOString()
+    }
+  };
+
+  try {
+    const updated = await updateProfileFields({ [progressField]: nextProgress });
+    if (updated) updated.progresso = nextProgress;
+    return { ok: true, persisted: true, profile: updated };
+  } catch (error) {
+    state.profile.progresso = nextProgress;
+    window.dispatchEvent(new CustomEvent("voltz:profile-updated", { detail: state.profile }));
+    return { ok: true, persisted: false, profile: state.profile, error };
+  }
+}
+
+
 async function resetRealmProgress(realmId) {
   await ready;
   if (!state.profile || !realmId) return { ok: false, persisted: false, reason: "invalid-state" };
@@ -315,12 +504,18 @@ async function resetRealmProgress(realmId) {
     ? currentWorld.completedRealmIds.filter((id) => id !== realmId)
     : [];
 
+  const currentDiplomas = currentWorld.diplomas && typeof currentWorld.diplomas === "object"
+    ? cloneJson(currentWorld.diplomas)
+    : {};
+  delete currentDiplomas[realmId];
+
   const nextProgress = {
     ...currentProgress,
     [realmId]: normalizeRealmProgress({}),
     _world: {
       ...currentWorld,
       completedRealmIds,
+      diplomas: currentDiplomas,
       lastProgressAt: new Date().toISOString()
     }
   };
@@ -582,15 +777,19 @@ async function inspectSave(realmId = "reino-matematica") {
     defeatedEnemyIds: [...localRealm.defeatedEnemyIds].sort(),
     solvedWorldEquationIds: [...localRealm.solvedWorldEquationIds].sort(),
     miniBossDefeated: localRealm.miniBossDefeated,
+    guardianChallengeCompleted: localRealm.guardianChallengeCompleted,
     bossDefeated: localRealm.bossDefeated,
-    completed: localRealm.completed
+    completed: localRealm.completed,
+    diploma: Boolean(getRealmDiploma(realmId))
   };
   const remoteComparable = {
     defeatedEnemyIds: [...remoteRealm.defeatedEnemyIds].sort(),
     solvedWorldEquationIds: [...remoteRealm.solvedWorldEquationIds].sort(),
     miniBossDefeated: remoteRealm.miniBossDefeated,
+    guardianChallengeCompleted: remoteRealm.guardianChallengeCompleted,
     bossDefeated: remoteRealm.bossDefeated,
-    completed: remoteRealm.completed
+    completed: remoteRealm.completed,
+    diploma: Boolean(remoteProfile.progresso?._world?.diplomas?.[realmId])
   };
 
   return {
@@ -676,6 +875,10 @@ window.VoltzProfile = {
   setRealmProgress,
   resetRealmProgress,
   completeEncounter,
+  completeGuardianChallenge,
+  resetGuardianChallenge,
+  getRealmDiploma,
+  hasRealmDiploma,
   getInventory,
   getItemCount,
   purchaseItem,

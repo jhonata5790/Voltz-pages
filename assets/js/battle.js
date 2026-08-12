@@ -19,6 +19,11 @@ const battleState = {
   hintRevealed: false,
   hintBusy: false,
   bagMessage: "",
+  structuredReasoningUsed: false,
+  eliminatedOptionLetter: "",
+  guardianRecognitionActive: false,
+  guardianDialogueIndex: 0,
+  guardianSaveResult: null,
   currentTab: "question",
   outcomeTimerId: null,
   resultMode: false
@@ -146,6 +151,11 @@ function clearBattleTimer() {
       battleState.hintRevealed = false;
       battleState.hintBusy = false;
       battleState.bagMessage = "";
+      battleState.structuredReasoningUsed = false;
+      battleState.eliminatedOptionLetter = "";
+      battleState.guardianRecognitionActive = false;
+      battleState.guardianDialogueIndex = 0;
+      battleState.guardianSaveResult = null;
       battleState.resultMode = false;
 
       keys.up = false;
@@ -170,6 +180,8 @@ function clearBattleTimer() {
       const questionNumber = battleState.questionNumber;
       const hintCount = Math.max(0, Number(window.VoltzProfile?.getItemCount?.("dica-foco") || 0));
       const canUseHint = hintCount > 0 && !battleState.hintRevealed && !battleState.locked && !battleState.hintBusy;
+      const hasStructuredReasoning = Boolean(window.VoltzProfile?.hasRealmDiploma?.("reino-matematica"));
+      const canUseStructuredReasoning = hasStructuredReasoning && !battleState.structuredReasoningUsed && !battleState.locked;
 
       enemyPanel.innerHTML = `
         <div class="battle-panel-inner enemy-theme-${type.id}">
@@ -235,12 +247,15 @@ function clearBattleTimer() {
                 <div class="enemy-question-text">${escapeHtml(q.text)}</div>
 
                 <div class="enemy-question-options" id="enemyQuestionOptions">
-                  ${Object.entries(q.options).map(([letter, value]) => `
-                    <button class="enemy-option-btn" type="button" onclick="answerEnemyQuestion('${letter}')">
-                      <strong>${letter}</strong>
-                      <span>${escapeHtml(value)}</span>
-                    </button>
-                  `).join("")}
+                  ${Object.entries(q.options).map(([letter, value]) => {
+                    const eliminated = battleState.eliminatedOptionLetter === letter;
+                    return `
+                      <button class="enemy-option-btn ${eliminated ? "eliminated" : ""}" type="button" onclick="answerEnemyQuestion('${letter}')" ${eliminated ? "disabled" : ""}>
+                        <strong>${letter}</strong>
+                        <span>${eliminated ? "Alternativa eliminada" : escapeHtml(value)}</span>
+                      </button>
+                    `;
+                  }).join("")}
                 </div>
 
                 <div class="enemy-feedback" id="enemyFeedback"></div>
@@ -275,6 +290,25 @@ function clearBattleTimer() {
                         : "Sem dicas"}
                 </button>
               </article>
+
+              ${hasStructuredReasoning ? `
+                <article class="battle-bag-item battle-bag-item-permanent">
+                  <div class="battle-bag-item-icon">🧠</div>
+                  <div class="battle-bag-item-copy">
+                    <div class="battle-bag-item-name">Raciocínio Estruturado</div>
+                    <p>Competência do Diploma da Matemática. Elimina uma alternativa incorreta da pergunta atual.</p>
+                    <span class="battle-bag-item-count">Permanente · 1 uso por batalha</span>
+                  </div>
+                  <button
+                    class="battle-item-use-btn"
+                    type="button"
+                    onclick="useStructuredReasoning()"
+                    ${canUseStructuredReasoning ? "" : "disabled"}
+                  >
+                    ${battleState.structuredReasoningUsed ? "Usado nesta batalha" : "Eliminar alternativa"}
+                  </button>
+                </article>
+              ` : ""}
 
               <div id="battleBagMessage" class="battle-bag-message ${battleState.bagMessage ? "visible" : ""}">
                 ${escapeHtml(battleState.bagMessage || (hintCount > 0
@@ -341,6 +375,28 @@ function clearBattleTimer() {
         renderBattleScreen();
         setBattleTab(battleState.currentTab);
       }
+    }
+
+    function useStructuredReasoning() {
+      if (
+        !battleState.active ||
+        battleState.locked ||
+        battleState.structuredReasoningUsed ||
+        !currentEnemyQuestion ||
+        !window.VoltzProfile?.hasRealmDiploma?.("reino-matematica")
+      ) return;
+
+      const wrongLetters = Object.keys(currentEnemyQuestion.options || {}).filter(
+        (letter) => letter !== currentEnemyQuestion.answer
+      );
+      if (!wrongLetters.length) return;
+
+      battleState.structuredReasoningUsed = true;
+      battleState.eliminatedOptionLetter = wrongLetters[Math.floor(Math.random() * wrongLetters.length)];
+      battleState.bagMessage = "Raciocínio Estruturado eliminou uma alternativa incorreta. A competência já foi usada nesta batalha.";
+      battleState.currentTab = "question";
+      renderBattleScreen();
+      setBattleTab("question");
     }
 
     function setBattleTab(tab) {
@@ -425,6 +481,128 @@ function clearBattleTimer() {
       showBattleNextButton("Continuar");
     }
 
+    function getGuardianThresholdHp(type) {
+      const percent = Number(type?.guardianChallenge?.stopAtPercent);
+      if (!Number.isFinite(percent) || percent <= 0 || percent >= 100) return null;
+      return Math.round((battleState.enemyMaxHp * percent) / 100);
+    }
+
+    function shouldTriggerGuardianRecognition(type, nextHp) {
+      const threshold = getGuardianThresholdHp(type);
+      return Boolean(
+        threshold !== null &&
+        !battleState.guardianRecognitionActive &&
+        nextHp <= threshold
+      );
+    }
+
+    async function beginGuardianRecognition(type) {
+      if (!currentEnemy || battleState.guardianRecognitionActive) return;
+
+      clearBattleTimer();
+      battleState.guardianRecognitionActive = true;
+      battleState.locked = true;
+      battleState.active = false;
+      battleState.resultMode = true;
+      battleState.guardianDialogueIndex = 0;
+      enemyQuestionAnswered = false;
+
+      const guardianSnapshot = { ...currentEnemy };
+      const challenge = type.guardianChallenge || {};
+      const realmId = typeof window.getActiveRealmProgressKey === "function"
+        ? window.getActiveRealmProgressKey()
+        : "reino-matematica";
+
+      enemyPanel.innerHTML = `
+        <div class="battle-result-card guardian-recognition-card">
+          <div class="battle-result-icon guardian-recognition-icon">∑</div>
+          <div class="enemy-panel-kicker">O combate foi interrompido</div>
+          <div class="enemy-panel-title">${escapeHtml(type.name)} ergue a mão.</div>
+          <p>O guardião alcançou o ponto que precisava para avaliar sua jornada.</p>
+          <div class="battle-auto-return">Registrando o resultado do teste...</div>
+        </div>
+      `;
+
+      try {
+        battleState.guardianSaveResult = await window.VoltzProfile?.completeGuardianChallenge?.(
+          realmId,
+          guardianSnapshot,
+          { xp: type.xpReward || 0, coins: type.coinReward || 0 },
+          challenge.diploma || {}
+        );
+      } catch (error) {
+        console.error("Falha ao concluir desafio do guardião:", error);
+        battleState.guardianSaveResult = { ok: false, persisted: false, error };
+      }
+
+      renderGuardianDialogue(type);
+    }
+
+    function renderGuardianDialogue(type) {
+      const challenge = type.guardianChallenge || {};
+      const lines = Array.isArray(challenge.dialogue) && challenge.dialogue.length
+        ? challenge.dialogue
+        : ["Basta.", "Seu teste foi concluído."];
+      const index = Math.min(battleState.guardianDialogueIndex, lines.length);
+
+      if (index >= lines.length) {
+        renderGuardianDiploma(type);
+        return;
+      }
+
+      enemyPanel.innerHTML = `
+        <div class="battle-result-card guardian-dialogue-card">
+          <div class="battle-result-icon guardian-recognition-icon">∑</div>
+          <div class="enemy-panel-kicker">${escapeHtml(type.name)}</div>
+          <div class="guardian-dialogue-quote">“${escapeHtml(lines[index])}”</div>
+          <div class="guardian-dialogue-progress">${index + 1}/${lines.length}</div>
+          <button class="guardian-continue-btn" type="button" onclick="advanceGuardianDialogue()">Continuar</button>
+        </div>
+      `;
+    }
+
+    function renderGuardianDiploma(type) {
+      const diploma = type.guardianChallenge?.diploma || {};
+      const saveResult = battleState.guardianSaveResult;
+      const saveText = saveResult?.persisted === false
+        ? "⚠ O progresso ficou apenas local. Verifique a conexão com o Supabase."
+        : "✓ Diploma e conclusão do reino salvos no Supabase.";
+      const rewardText = saveResult?.alreadyCompleted
+        ? "Conclusão já registrada"
+        : `+${type.xpReward || 0} XP · +${type.coinReward || 0} moedas`;
+
+      enemyPanel.innerHTML = `
+        <div class="battle-result-card guardian-diploma-card">
+          <div class="guardian-diploma-seal">📜</div>
+          <div class="enemy-panel-kicker">Reino da Matemática concluído</div>
+          <div class="enemy-panel-title">${escapeHtml(diploma.name || "Diploma da Matemática")}</div>
+          <p>O Golem não foi derrotado. Ele reconheceu que você demonstrou compreensão suficiente para concluir seu teste.</p>
+          <div class="guardian-ability-card">
+            <span>🧠</span>
+            <div>
+              <strong>${escapeHtml(diploma.abilityName || "Raciocínio Estruturado")}</strong>
+              <small>${escapeHtml(diploma.abilityDescription || "Uma vez por batalha, elimina uma alternativa incorreta.")}</small>
+            </div>
+          </div>
+          <div class="battle-reward-row"><span>${escapeHtml(rewardText)}</span></div>
+          <div class="battle-auto-return ${saveResult?.persisted === false ? "save-warning" : ""}">${escapeHtml(saveText)}</div>
+          <button class="guardian-continue-btn guardian-finish-btn" type="button" onclick="finishGuardianRecognition()">Receber diploma e voltar ao mapa</button>
+        </div>
+      `;
+    }
+
+    function advanceGuardianDialogue() {
+      if (!currentEnemy || !battleState.guardianRecognitionActive) return;
+      battleState.guardianDialogueIndex += 1;
+      renderGuardianDialogue(getEnemyType(currentEnemy));
+    }
+
+    function finishGuardianRecognition() {
+      if (!battleState.guardianRecognitionActive) return;
+      closeEnemyPanel({ force: true, skipProgressUpdate: true });
+      interactionText.textContent = "Diploma da Matemática conquistado. Raciocínio Estruturado foi desbloqueado permanentemente!";
+    }
+
     function answerEnemyQuestion(letter) {
       if (!enemyPanelOpen || !currentEnemy || !currentEnemyQuestion || battleState.locked) return;
 
@@ -448,11 +626,18 @@ function clearBattleTimer() {
         }
       });
 
+      let guardianRecognitionTriggered = false;
+
       if (isCorrect) {
         const damage = type.enemyDamageOnCorrect || 25;
-        battleState.enemyHp = Math.max(0, battleState.enemyHp - damage);
-        showBattleFeedback("correct", `Acertou! ${currentEnemyQuestion.explanation} O ${type.name} sofreu ${damage} de dano.`);
-        triggerBattleEffect("enemy-hit", `-${damage}`);
+        const rawNextHp = Math.max(0, battleState.enemyHp - damage);
+        guardianRecognitionTriggered = shouldTriggerGuardianRecognition(type, rawNextHp);
+        const thresholdHp = getGuardianThresholdHp(type);
+        battleState.enemyHp = guardianRecognitionTriggered && thresholdHp !== null ? thresholdHp : rawNextHp;
+        showBattleFeedback("correct", guardianRecognitionTriggered
+          ? `Acertou! ${currentEnemyQuestion.explanation} O ${type.name} interrompeu o combate.`
+          : `Acertou! ${currentEnemyQuestion.explanation} O ${type.name} sofreu ${damage} de dano.`);
+        triggerBattleEffect("enemy-hit", guardianRecognitionTriggered ? "50%" : `-${damage}`);
       } else {
         const damage = type.playerDamageOnWrong || 15;
         battleState.playerHp = Math.max(0, battleState.playerHp - damage);
@@ -462,6 +647,13 @@ function clearBattleTimer() {
       }
 
       updateBattleHud();
+
+      if (guardianRecognitionTriggered) {
+        // Bloqueia o fechamento manual durante a breve transição até o diálogo.
+        battleState.resultMode = true;
+        window.setTimeout(() => beginGuardianRecognition(type), 650);
+        return;
+      }
 
       if (battleState.enemyHp <= 0) {
         showBattleVictory();
@@ -624,6 +816,7 @@ function clearBattleTimer() {
       battleState.hintRevealed = false;
       battleState.hintBusy = false;
       battleState.bagMessage = "";
+      battleState.eliminatedOptionLetter = "";
       currentEnemyQuestion = drawNextBattleQuestion(type);
       renderBattleScreen();
       startBattleTimer();
@@ -645,6 +838,11 @@ function clearBattleTimer() {
       battleState.hintRevealed = false;
       battleState.hintBusy = false;
       battleState.bagMessage = "";
+      battleState.structuredReasoningUsed = false;
+      battleState.eliminatedOptionLetter = "";
+      battleState.guardianRecognitionActive = false;
+      battleState.guardianDialogueIndex = 0;
+      battleState.guardianSaveResult = null;
       enemyQuestionAnswered = false;
       enemyPanel.classList.remove("visible", "battle-mode", "player-damaged");
       enemyPanel.innerHTML = "";
@@ -767,3 +965,6 @@ window.answerEnemyQuestion = answerEnemyQuestion;
 window.nextEnemyQuestion = nextEnemyQuestion;
 window.setBattleTab = setBattleTab;
 window.useBattleHint = useBattleHint;
+window.useStructuredReasoning = useStructuredReasoning;
+window.advanceGuardianDialogue = advanceGuardianDialogue;
+window.finishGuardianRecognition = finishGuardianRecognition;

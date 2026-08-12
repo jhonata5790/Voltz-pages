@@ -62,7 +62,7 @@
           <button class="dev-btn danger" data-action="commons" data-value="0">Restaurar comuns</button>
           <button class="dev-btn save" data-action="melog" data-value="1">Marcar Melog derrotado</button>
           <button class="dev-btn danger" data-action="melog" data-value="0">Restaurar Melog</button>
-          <button class="dev-btn save" data-action="golem" data-value="1">Concluir guardião/Golem</button>
+          <button class="dev-btn save" data-action="golem" data-value="1">Concluir Golem + Diploma</button>
           <button class="dev-btn danger" data-action="golem" data-value="0">Restaurar Golem</button>
           <button class="dev-btn save" data-action="equations" data-value="1">Resolver todas equações</button>
           <button class="dev-btn danger" data-action="equations" data-value="0">Restaurar equações</button>
@@ -123,7 +123,8 @@
       <div class="dev-stat"><span>Posição</span><strong>${snap.x}, ${snap.y}</strong></div>
       <div class="dev-stat"><span>Comuns</span><strong>${snap.commonDefeated}/${snap.commonTotal}</strong></div>
       <div class="dev-stat"><span>Melog</span><strong>${snap.miniBossDefeated ? "✓" : "—"}</strong></div>
-      <div class="dev-stat"><span>Golem</span><strong>${snap.bossDefeated ? "✓" : "—"}</strong></div>
+      <div class="dev-stat"><span>Golem</span><strong>${snap.guardianChallengeCompleted ? "✓ teste" : "—"}</strong></div>
+      <div class="dev-stat"><span>Diploma</span><strong>${snap.diploma ? "✓" : "—"}</strong></div>
       <div class="dev-stat"><span>Equações</span><strong>${snap.solvedEquations}/${snap.totalEquations}</strong></div>
       <div class="dev-stat"><span>Ritmo</span><strong>${snap.rhythmStacks}/3${snap.rhythmDevOverride ? " DEV" : ""}</strong></div>
       <div class="dev-stat"><span>Velocidade</span><strong>×${snap.speedMultiplier}</strong></div>

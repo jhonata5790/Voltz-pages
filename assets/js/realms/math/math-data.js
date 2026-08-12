@@ -507,13 +507,31 @@
       aura: "rgba(255,209,102,0.28)",
       battleImage: "assets/images/bosses/golem-dos-calculos.webp",
       description: "Guardião do Reino da Matemática. Ele não odeia o jogador: ele testa se você dominou o caminho dos cálculos.",
-      maxHp: 240,
+      maxHp: 600,
       playerDamageOnWrong: 22,
       playerDamageOnTimeout: 10,
-      enemyDamageOnCorrect: 32,
+      enemyDamageOnCorrect: 60,
       timeLimit: 25,
-      xpReward: 260,
-      coinReward: 80,
+      xpReward: 300,
+      coinReward: 100,
+      guardianChallenge: {
+        stopAtPercent: 50,
+        diploma: {
+          id: "diploma-matematica",
+          realmId: "reino-matematica",
+          name: "Diploma da Matemática",
+          abilityId: "raciocinio-estruturado",
+          abilityName: "Raciocínio Estruturado",
+          abilityDescription: "Uma vez por batalha, elimina uma alternativa incorreta da pergunta atual."
+        },
+        dialogue: [
+          "Basta.",
+          "Você não veio até aqui para me destruir.",
+          "Cada resposta que deu, cada erro que corrigiu e cada obstáculo que atravessou já demonstrou o que eu precisava saber.",
+          "A Matemática não exige perfeição. Exige compreensão.",
+          "Você provou que é capaz de continuar aprendendo."
+        ]
+      },
       questions: [
         {
           tip: "Resolva potência, multiplicação e soma na ordem correta.",
@@ -726,6 +744,14 @@
       explanation: "√64 = 8. As raízes cristalinas do bosque recuperaram sua forma perfeita."
     }
   ];
+
+  const progression = {
+    // Matemática deve incentivar exploração sem exigir limpeza total do mapa.
+    bridgeEquationId: "equacao-operacoes-01",
+    commonEnemiesRequiredForMiniBoss: 6,
+    requiredEquationIdsForMiniBoss: worldEquations.map((equation) => equation.id),
+    requireMiniBossForBoss: true
+  };
 
   const scene = {
     id: "reino-matematica",
@@ -960,6 +986,20 @@
         aura: "#ffd166",
         portrait: "assets/images/bosses/golem-dos-calculos.webp",
         dynamicDialogue: "golem-gate"
+      },
+      {
+        id: "npc-golem-math-concluido",
+        name: "Golem dos Cálculos",
+        role: "Guardião da Matemática",
+        x: 2500,
+        y: 385,
+        visualType: "guardian",
+        colorA: "#ffd166",
+        colorB: "#9257ff",
+        aura: "#ffd166",
+        portrait: "assets/images/bosses/golem-dos-calculos.webp",
+        showWhenGuardianCompleted: true,
+        dynamicDialogue: "math-guardian-completed"
       }
     ],
     portalObjects: [
@@ -985,6 +1025,7 @@
     miniBoss,
     boss,
     worldEquations,
+    progression,
     scene
   };
 })(window);

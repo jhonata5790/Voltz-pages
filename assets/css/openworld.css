@@ -2434,6 +2434,103 @@ body.debug-mode .world.show-colliders .player-hitbox-debug {
   50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
 }
 
+.math-progress-hud {
+  position: absolute;
+  top: 74px;
+  left: 18px;
+  z-index: 950;
+  display: none;
+  width: min(360px, calc(100% - 36px));
+  padding: 13px 14px;
+  border-radius: 17px;
+  border: 1px solid rgba(120, 247, 255, 0.28);
+  background: rgba(4, 7, 18, 0.91);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24), 0 0 28px rgba(120, 247, 255, 0.06);
+  backdrop-filter: blur(12px);
+  color: #f5fbff;
+}
+
+.math-progress-hud.visible { display: block; }
+
+.math-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 5px;
+  color: rgba(120, 247, 255, 0.78);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.math-progress-head strong { color: #ffd166; }
+
+.math-progress-stage {
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+}
+
+.math-progress-objective {
+  margin-top: 4px;
+  color: rgba(245, 251, 255, 0.72);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.math-progress-track {
+  height: 5px;
+  margin: 10px 0 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.math-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #78f7ff, #9257ff, #ffd166);
+  box-shadow: 0 0 12px rgba(120, 247, 255, 0.28);
+  transition: width 220ms ease;
+}
+
+.math-progress-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.math-progress-checks span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(245, 251, 255, 0.55);
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.math-progress-checks span.done {
+  border-color: rgba(120, 247, 255, 0.28);
+  background: rgba(120, 247, 255, 0.08);
+  color: #78f7ff;
+}
+
+.math-progress-checks span.available {
+  border-color: rgba(255, 209, 102, 0.38);
+  background: rgba(255, 209, 102, 0.09);
+  color: #ffd166;
+  animation: math-progress-ready 1.4s ease-in-out infinite;
+}
+
+@keyframes math-progress-ready {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 209, 102, 0); }
+  50% { box-shadow: 0 0 14px rgba(255, 209, 102, 0.15); }
+}
+
 .math-buff-hud {
   position: absolute;
   top: 74px;
@@ -2651,6 +2748,12 @@ body.debug-mode .world.show-colliders .player-hitbox-debug {
 }
 
 @media (max-width: 700px) {
+  .math-progress-hud {
+    top: 66px;
+    left: 10px;
+    width: min(300px, calc(100% - 20px));
+  }
+
   .math-buff-hud {
     top: 66px;
     right: 10px;
@@ -3199,4 +3302,39 @@ body.debug-mode .world.show-colliders .player-hitbox-debug {
     radial-gradient(ellipse at 78% 55%, rgba(146, 87, 255, 0.16), transparent 17%),
     radial-gradient(ellipse at 50% 32%, rgba(255, 77, 125, 0.12), transparent 12%),
     radial-gradient(ellipse at 50% 10%, rgba(255, 209, 102, 0.16), transparent 10%);
+}
+
+
+/* Golem amigável após a conclusão do Reino da Matemática */
+.npc-guardian-image-wrap {
+  position: relative;
+  width: 150px;
+  height: 165px;
+  display: grid;
+  place-items: end center;
+  transform: translate(-15px, -36px);
+  pointer-events: none;
+}
+
+.npc-guardian-aura {
+  position: absolute;
+  inset: 18px 2px 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 209, 102, 0.28), rgba(146, 87, 255, 0.12) 48%, transparent 72%);
+  filter: blur(5px);
+  animation: guardianNpcAura 2.4s ease-in-out infinite;
+}
+
+.npc-guardian-image {
+  position: relative;
+  z-index: 1;
+  max-width: 142px;
+  max-height: 158px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.42)) drop-shadow(0 0 18px rgba(255, 209, 102, 0.28));
+}
+
+@keyframes guardianNpcAura {
+  0%, 100% { opacity: 0.65; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.06); }
 }

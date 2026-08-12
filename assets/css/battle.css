@@ -584,3 +584,99 @@
   letter-spacing: 0.04em;
   vertical-align: middle;
 }
+
+
+/* Diploma da Matemática + Raciocínio Estruturado */
+.battle-bag { display: grid; gap: 14px; }
+
+.battle-bag-item-permanent {
+  border-color: rgba(146, 87, 255, 0.38);
+  background: linear-gradient(135deg, rgba(146, 87, 255, 0.13), rgba(0, 234, 255, 0.07));
+}
+
+.enemy-option-btn.eliminated,
+.enemy-option-btn.eliminated:disabled {
+  opacity: 0.36;
+  filter: grayscale(0.8);
+  text-decoration: line-through;
+  border-style: dashed;
+}
+
+.guardian-recognition-card,
+.guardian-dialogue-card,
+.guardian-diploma-card {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 209, 102, 0.2), transparent 32%),
+    radial-gradient(circle at 50% 64%, rgba(146, 87, 255, 0.16), transparent 42%),
+    linear-gradient(135deg, rgba(5, 7, 19, 0.99), rgba(24, 16, 48, 0.99));
+}
+
+.guardian-recognition-icon {
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.4);
+  box-shadow: 0 0 40px rgba(255, 209, 102, 0.2);
+}
+
+.guardian-dialogue-quote {
+  max-width: 720px;
+  min-height: 90px;
+  display: grid;
+  place-items: center;
+  padding: 20px 26px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 209, 102, 0.24);
+  background: rgba(255, 209, 102, 0.055);
+  color: rgba(255, 244, 214, 0.98);
+  font-size: clamp(1.08rem, 2vw, 1.42rem);
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.guardian-dialogue-progress {
+  color: rgba(120, 247, 255, 0.82);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.guardian-continue-btn {
+  margin-top: 8px;
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #ffd166, #78f7ff);
+  color: #02040d;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+
+.guardian-diploma-seal {
+  width: 104px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 209, 102, 0.42);
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.2), rgba(146, 87, 255, 0.18));
+  font-size: 3.2rem;
+  box-shadow: 0 0 42px rgba(255, 209, 102, 0.18);
+}
+
+.guardian-ability-card {
+  width: min(620px, 100%);
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(120, 247, 255, 0.28);
+  background: rgba(0, 234, 255, 0.055);
+  text-align: left;
+}
+
+.guardian-ability-card > span { font-size: 2rem; }
+.guardian-ability-card strong { display: block; color: #78f7ff; margin-bottom: 4px; }
+.guardian-ability-card small { color: rgba(203, 215, 255, 0.88); line-height: 1.45; }
+.guardian-finish-btn { margin-top: 4px; }
+.save-warning { color: #ff9aac; }
