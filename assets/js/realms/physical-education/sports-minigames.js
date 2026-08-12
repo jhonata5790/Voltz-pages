@@ -1073,7 +1073,130 @@
     }
   }
 
-  function throwDodgeball() {
+
+  function createDodgeballImpact(x, y, styleId = "straight") {
+    if (!panel) return;
+    const impact = document.createElement("div");
+    impact.className = `dodgeball-impact dodgeball-impact-${styleId}`;
+    impact.style.left = `${x}px`;
+    impact.style.top = `${y}px`;
+
+    const particleCount = styleId === "power" ? 12 : 8;
+    impact.innerHTML = `
+      <span class="dodgeball-impact-ring"></span>
+      <span class="dodgeball-impact-core"></span>
+      ${Array.from({ length: particleCount }, (_, index) => `<span class="dodgeball-impact-particle" style="--impact-angle:${(360 / particleCount) * index}deg"></span>`).join("")}
+    `;
+    panel.appendChild(impact);
+    addTimer(() => impact.remove(), styleId === "power" ? 520 : 430);
+  }
+
+  function flashDodgeballRival(styleId = "straight") {
+    const rivalImage = panel?.querySelector?.(".dodgeball-rival-image");
+    if (!rivalImage?.animate) return Promise.resolve();
+
+    const power = styleId === "power";
+    const keyframes = power
+      ? [
+          { filter: "brightness(1) contrast(1)", transform: "translateX(0) scale(1)" },
+          { filter: "brightness(.10) contrast(1.45)", transform: "translateX(-5px) scale(1.025)", offset: .16 },
+          { filter: "brightness(1) contrast(1.15)", transform: "translateX(5px) scale(1.015)", offset: .30 },
+          { filter: "brightness(.08) contrast(1.55)", transform: "translateX(-4px) scale(1.035)", offset: .45 },
+          { filter: "brightness(1) contrast(1.1)", transform: "translateX(4px) scale(1.01)", offset: .62 },
+          { filter: "brightness(.18) contrast(1.35)", transform: "translateX(-2px) scale(1.02)", offset: .76 },
+          { filter: "brightness(1) contrast(1)", transform: "translateX(0) scale(1)" }
+        ]
+      : [
+          { filter: "brightness(1)", transform: "translateX(0)" },
+          { filter: "brightness(.28)", transform: "translateX(-2px)", offset: .34 },
+          { filter: "brightness(.72)", transform: "translateX(2px)", offset: .62 },
+          { filter: "brightness(1)", transform: "translateX(0)" }
+        ];
+
+    const animation = rivalImage.animate(keyframes, {
+      duration: power ? 320 : 245,
+      easing: power ? "linear" : "ease-out"
+    });
+    return animation.finished.catch(() => {});
+  }
+
+  async function playDodgeballThrowEffect(styleId, connected, cursor, min, max, onImpact) {
+    if (!panel) {
+      if (connected) onImpact?.();
+      return;
+    }
+
+    const rivalImage = panel.querySelector(".dodgeball-rival-image");
+    const panelRect = panel.getBoundingClientRect();
+    const rivalRect = rivalImage?.getBoundingClientRect?.();
+    if (!rivalRect || rivalRect.width <= 0 || rivalRect.height <= 0) {
+      if (connected) onImpact?.();
+      return;
+    }
+
+    const projectile = document.createElement("div");
+    projectile.className = `dodgeball-attack-projectile dodgeball-projectile-${styleId}`;
+    projectile.setAttribute("aria-hidden", "true");
+    panel.appendChild(projectile);
+
+    const startX = panelRect.width * .50;
+    const startY = panelRect.height - 44;
+    const rivalX = rivalRect.left - panelRect.left + rivalRect.width * .50;
+    const rivalY = rivalRect.top - panelRect.top + rivalRect.height * .40;
+
+    const missDirection = cursor < min ? -1 : cursor > max ? 1 : (Math.random() < .5 ? -1 : 1);
+    const targetX = connected ? rivalX : rivalX + missDirection * Math.max(110, rivalRect.width * 1.05);
+    const targetY = connected ? rivalY : rivalY - 18 + Math.random() * 38;
+    const dx = targetX - startX;
+    const dy = targetY - startY;
+
+    projectile.style.left = `${startX - 22}px`;
+    projectile.style.top = `${startY - 22}px`;
+
+    let duration = 500;
+    let frames;
+    if (styleId === "curve") {
+      duration = 650;
+      const side = Math.random() < .5 ? -1 : 1;
+      const curve = side * Math.min(170, panelRect.width * .14);
+      frames = [
+        { transform: "translate(0, 0) scale(1.32) rotate(0deg)", opacity: 1 },
+        { transform: `translate(${dx * .30 + curve}px, ${dy * .30}px) scale(1.08) rotate(${side * 160}deg)`, offset: .32 },
+        { transform: `translate(${dx * .67 + curve * .72}px, ${dy * .67}px) scale(.78) rotate(${side * 340}deg)`, offset: .68 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.52) rotate(${side * 520}deg)`, opacity: 1 }
+      ];
+    } else if (styleId === "power") {
+      duration = 255;
+      frames = [
+        { transform: "translate(0, 0) scale(1.48)", opacity: 1, filter: "brightness(1.2)" },
+        { transform: `translate(${dx * .46}px, ${dy * .46}px) scale(.98)`, opacity: 1, filter: "brightness(1.28)", offset: .45 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.48)`, opacity: 1, filter: "brightness(1.35)" }
+      ];
+    } else {
+      duration = 485;
+      frames = [
+        { transform: "translate(0, 0) scale(1.34)", opacity: 1 },
+        { transform: `translate(${dx * .52}px, ${dy * .52}px) scale(.88)`, opacity: 1, offset: .52 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.52)`, opacity: 1 }
+      ];
+    }
+
+    const animation = projectile.animate(frames, {
+      duration,
+      easing: styleId === "power" ? "cubic-bezier(.08,.72,.16,1)" : styleId === "curve" ? "cubic-bezier(.32,.02,.22,1)" : "cubic-bezier(.18,.68,.22,1)"
+    });
+
+    await animation.finished.catch(() => {});
+    projectile.remove();
+
+    if (!connected) return;
+
+    onImpact?.();
+    createDodgeballImpact(targetX, targetY, styleId);
+    await flashDodgeballRival(styleId);
+  }
+
+  async function throwDodgeball() {
     const g = state.current;
     if (!g || g.type !== "dodgeball" || g.phase !== "aim" || !g.selectedThrow || g.locked) return;
     const option = g.selectedThrow;
@@ -1082,29 +1205,40 @@
     const max = clamp(option.max + g.throwWindowBonus, 10, 95);
     const hit = g.cursor >= min && g.cursor <= max;
     const graze = option.graze ? (g.cursor >= min - option.graze && g.cursor <= max + option.graze) : false;
+    const connected = hit || graze;
     let damage = 0;
     let message = "";
 
     if (hit) {
       damage = option.baseDamage + g.damageBonus;
-      g.opponentHp = Math.max(0, g.opponentHp - damage);
       message = `Acerto direto! O arremesso ${option.label.toLowerCase()} atingiu Capitão Rubro e causou ${damage} ponto${damage === 1 ? "" : "s"}.`;
     } else if (graze) {
       damage = Math.max(1, Math.floor((option.baseDamage + g.damageBonus) / 2));
-      g.opponentHp = Math.max(0, g.opponentHp - damage);
       message = `Quase perfeito, mas suficiente. O arremesso passou raspando e ainda causou ${damage} ponto.`;
     } else {
       message = `Capitão Rubro leu o seu ${option.label.toLowerCase()} e saiu da trajetória.`;
     }
+
+    const feedback = panel?.querySelector?.(".dodgeball-aim-stage .sports-feedback");
+    if (feedback) feedback.textContent = connected ? "A bola saiu da sua mão..." : "Capitão Rubro começa a sair da trajetória...";
+    const throwButton = panel?.querySelector?.(".dodgeball-aim-stage .sports-primary-btn");
+    const backButton = panel?.querySelector?.(".dodgeball-aim-stage .sports-close-btn");
+    if (throwButton) { throwButton.disabled = true; throwButton.textContent = "Lançado!"; }
+    if (backButton) backButton.disabled = true;
+
+    await playDodgeballThrowEffect(option.id, connected, g.cursor, min, max, () => {
+      g.opponentHp = Math.max(0, g.opponentHp - damage);
+    });
+
+    if (!state.current || state.current !== g) return;
 
     g.throwWindowBonus = 0;
     g.damageBonus = 0;
     g.turn += 1;
     g.dialogue = message;
 
-    // Mantém selectedThrow vivo durante a tela de resolução.
-    // Antes ele era apagado aqui e renderDodgeballAim tentava acessar option.min/max,
-    // causando um TypeError e fazendo o Espaço parecer não funcionar.
+    // Mantém o estilo vivo só durante a resolução para o painel conseguir
+    // mostrar corretamente qual arremesso acabou de acontecer.
     renderDodgeballAim(message);
 
     addTimer(() => {
@@ -1116,7 +1250,7 @@
         return;
       }
       startDodgeDefense();
-    }, 950);
+    }, option.id === "power" ? 520 : 650);
   }
 
   function startDodgeDefense() {
