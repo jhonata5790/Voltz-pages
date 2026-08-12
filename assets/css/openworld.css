@@ -3338,3 +3338,328 @@ body.debug-mode .world.show-colliders .player-hitbox-debug {
   0%, 100% { opacity: 0.65; transform: scale(0.96); }
   50% { opacity: 1; transform: scale(1.06); }
 }
+
+
+/* =========================================================
+   UI de jogo ampliada + Inventário de mundo aberto
+   ========================================================= */
+
+.game-wrapper {
+  height: calc(100vh - 72px);
+  width: 100%;
+  padding: 10px 12px 12px;
+  display: block;
+}
+
+.game-viewport {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 22px;
+}
+
+.hud-action-button {
+  appearance: none;
+  color: var(--white);
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.14s ease;
+}
+
+.hud-action-button:hover,
+.hud-action-button[aria-expanded="true"] {
+  transform: translateY(-1px);
+  border-color: rgba(255, 209, 102, 0.42);
+  background: rgba(255, 209, 102, 0.09);
+}
+
+/* Durante a batalha, a interface contextual do mapa nunca fica acima do combate. */
+body.battle-active .math-progress-hud,
+body.battle-active .math-buff-hud,
+body.battle-active .interaction-text,
+body.battle-active .player-locator,
+body.battle-active .debug-panel {
+  display: none !important;
+}
+
+/* O inventário também limpa a HUD contextual para leitura. */
+body.world-inventory-open .math-progress-hud,
+body.world-inventory-open .math-buff-hud,
+body.world-inventory-open .interaction-text {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.world-inventory-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1320;
+  width: min(1040px, calc(100% - 36px));
+  max-height: calc(100% - 38px);
+  overflow: auto;
+  transform: translate(-50%, -47%) scale(0.97);
+  opacity: 0;
+  pointer-events: none;
+  padding: 24px;
+  border-radius: 28px;
+  border: 1px solid rgba(120, 247, 255, 0.34);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(0, 234, 255, 0.13), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(146, 87, 255, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(4, 7, 18, 0.985), rgba(14, 11, 42, 0.985));
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.48),
+    0 0 42px rgba(0, 234, 255, 0.1),
+    inset 0 0 42px rgba(146, 87, 255, 0.06);
+  backdrop-filter: blur(20px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.world-inventory-panel.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.world-inventory-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.world-inventory-kicker {
+  color: var(--warning);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+}
+
+.world-inventory-title {
+  margin-top: 4px;
+  color: var(--cyan);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.world-inventory-subtitle {
+  max-width: 660px;
+  margin-top: 7px;
+  color: rgba(203, 215, 255, 0.8);
+  line-height: 1.5;
+}
+
+.world-inventory-close {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--white);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.world-inventory-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.world-inventory-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 11px 13px;
+  border-radius: 15px;
+  border: 1px solid rgba(120, 247, 255, 0.15);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.world-inventory-summary span {
+  color: rgba(203, 215, 255, 0.6);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.world-inventory-summary strong {
+  overflow: hidden;
+  color: var(--white);
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.world-inventory-section + .world-inventory-section {
+  margin-top: 20px;
+}
+
+.world-inventory-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 9px;
+}
+
+.world-inventory-section-head span {
+  color: var(--white);
+  font-size: 0.9rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.world-inventory-section-head small {
+  color: rgba(120, 247, 255, 0.64);
+  font-size: 0.72rem;
+}
+
+.world-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.world-inventory-card {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  padding: 13px;
+  border-radius: 18px;
+  border: 1px solid rgba(120, 247, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.world-inventory-card.diploma {
+  border-color: rgba(255, 209, 102, 0.28);
+  background: rgba(255, 209, 102, 0.055);
+}
+
+.world-inventory-card.ability {
+  border-color: rgba(146, 87, 255, 0.26);
+  background: rgba(146, 87, 255, 0.055);
+}
+
+.world-inventory-card-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  border: 1px solid rgba(120, 247, 255, 0.18);
+  background: linear-gradient(135deg, rgba(0, 234, 255, 0.12), rgba(146, 87, 255, 0.14));
+  font-size: 1.55rem;
+}
+
+.world-inventory-card-body {
+  min-width: 0;
+}
+
+.world-inventory-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.world-inventory-card-topline strong {
+  min-width: 0;
+  color: var(--white);
+  font-size: 0.93rem;
+}
+
+.world-inventory-card-topline span {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.2);
+  color: var(--warning);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.world-inventory-card p {
+  color: rgba(203, 215, 255, 0.76);
+  font-size: 0.8rem;
+  line-height: 1.42;
+}
+
+.world-inventory-card small {
+  display: block;
+  margin-top: 6px;
+  color: rgba(120, 247, 255, 0.66);
+  font-size: 0.7rem;
+}
+
+.world-inventory-empty {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border: 1px dashed rgba(120, 247, 255, 0.18);
+  border-radius: 17px;
+  color: rgba(203, 215, 255, 0.58);
+  text-align: center;
+}
+
+.world-inventory-message {
+  margin-top: 18px;
+  padding: 10px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 247, 255, 0.13);
+  background: rgba(0, 234, 255, 0.045);
+  color: rgba(203, 215, 255, 0.7);
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+@media (max-width: 980px) {
+  .game-wrapper {
+    padding: 8px;
+  }
+
+  .game-viewport {
+    border-radius: 18px;
+  }
+
+  .world-inventory-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .world-inventory-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .game-wrapper {
+    height: calc(100vh - 112px);
+    padding: 6px;
+  }
+
+  .world-inventory-panel {
+    width: calc(100% - 18px);
+    max-height: calc(100% - 18px);
+    padding: 17px;
+    border-radius: 20px;
+  }
+
+  .world-inventory-header {
+    flex-direction: column;
+  }
+
+  .world-inventory-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}

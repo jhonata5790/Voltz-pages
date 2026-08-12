@@ -132,6 +132,8 @@ function clearBattleTimer() {
       clearBattleOutcomeTimer();
       const type = getEnemyType(enemy);
 
+      window.closeWorldInventory?.();
+      document.body.classList.add("battle-active");
       enemyPanelOpen = true;
       currentEnemy = enemy;
       enemyQuestionAnswered = false;
@@ -846,6 +848,7 @@ function clearBattleTimer() {
       enemyQuestionAnswered = false;
       enemyPanel.classList.remove("visible", "battle-mode", "player-damaged");
       enemyPanel.innerHTML = "";
+      document.body.classList.remove("battle-active");
       updateHint();
     }
 

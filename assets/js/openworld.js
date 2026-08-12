@@ -31,6 +31,14 @@ const viewport = document.getElementById("gameViewport");
     const shopBuyHintButton = document.getElementById("shopBuyHintButton");
     const shopMessage = document.getElementById("shopMessage");
 
+    const worldInventoryButton = document.getElementById("worldInventoryButton");
+    const worldInventoryPanel = document.getElementById("worldInventoryPanel");
+    const worldInventorySummary = document.getElementById("worldInventorySummary");
+    const worldInventoryItems = document.getElementById("worldInventoryItems");
+    const worldInventoryDiplomas = document.getElementById("worldInventoryDiplomas");
+    const worldInventoryAbilities = document.getElementById("worldInventoryAbilities");
+    const worldInventoryMessage = document.getElementById("worldInventoryMessage");
+
     const equationPanel = document.getElementById("equationPanel");
     const equationPanelKicker = document.getElementById("equationPanelKicker");
     const equationPanelTitle = document.getElementById("equationPanelTitle");
@@ -695,6 +703,7 @@ const viewport = document.getElementById("gameViewport");
     let nearbyPortal = null;
     let realmPanelOpen = false;
     let shopPanelOpen = false;
+    let worldInventoryOpen = false;
     let shopPurchaseBusy = false;
     let worldEquationPanelOpen = false;
     let nearbyWorldEquation = null;
@@ -1230,6 +1239,152 @@ const viewport = document.getElementById("gameViewport");
       shopPanelOpen = false;
       shopPurchaseBusy = false;
       shopPanel?.classList.remove("visible");
+      updateHint();
+    }
+
+    function stopPlayerForOverlay() {
+      keys.up = false;
+      keys.down = false;
+      keys.left = false;
+      keys.right = false;
+      keys.run = false;
+      playerState.moving = false;
+      updatePlayerAnimation();
+    }
+
+    function getInventoryItemPresentation(itemId, count) {
+      const knownItems = {
+        "dica-foco": {
+          icon: "💡",
+          name: "Dica de Foco",
+          description: "Revela a dica da pergunta atual. O uso consome 1 unidade.",
+          usage: "Usável durante batalhas"
+        }
+      };
+
+      const known = knownItems[itemId];
+      if (known) return { ...known, count };
+
+      return {
+        icon: "◇",
+        name: String(itemId || "Item").replace(/[-_]/g, " "),
+        description: "Item guardado no seu inventário persistente.",
+        usage: "Item salvo",
+        count
+      };
+    }
+
+    function renderWorldInventory(message = "") {
+      if (!worldInventoryPanel) return;
+
+      const profile = window.VoltzProfile?.state?.profile;
+      const inventory = window.VoltzProfile?.getInventory?.() || {};
+      const diplomasObject = window.VoltzProfile?.getDiplomas?.() || {};
+      const diplomas = Object.values(diplomasObject).filter((entry) => entry && typeof entry === "object");
+      const abilities = diplomas.filter((entry) => entry.abilityId || entry.abilityName);
+
+      if (worldInventorySummary) {
+        const totalItems = Object.values(inventory).reduce((sum, value) => sum + Math.max(0, Number(value || 0)), 0);
+        worldInventorySummary.innerHTML = `
+          <div><span>Aluno</span><strong>${escapeHtml(profile?.nome || "Aluno")}</strong></div>
+          <div><span>Itens</span><strong>${totalItems}</strong></div>
+          <div><span>Diplomas</span><strong>${diplomas.length}</strong></div>
+          <div><span>Moedas</span><strong>${Math.max(0, Number(profile?.moedas || 0))}</strong></div>
+        `;
+      }
+
+      if (worldInventoryItems) {
+        const entries = Object.entries(inventory)
+          .filter(([, count]) => Math.max(0, Number(count || 0)) > 0)
+          .map(([itemId, count]) => getInventoryItemPresentation(itemId, Math.max(0, Number(count || 0))));
+
+        worldInventoryItems.innerHTML = entries.length
+          ? entries.map((item) => `
+              <article class="world-inventory-card">
+                <div class="world-inventory-card-icon">${item.icon}</div>
+                <div class="world-inventory-card-body">
+                  <div class="world-inventory-card-topline">
+                    <strong>${escapeHtml(item.name)}</strong>
+                    <span>x${item.count}</span>
+                  </div>
+                  <p>${escapeHtml(item.description)}</p>
+                  <small>${escapeHtml(item.usage)}</small>
+                </div>
+              </article>
+            `).join("")
+          : `<div class="world-inventory-empty">Sua mochila ainda não possui consumíveis.</div>`;
+      }
+
+      if (worldInventoryDiplomas) {
+        worldInventoryDiplomas.innerHTML = diplomas.length
+          ? diplomas.map((diploma) => `
+              <article class="world-inventory-card diploma">
+                <div class="world-inventory-card-icon">📜</div>
+                <div class="world-inventory-card-body">
+                  <div class="world-inventory-card-topline">
+                    <strong>${escapeHtml(diploma.name || "Diploma")}</strong>
+                    <span>Conquistado</span>
+                  </div>
+                  <p>${diploma.abilityName
+                    ? `Concede a competência permanente ${escapeHtml(diploma.abilityName)}.`
+                    : "Diploma conquistado ao concluir um Reino do Conhecimento."}</p>
+                  <small>${diploma.earnedAt ? `Registrado em ${new Date(diploma.earnedAt).toLocaleDateString("pt-BR")}` : "Conquista permanente"}</small>
+                </div>
+              </article>
+            `).join("")
+          : `<div class="world-inventory-empty">Nenhum diploma conquistado ainda.</div>`;
+      }
+
+      if (worldInventoryAbilities) {
+        worldInventoryAbilities.innerHTML = abilities.length
+          ? abilities.map((diploma) => `
+              <article class="world-inventory-card ability">
+                <div class="world-inventory-card-icon">🧠</div>
+                <div class="world-inventory-card-body">
+                  <div class="world-inventory-card-topline">
+                    <strong>${escapeHtml(diploma.abilityName || "Competência")}</strong>
+                    <span>Permanente</span>
+                  </div>
+                  <p>${escapeHtml(diploma.abilityDescription || "Competência desbloqueada por um diploma.")}</p>
+                  <small>Disponível automaticamente quando aplicável.</small>
+                </div>
+              </article>
+            `).join("")
+          : `<div class="world-inventory-empty">Conclua reinos para desbloquear competências permanentes.</div>`;
+      }
+
+      if (worldInventoryMessage) {
+        worldInventoryMessage.textContent = message || "Consumíveis de batalha não podem ser gastos aqui. Pressione I ou Esc para fechar.";
+      }
+    }
+
+    function openWorldInventory() {
+      if (!worldInventoryPanel || enemyPanelOpen) return;
+
+      if (dialogueOpen) closeDialogue();
+      if (realmPanelOpen) closeRealmPanel();
+      if (shopPanelOpen) closeShopPanel();
+      if (worldEquationPanelOpen) closeWorldEquationPanel();
+
+      worldInventoryOpen = true;
+      stopPlayerForOverlay();
+      renderWorldInventory();
+
+      worldInventoryPanel.classList.add("visible");
+      worldInventoryPanel.setAttribute("aria-hidden", "false");
+      worldInventoryButton?.setAttribute("aria-expanded", "true");
+      document.body.classList.add("world-inventory-open");
+      interactionText.textContent = "Mochila aberta. Consulte seus itens, diplomas e competências.";
+    }
+
+    function closeWorldInventory() {
+      if (!worldInventoryOpen) return;
+
+      worldInventoryOpen = false;
+      worldInventoryPanel?.classList.remove("visible");
+      worldInventoryPanel?.setAttribute("aria-hidden", "true");
+      worldInventoryButton?.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("world-inventory-open");
       updateHint();
     }
 
@@ -2699,6 +2854,14 @@ const viewport = document.getElementById("gameViewport");
       requestAnimationFrame(gameLoop);
     }
 
+    worldInventoryButton?.addEventListener("click", () => {
+      if (worldInventoryOpen) {
+        closeWorldInventory();
+      } else {
+        openWorldInventory();
+      }
+    });
+
     document.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
 
@@ -2711,6 +2874,14 @@ const viewport = document.getElementById("gameViewport");
           nextEnemyQuestion();
         }
 
+        return;
+      }
+
+      if (worldInventoryOpen) {
+        if ((key === "escape" || key === "i") && !event.repeat) {
+          event.preventDefault();
+          closeWorldInventory();
+        }
         return;
       }
 
@@ -2744,6 +2915,12 @@ const viewport = document.getElementById("gameViewport");
           closeDialogue();
         }
 
+        return;
+      }
+
+      if (key === "i" && !event.repeat) {
+        event.preventDefault();
+        openWorldInventory();
         return;
       }
 
@@ -3117,6 +3294,8 @@ const viewport = document.getElementById("gameViewport");
     window.closeRealmPanel = closeRealmPanel;
     window.closeShopPanel = closeShopPanel;
     window.buyShopHint = buyShopHint;
+    window.openWorldInventory = openWorldInventory;
+    window.closeWorldInventory = closeWorldInventory;
     window.closeWorldEquationPanel = closeWorldEquationPanel;
     window.answerWorldEquation = answerWorldEquation;
     window.getActiveBattleTimeBonus = getActiveBattleTimeBonus;
@@ -3144,5 +3323,6 @@ const viewport = document.getElementById("gameViewport");
       updateNearbyWorldEquation();
       updateHint();
       if (shopPanelOpen) renderShopPanel(shopMessage?.textContent || "");
+      if (worldInventoryOpen) renderWorldInventory();
     });
     gameLoop();

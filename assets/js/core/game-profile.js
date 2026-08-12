@@ -310,6 +310,14 @@ function getRealmDiploma(realmId) {
   return diploma && typeof diploma === "object" ? cloneJson(diploma) : null;
 }
 
+function getDiplomas() {
+  const world = state.profile?.progresso?._world;
+  const diplomas = world && typeof world === "object" && world.diplomas && typeof world.diplomas === "object"
+    ? world.diplomas
+    : {};
+  return cloneJson(diplomas);
+}
+
 function hasRealmDiploma(realmId) {
   if (getRealmDiploma(realmId)) return true;
 
@@ -878,6 +886,7 @@ window.VoltzProfile = {
   completeGuardianChallenge,
   resetGuardianChallenge,
   getRealmDiploma,
+  getDiplomas,
   hasRealmDiploma,
   getInventory,
   getItemCount,

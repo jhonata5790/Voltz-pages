@@ -36,6 +36,9 @@
         <div class="hud-pill">WASD / Setas: mover</div>
         <div class="hud-pill">Shift: correr</div>
         <div class="hud-pill">E: interagir</div>
+        <button id="worldInventoryButton" class="hud-pill hud-action-button" type="button" aria-expanded="false">
+          🎒 Mochila [I]
+        </button>
         <div class="hud-pill">Esc: voltar/fechar</div>
       </div>
 
@@ -259,6 +262,50 @@
 
         <div id="shopMessage" class="shop-message">
           Fale com o Mercador sempre que precisar reabastecer sua mochila.
+        </div>
+      </div>
+
+
+      <div id="worldInventoryPanel" class="world-inventory-panel" aria-live="polite" aria-hidden="true">
+        <div class="world-inventory-header">
+          <div>
+            <div class="world-inventory-kicker">Inventário do aluno</div>
+            <div class="world-inventory-title">Mochila Voltz</div>
+            <p class="world-inventory-subtitle">
+              Consulte seus itens, diplomas e competências permanentes. Consumíveis de batalha são usados durante o combate.
+            </p>
+          </div>
+          <button class="world-inventory-close" type="button" onclick="closeWorldInventory()">Fechar ✕</button>
+        </div>
+
+        <div id="worldInventorySummary" class="world-inventory-summary"></div>
+
+        <section class="world-inventory-section">
+          <div class="world-inventory-section-head">
+            <span>Itens</span>
+            <small>Recursos persistentes</small>
+          </div>
+          <div id="worldInventoryItems" class="world-inventory-grid"></div>
+        </section>
+
+        <section class="world-inventory-section">
+          <div class="world-inventory-section-head">
+            <span>Diplomas</span>
+            <small>Conquistas dos Reinos</small>
+          </div>
+          <div id="worldInventoryDiplomas" class="world-inventory-grid"></div>
+        </section>
+
+        <section class="world-inventory-section">
+          <div class="world-inventory-section-head">
+            <span>Competências</span>
+            <small>Benefícios permanentes</small>
+          </div>
+          <div id="worldInventoryAbilities" class="world-inventory-grid"></div>
+        </section>
+
+        <div id="worldInventoryMessage" class="world-inventory-message">
+          Pressione I ou Esc para fechar.
         </div>
       </div>
 
