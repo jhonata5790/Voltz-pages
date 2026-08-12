@@ -139,6 +139,7 @@
 
   function openPanelShell(title, kicker, subtitle, body) {
     if (!panel || !content) return;
+    panel.classList.toggle("dodgeball-fit", state.current?.type === "dodgeball");
     content.innerHTML = `
       <div class="sports-game-shell">
         <div class="sports-game-topbar">
@@ -244,7 +245,7 @@
     state.activeId = "";
     state.mode = "normal";
     state.championship = null;
-    panel?.classList.remove("visible");
+    panel?.classList.remove("visible", "dodgeball-fit");
     panel?.setAttribute("aria-hidden", "true");
     document.body.classList.remove("sports-minigame-active");
     updateHud();
@@ -992,8 +993,8 @@
         </div>
         <div class="sports-meter"><div class="sports-meter-perfect" style="left:${min}%;width:${Math.max(6, max - min)}%;"></div><div id="dodgeAttackCursor" class="sports-meter-cursor" style="left:${g.cursor}%"></div></div>
         <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
-          <button class="sports-primary-btn" type="button" onclick="VoltzSports.throwDodgeball()">Lançar [Espaço]</button>
-          <button class="sports-close-btn" type="button" onclick="VoltzSports.backDodgeMenu()">Voltar</button>
+          <button class="sports-primary-btn" type="button" onclick="VoltzSports.throwDodgeball()" ${g.locked ? "disabled" : ""}>${g.locked ? "Lançado!" : "Lançar [Espaço]"}</button>
+          <button class="sports-close-btn" type="button" onclick="VoltzSports.backDodgeMenu()" ${g.locked ? "disabled" : ""}>Voltar</button>
         </div>
         <div class="sports-feedback">${escapeHtml(feedback || "Acerte a zona colorida para superar a marcação de Capitão Rubro.")}</div>
       </div>`,
@@ -1074,7 +1075,7 @@
 
   function throwDodgeball() {
     const g = state.current;
-    if (!g || g.type !== "dodgeball" || g.phase !== "aim" || !g.selectedThrow) return;
+    if (!g || g.type !== "dodgeball" || g.phase !== "aim" || !g.selectedThrow || g.locked) return;
     const option = g.selectedThrow;
     g.locked = true;
     const min = clamp(option.min - g.throwWindowBonus, 5, 90);
@@ -1098,13 +1099,18 @@
 
     g.throwWindowBonus = 0;
     g.damageBonus = 0;
-    g.selectedThrow = null;
     g.turn += 1;
     g.dialogue = message;
+
+    // Mantém selectedThrow vivo durante a tela de resolução.
+    // Antes ele era apagado aqui e renderDodgeballAim tentava acessar option.min/max,
+    // causando um TypeError e fazendo o Espaço parecer não funcionar.
     renderDodgeballAim(message);
 
     addTimer(() => {
       if (!state.current || state.current !== g) return;
+      g.selectedThrow = null;
+      g.locked = false;
       if (g.opponentHp <= 0) {
         finishSport("dodgeball", true, "Você venceu o Capitão Rubro e dominou a Arena da Esquiva.");
         return;
@@ -1331,7 +1337,7 @@
       }
     }
 
-    if ((key === " " || key === "spacebar") && g.phase === "aim") {
+    if (key === "space" && g.phase === "aim") {
       event.preventDefault();
       throwDodgeball();
       return true;
@@ -1457,7 +1463,8 @@
 
   function handleKeyDown(event) {
     if (!state.open) return;
-    const key = event.key.toLowerCase();
+    const isSpace = event.code === "Space" || event.key === " " || event.key === "Spacebar";
+    const key = isSpace ? "space" : event.key.toLowerCase();
     state.pressed.add(key);
 
     if (key === "escape") {
@@ -1474,7 +1481,7 @@
       if (game.phase === "defense") return;
     }
 
-    if (key === " " || key === "spacebar") {
+    if (key === "space") {
       event.preventDefault();
       if (game.type === "football") shootFootball();
       else if (game.type === "basketball") shootBasketball();
@@ -1487,7 +1494,10 @@
   }
 
   function handleKeyUp(event) {
-    state.pressed.delete(event.key.toLowerCase());
+    const key = event.code === "Space" || event.key === " " || event.key === "Spacebar"
+      ? "space"
+      : event.key.toLowerCase();
+    state.pressed.delete(key);
   }
 
   document.addEventListener("keydown", handleKeyDown);

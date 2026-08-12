@@ -412,3 +412,225 @@
   .dodgeball-dialogue-box { min-height:150px; padding:14px; }
   .dodgeball-command-btn { min-height:84px; }
 }
+
+
+/* =========================================================
+   Queimada — ajuste de viewport
+   A luta deve caber inteira dentro do game viewport.
+   ========================================================= */
+.sports-minigame-panel.dodgeball-fit {
+  inset: 10px;
+  overflow: hidden;
+  border-radius: 20px;
+}
+.sports-minigame-panel.dodgeball-fit #sportsMinigameContent {
+  height: 100%;
+  min-height: 0;
+}
+.sports-minigame-panel.dodgeball-fit .sports-game-shell {
+  height: 100%;
+  min-height: 0;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sports-minigame-panel.dodgeball-fit .sports-game-topbar {
+  flex: 0 0 auto;
+  margin-bottom: 7px;
+  gap: 10px;
+  align-items: center;
+}
+.sports-minigame-panel.dodgeball-fit .sports-game-kicker {
+  font-size: .56rem;
+}
+.sports-minigame-panel.dodgeball-fit .sports-game-title {
+  margin-top: 1px;
+  font-size: clamp(1.05rem, 1.55vw, 1.45rem);
+}
+.sports-minigame-panel.dodgeball-fit .sports-game-subtitle {
+  margin-top: 2px;
+  max-width: 950px;
+  font-size: .70rem;
+  line-height: 1.25;
+}
+.sports-minigame-panel.dodgeball-fit .sports-close-btn,
+.sports-minigame-panel.dodgeball-fit .sports-primary-btn {
+  padding: 7px 11px;
+  font-size: .75rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-rival-stage {
+  flex: 0 0 auto;
+  width: min(780px, 82%);
+  min-height: 150px;
+  height: clamp(145px, 20vh, 190px);
+  margin-bottom: 7px;
+  border-radius: 16px;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-rival-image {
+  height: clamp(125px, 18vh, 170px);
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-rival-aura {
+  bottom: 28px;
+  width: 220px;
+  height: 150px;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-rival-card {
+  left: 8px;
+  right: 8px;
+  bottom: 7px;
+  padding: 6px 9px;
+  border-radius: 9px;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-rival-kicker {
+  font-size: .48rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-rival-card strong {
+  font-size: .78rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-scoreboard {
+  font-size: .59rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-battle-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: min(900px, 94%);
+  margin: 0 auto;
+  padding: 9px 11px;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-status-strip {
+  flex: 0 0 auto;
+  margin-bottom: 6px;
+  gap: 6px;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-status-strip span {
+  padding: 5px 8px;
+  font-size: .62rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-dialogue-box {
+  flex: 0 0 auto;
+  min-height: 54px;
+  max-height: 72px;
+  overflow: hidden;
+  padding: 8px 12px;
+  margin-bottom: 7px;
+  border-width: 2px;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-dialogue-box p {
+  font-size: .76rem;
+  line-height: 1.35;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-command-area,
+.sports-minigame-panel.dodgeball-fit .sports-game-card.dodgeball-aim-stage,
+.sports-minigame-panel.dodgeball-fit .sports-game-card.dodgeball-defense-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-command-title {
+  margin-bottom: 5px;
+  font-size: .62rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-command-grid {
+  gap: 6px;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-command-btn {
+  min-height: 58px;
+  padding: 7px 9px 7px 35px;
+  border-radius: 10px;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-command-btn strong {
+  margin-bottom: 2px;
+  font-size: .76rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-command-btn small {
+  font-size: .61rem;
+  line-height: 1.18;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-command-index {
+  left: 8px;
+  top: 8px;
+  width: 18px;
+  height: 18px;
+  font-size: .60rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-command-footer,
+.sports-minigame-panel.dodgeball-fit .sports-help {
+  margin-top: 5px;
+  font-size: .58rem;
+}
+.sports-minigame-panel.dodgeball-fit .sports-game-card.dodgeball-aim-stage {
+  width: min(720px, 92%);
+  padding: 10px 14px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.sports-minigame-panel.dodgeball-fit .sports-status-row {
+  margin-bottom: 6px;
+  gap: 6px;
+}
+.sports-minigame-panel.dodgeball-fit .sports-stat-pill {
+  padding: 5px 8px;
+  font-size: .62rem;
+}
+.sports-minigame-panel.dodgeball-fit .sports-meter {
+  height: 28px;
+  margin: 10px 0;
+}
+.sports-minigame-panel.dodgeball-fit .sports-meter-cursor {
+  top: 3px;
+  height: 20px;
+  width: 6px;
+}
+.sports-minigame-panel.dodgeball-fit .sports-feedback {
+  min-height: 18px;
+  margin-top: 6px;
+  font-size: .68rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-defense-stage {
+  width: min(790px, 96%);
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-turn-label {
+  margin-bottom: 4px;
+  font-size: .67rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-hearts {
+  margin: 3px 0;
+  font-size: .90rem;
+}
+.sports-minigame-panel.dodgeball-fit .dodgeball-arena {
+  flex: 1 1 auto;
+  min-height: 135px;
+  height: clamp(150px, 26vh, 245px);
+  width: min(700px, 100%);
+  aspect-ratio: auto;
+  border-radius: 12px;
+  border-width: 2px;
+}
+
+@media (max-height: 760px) {
+  .sports-minigame-panel.dodgeball-fit .sports-game-subtitle { display: none; }
+  .sports-minigame-panel.dodgeball-fit .dodgeball-rival-stage {
+    min-height: 115px;
+    height: 120px;
+  }
+  .sports-minigame-panel.dodgeball-fit .dodgeball-rival-image { height: 112px; }
+  .sports-minigame-panel.dodgeball-fit .dodgeball-dialogue-box {
+    min-height: 44px;
+    max-height: 52px;
+  }
+  .sports-minigame-panel.dodgeball-fit .dodgeball-command-btn { min-height: 48px; }
+  .sports-minigame-panel.dodgeball-fit .dodgeball-arena {
+    min-height: 120px;
+    height: 150px;
+  }
+}
