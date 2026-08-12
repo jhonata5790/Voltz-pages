@@ -849,6 +849,10 @@ function clearBattleTimer() {
       enemyPanel.classList.remove("visible", "battle-mode", "player-damaged");
       enemyPanel.innerHTML = "";
       document.body.classList.remove("battle-active");
+
+      // O estado salvo pode ter feito um NPC/objeto surgir no ponto onde a batalha
+      // começou. Garante que o jogador nunca volte ao mapa preso dentro do novo colisor.
+      window.releasePlayerFromCollision?.();
       updateHint();
     }
 

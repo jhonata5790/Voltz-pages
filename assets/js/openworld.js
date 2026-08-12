@@ -2508,7 +2508,7 @@ const viewport = document.getElementById("gameViewport");
     function updateMovement() {
       updateVisualTransition();
 
-      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) {
+      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldInventoryOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) {
         playerState.moving = false;
         updatePlayerPosition();
         updatePlayerAnimation();
@@ -2610,6 +2610,53 @@ const viewport = document.getElementById("gameViewport");
     function getCollisionAt(x, y) {
       const playerBox = getPlayerHitboxAt(x, y);
       return colliders.find((collider) => rectanglesOverlap(playerBox, collider)) || null;
+    }
+
+    // Mudanças persistentes do mundo podem criar um novo colisor exatamente onde o
+    // jogador está (ex.: o Golem reaparece como NPC amigável após entregar o diploma).
+    // Se isso acontecer, o movimento por passos pequenos ficaria preso para sempre.
+    // Esta rotina encontra o ponto livre mais próximo sem teleportar o jogador para
+    // outra região do mapa.
+    function releasePlayerFromCollision() {
+      const currentHit = getCollisionAt(playerState.x, playerState.y);
+      if (!currentHit) return false;
+
+      const originX = playerState.x;
+      const originY = playerState.y;
+      const directions = [
+        [0, 1], [1, 0], [0, -1], [-1, 0],
+        [1, 1], [1, -1], [-1, 1], [-1, -1],
+        [0.5, 1], [1, 0.5], [-0.5, 1], [-1, 0.5],
+        [0.5, -1], [1, -0.5], [-0.5, -1], [-1, -0.5]
+      ];
+
+      for (let radius = 12; radius <= 180; radius += 12) {
+        for (const [dx, dy] of directions) {
+          const candidateX = originX + dx * radius;
+          const candidateY = originY + dy * radius;
+
+          if (!getCollisionAt(candidateX, candidateY)) {
+            playerState.x = candidateX;
+            playerState.y = candidateY;
+            clampPlayer();
+            lastCollisionLabel = "livre";
+            playerState.moving = false;
+            updatePlayerPosition();
+            updatePlayerAnimation();
+            updateCamera();
+            updateOcclusionVisibility();
+            updateNearbyNpc();
+            updateNearbyPortal();
+            updateNearbyEnemy();
+            updateNearbyWorldEquation();
+            updateDebug();
+            return true;
+          }
+        }
+      }
+
+      console.warn(`[COLISÃO] Não foi possível liberar o jogador de: ${currentHit.label || currentHit.id || "colisor"}`);
+      return false;
     }
 
     function movePlayerWithCollision(moveX, moveY) {
@@ -3296,6 +3343,7 @@ const viewport = document.getElementById("gameViewport");
     window.buyShopHint = buyShopHint;
     window.openWorldInventory = openWorldInventory;
     window.closeWorldInventory = closeWorldInventory;
+    window.releasePlayerFromCollision = releasePlayerFromCollision;
     window.closeWorldEquationPanel = closeWorldEquationPanel;
     window.answerWorldEquation = answerWorldEquation;
     window.getActiveBattleTimeBonus = getActiveBattleTimeBonus;
