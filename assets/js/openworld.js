@@ -1037,8 +1037,13 @@ const viewport = document.getElementById("gameViewport");
 
     function getNearestWorldEquationInRange() {
       return worldEquationObjects
-        .map((equation) => ({ equation, distance: getWorldEquationDistance(equation) }))
-        .filter((entry) => entry.distance <= 105)
+        .filter((equation) => Number.isFinite(Number(equation?.x)) && Number.isFinite(Number(equation?.y)))
+        .map((equation) => ({
+          equation,
+          distance: getWorldEquationDistance(equation),
+          interactionRange: Math.max(60, Number(equation.interactionRange) || 105)
+        }))
+        .filter((entry) => Number.isFinite(entry.distance) && entry.distance <= entry.interactionRange)
         .sort((a, b) => a.distance - b.distance)[0]?.equation || null;
     }
 
