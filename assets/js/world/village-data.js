@@ -6,7 +6,7 @@ window.VoltzData.village = {
     { id: "biblioteca", label: "Biblioteca de Dicas", x: 410, y: 360, w: 400, h: 280, roofH: 144, collider: { x: 0, y: 0, w: 0, h: 0 } },
     { id: "arena", label: "Arena de Treino", x: 1690, y: 360, w: 430, h: 300, roofH: 152, collider: { x: 0, y: 0, w: 0, h: 0 } },
     { id: "loja", label: "Loja Voltz", x: 430, y: 965, w: 400, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } },
-    { id: "ranking", label: "Central de Ranking", x: 1690, y: 965, w: 430, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } },
+    { id: "ranking", label: "Hall da Fama", x: 1690, y: 965, w: 430, h: 290, roofH: 150, collider: { x: 0, y: 0, w: 0, h: 0 } },
     { id: "terminal", label: "Terminal do Aluno", x: 1025, y: 1250, w: 450, h: 270, roofH: 140, collider: { x: 0, y: 0, w: 0, h: 0 } }
   ],
 

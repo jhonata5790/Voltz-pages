@@ -38,6 +38,11 @@ const viewport = document.getElementById("gameViewport");
     const worldInventoryDiplomas = document.getElementById("worldInventoryDiplomas");
     const worldInventoryAbilities = document.getElementById("worldInventoryAbilities");
     const worldInventoryMessage = document.getElementById("worldInventoryMessage");
+    const hallFamePanel = document.getElementById("hallFamePanel");
+    const hallFamePodium = document.getElementById("hallFamePodium");
+    const hallFameList = document.getElementById("hallFameList");
+    const hallFameCurrent = document.getElementById("hallFameCurrent");
+    const hallFameStatus = document.getElementById("hallFameStatus");
 
     const equationPanel = document.getElementById("equationPanel");
     const equationPanelKicker = document.getElementById("equationPanelKicker");
@@ -674,7 +679,7 @@ const viewport = document.getElementById("gameViewport");
         { label: "Estudo", x: 456, y: 318 },
         { label: "Treino", x: 1778, y: 318 },
         { label: "Comércio", x: 485, y: 1248 },
-        { label: "Ranking", x: 1745, y: 1248 }
+        { label: "Hall da Fama", x: 1745, y: 1248 }
       ],
       buildings: cloneData(buildings),
       decorObjects: cloneData(decorObjects),
@@ -704,6 +709,8 @@ const viewport = document.getElementById("gameViewport");
     let realmPanelOpen = false;
     let shopPanelOpen = false;
     let worldInventoryOpen = false;
+    let hallFamePanelOpen = false;
+    let hallFameLoading = false;
     let shopPurchaseBusy = false;
     let worldEquationPanelOpen = false;
     let nearbyWorldEquation = null;
@@ -1358,6 +1365,118 @@ const viewport = document.getElementById("gameViewport");
       }
     }
 
+
+    function hallEscape(value) {
+      return escapeHtml(String(value ?? ""));
+    }
+
+    function formatHallNumber(value) {
+      return Math.max(0, Number(value || 0)).toLocaleString("pt-BR");
+    }
+
+    function renderHallEntryCard(entry, medal, cardClass = "") {
+      if (!entry) {
+        return `<article class="hall-fame-card ${cardClass}"><div class="hall-fame-medal">${medal}</div><div class="hall-fame-name">Vaga aberta</div><div class="hall-fame-stats"><span>Aguardando novo aluno...</span></div></article>`;
+      }
+      return `
+        <article class="hall-fame-card ${cardClass} ${entry.isCurrentUser ? "current" : ""}">
+          <div class="hall-fame-medal">${medal}</div>
+          <div class="hall-fame-name">${hallEscape(entry.name)}${entry.isCurrentUser ? " · você" : ""}</div>
+          <div class="hall-fame-stats">
+            <span>🏁 ${formatHallNumber(entry.completions)} conclusão${entry.completions === 1 ? "" : "ões"}</span>
+            <span>🎓 ${formatHallNumber(entry.diplomas)} diploma${entry.diplomas === 1 ? "" : "s"}</span>
+            <span>⚡ ${formatHallNumber(entry.xp)} XP</span>
+          </div>
+        </article>`;
+    }
+
+    function renderHallOfFameEntries(entries, currentUser) {
+      const ordered = Array.isArray(entries) ? [...entries].sort((a,b) => a.position - b.position) : [];
+      const top = [1,2,3].map((p) => ordered.find((e) => e.position === p) || null);
+
+      if (hallFamePodium) {
+        hallFamePodium.innerHTML = [
+          renderHallEntryCard(top[1], "🥈", "second"),
+          renderHallEntryCard(top[0], "🥇", "first"),
+          renderHallEntryCard(top[2], "🥉", "third")
+        ].join("");
+      }
+
+      const rows = ordered.filter((e) => e.position >= 4 && e.position <= 10);
+      if (hallFameList) {
+        hallFameList.innerHTML = rows.length ? rows.map((entry) => `
+          <div class="hall-fame-row ${entry.isCurrentUser ? "current" : ""}">
+            <span class="hall-fame-position">#${entry.position}</span>
+            <strong>${hallEscape(entry.name)}${entry.isCurrentUser ? " · você" : ""}</strong>
+            <span>🏁 ${formatHallNumber(entry.completions)}</span>
+            <span>🎓 ${formatHallNumber(entry.diplomas)}</span>
+            <span>⚡ ${formatHallNumber(entry.xp)} XP</span>
+          </div>`).join("") : `<div class="hall-fame-status">Ainda não há alunos entre o 4º e o 10º lugar.</div>`;
+      }
+
+      if (hallFameCurrent) {
+        hallFameCurrent.innerHTML = currentUser
+          ? `<strong>Sua posição: #${currentUser.position}</strong> · ${hallEscape(currentUser.name)} · 🏁 ${formatHallNumber(currentUser.completions)} · 🎓 ${formatHallNumber(currentUser.diplomas)} · ⚡ ${formatHallNumber(currentUser.xp)} XP`
+          : "Sua posição será exibida assim que o perfil entrar na classificação.";
+      }
+    }
+
+    async function refreshHallOfFame() {
+      if (hallFameLoading) return;
+      hallFameLoading = true;
+      if (hallFameStatus) {
+        hallFameStatus.className = "hall-fame-status";
+        hallFameStatus.textContent = "Sincronizando com o Hall da Fama...";
+      }
+
+      try {
+        const result = await window.VoltzProfile?.fetchLeaderboard?.(10);
+        if (!result?.ok) throw result?.error || new Error("Não foi possível carregar o ranking.");
+        renderHallOfFameEntries(result.entries, result.currentUser);
+        if (hallFameStatus) {
+          hallFameStatus.className = "hall-fame-status";
+          hallFameStatus.textContent = `${result.entries.filter((entry) => entry.position <= 10).length} aluno(s) no quadro atual · ranking sincronizado com o Supabase.`;
+        }
+      } catch (error) {
+        console.error("Falha ao carregar Hall da Fama:", error);
+        if (hallFameStatus) {
+          hallFameStatus.className = "hall-fame-status error";
+          hallFameStatus.textContent = `Falha ao carregar ranking: ${error?.message || "erro desconhecido"}`;
+        }
+      } finally {
+        hallFameLoading = false;
+      }
+    }
+
+    function openHallOfFamePanel() {
+      if (!hallFamePanel || enemyPanelOpen) return;
+      if (worldInventoryOpen) closeWorldInventory();
+      if (shopPanelOpen) closeShopPanel();
+      if (realmPanelOpen) closeRealmPanel();
+      if (worldEquationPanelOpen) closeWorldEquationPanel();
+
+      hallFamePanelOpen = true;
+      clearMovementKeys();
+      playerState.moving = false;
+      updatePlayerAnimation();
+      hallFamePanel.classList.add("visible");
+      hallFamePanel.setAttribute("aria-hidden", "false");
+      interactionText.textContent = "Consultando o Hall da Fama.";
+      refreshHallOfFame();
+    }
+
+    function closeHallOfFamePanel() {
+      if (!hallFamePanelOpen) return;
+      hallFamePanelOpen = false;
+      hallFamePanel?.classList.remove("visible");
+      hallFamePanel?.setAttribute("aria-hidden", "true");
+      interactionText.textContent = currentScene?.defaultHint || "Explore o mundo.";
+    }
+
+    window.openHallOfFamePanel = openHallOfFamePanel;
+    window.closeHallOfFamePanel = closeHallOfFamePanel;
+    window.refreshHallOfFame = refreshHallOfFame;
+
     function openWorldInventory() {
       if (!worldInventoryPanel || enemyPanelOpen) return;
 
@@ -1500,6 +1619,7 @@ const viewport = document.getElementById("gameViewport");
       enemyObjects = getEnemyObjectsForScene(scene);
 
       if (worldEquationPanelOpen) closeWorldEquationPanel();
+      if (hallFamePanelOpen) closeHallOfFamePanel();
       nearbyNpc = null;
       nearbyWorldEquation = null;
       nearbyEnemy = null;
@@ -2006,6 +2126,7 @@ const viewport = document.getElementById("gameViewport");
 
       const shouldOpenRealmPanel = Boolean(currentDialogueNpc && currentDialogueNpc.opensRealmPanel);
       const shouldOpenShop = Boolean(currentDialogueNpc && currentDialogueNpc.opensShop);
+      const shouldOpenHallOfFame = Boolean(currentDialogueNpc && currentDialogueNpc.opensHallOfFame);
       const shouldReturnToVillage = Boolean(currentDialogueNpc && currentDialogueNpc.returnToVillage);
       const shouldResetMath = Boolean(currentDialogueNpc && currentDialogueNpc.resetsMathProgress);
       closeDialogue();
@@ -2020,6 +2141,10 @@ const viewport = document.getElementById("gameViewport");
 
       if (shouldOpenShop) {
         openShopPanel();
+      }
+
+      if (shouldOpenHallOfFame) {
+        openHallOfFamePanel();
       }
 
       if (shouldReturnToVillage) {
@@ -2508,7 +2633,7 @@ const viewport = document.getElementById("gameViewport");
     function updateMovement() {
       updateVisualTransition();
 
-      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldInventoryOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) {
+      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldInventoryOpen || hallFamePanelOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) {
         playerState.moving = false;
         updatePlayerPosition();
         updatePlayerAnimation();
@@ -2921,6 +3046,14 @@ const viewport = document.getElementById("gameViewport");
           nextEnemyQuestion();
         }
 
+        return;
+      }
+
+      if (hallFamePanelOpen) {
+        if (key === "escape" && !event.repeat) {
+          event.preventDefault();
+          closeHallOfFamePanel();
+        }
         return;
       }
 

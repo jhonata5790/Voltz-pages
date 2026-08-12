@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="assets/css/openworld.css" />
   <link rel="stylesheet" href="assets/css/interiors/interior-system.css" />
   <link rel="stylesheet" href="assets/css/interiors/library-interior.css" />
+  <link rel="stylesheet" href="assets/css/interiors/hall-of-fame-interior.css" />
   <link rel="stylesheet" href="assets/css/battle.css" />
   <link rel="stylesheet" href="assets/css/dev-menu.css" />
 </head>
@@ -266,6 +267,27 @@
       </div>
 
 
+
+      <div id="hallFamePanel" class="hall-fame-panel" aria-live="polite" aria-hidden="true">
+        <div class="hall-fame-header">
+          <div>
+            <div class="hall-fame-kicker">Registro Global Voltz</div>
+            <div class="hall-fame-title">Hall da Fama</div>
+            <p class="hall-fame-subtitle">A classificação respeita a jornada completa: primeiro conclusões do jogo, depois diplomas e, por fim, XP.</p>
+          </div>
+          <button class="hall-fame-close" type="button" onclick="closeHallOfFamePanel()">Fechar ✕</button>
+        </div>
+        <div class="hall-fame-rule"><span>① Conclusões</span><span>② Diplomas</span><span>③ XP</span></div>
+        <div id="hallFamePodium" class="hall-fame-podium"></div>
+        <div id="hallFameList" class="hall-fame-list"></div>
+        <div id="hallFameCurrent" class="hall-fame-current-box"></div>
+        <div id="hallFameStatus" class="hall-fame-status">Carregando classificação...</div>
+        <div class="hall-fame-footer">
+          <span>Somente nome público, conclusões, diplomas e XP entram no Hall.</span>
+          <button class="hall-fame-refresh" type="button" onclick="refreshHallOfFame()">Atualizar ranking</button>
+        </div>
+      </div>
+
       <div id="worldInventoryPanel" class="world-inventory-panel" aria-live="polite" aria-hidden="true">
         <div class="world-inventory-header">
           <div>
@@ -360,6 +382,7 @@
   <script src="assets/js/interiors/interior-data.js" defer></script>
   <script src="assets/js/interiors/interior-system.js" defer></script>
   <script src="assets/js/interiors/library-interior.js" defer></script>
+  <script src="assets/js/interiors/hall-of-fame-interior.js" defer></script>
   <script src="assets/js/npc/village-npc-data.js" defer></script>
   <script src="assets/js/realms/realm-data.js" defer></script>
   <script src="assets/js/realms/math/math-data.js" defer></script>

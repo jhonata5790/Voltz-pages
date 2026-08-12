@@ -813,6 +813,43 @@ async function inspectSave(realmId = "reino-matematica") {
   };
 }
 
+
+async function fetchLeaderboard(limit = 10) {
+  await ready;
+
+  if (!state.user) {
+    return { ok: false, reason: "profile-not-ready", entries: [] };
+  }
+
+  const safeLimit = Math.max(1, Math.min(50, Math.floor(Number(limit) || 10)));
+  const { data, error } = await supabase.rpc("get_leaderboard", {
+    limit_count: safeLimit
+  });
+
+  if (error) {
+    console.error("Não foi possível carregar o Hall da Fama:", error);
+    return { ok: false, reason: "supabase-read", error, entries: [] };
+  }
+
+  const entries = Array.isArray(data)
+    ? data.map((entry) => ({
+        position: Number(entry.rank_position || 0),
+        userId: entry.user_id || "",
+        name: entry.display_name || "Aluno",
+        completions: Math.max(0, Number(entry.game_completions || 0)),
+        diplomas: Math.max(0, Number(entry.diploma_count || 0)),
+        xp: Math.max(0, Number(entry.xp || 0)),
+        isCurrentUser: Boolean(entry.is_current_user)
+      }))
+    : [];
+
+  return {
+    ok: true,
+    entries,
+    currentUser: entries.find((entry) => entry.isCurrentUser) || null
+  };
+}
+
 async function refreshProfileFromServer() {
   await ready;
   if (!state.user) return { ok: false, reason: "profile-not-ready" };
@@ -894,6 +931,7 @@ window.VoltzProfile = {
   addItem,
   consumeItem,
   inspectSave,
+  fetchLeaderboard,
   refreshProfileFromServer,
   logout
 };

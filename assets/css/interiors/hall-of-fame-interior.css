@@ -1,0 +1,55 @@
+
+.world.scene-hall-of-fame-interior {
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 209, 102, 0.13), transparent 28%),
+    radial-gradient(circle at 22% 72%, rgba(146, 87, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 78% 72%, rgba(0, 234, 255, 0.1), transparent 30%),
+    #02040d;
+}
+.hall-room {
+  position:absolute; overflow:hidden; border-radius:34px 34px 20px 20px;
+  background:
+    linear-gradient(rgba(255,209,102,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,209,102,.035) 1px,transparent 1px),
+    linear-gradient(145deg,rgba(28,22,44,.99),rgba(6,10,25,.99));
+  background-size:38px 38px,38px 38px,auto;
+  border:3px solid rgba(255,209,102,.42);
+  box-shadow:0 0 72px rgba(255,209,102,.17),inset 0 0 90px rgba(0,0,0,.56);
+}
+.hall-room-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 48%,rgba(255,209,102,.12),transparent 34%),linear-gradient(90deg,transparent,rgba(146,87,255,.08),transparent)}
+.hall-wall{position:absolute;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 16px,transparent 16px 34px),linear-gradient(180deg,rgba(78,52,112,.55),rgba(6,8,18,.96));border:1px solid rgba(255,209,102,.18)}
+.hall-wall-north{inset:0 0 auto;height:38px}.hall-wall-west{left:0;top:0;width:38px;height:100%}.hall-wall-east{right:0;top:0;width:38px;height:100%}
+.hall-wall-south{bottom:0;width:calc(50% - 70px);height:38px}.hall-wall-south-left{left:0}.hall-wall-south-right{right:0}
+.hall-door{position:absolute;left:50%;bottom:0;width:140px;height:54px;transform:translateX(-50%);border-radius:22px 22px 0 0;border:2px solid rgba(120,247,255,.38);border-bottom:none;background:linear-gradient(180deg,rgba(0,234,255,.18),rgba(2,4,13,.92));box-shadow:0 -10px 28px rgba(0,234,255,.14)}
+.hall-door span{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);white-space:nowrap;color:#78f7ff;font-size:.55rem;font-weight:900;letter-spacing:1.5px}
+.hall-title{position:absolute;top:13px;left:50%;transform:translateX(-50%);color:#ffe3a0;font-weight:1000;font-size:.78rem;letter-spacing:3px;text-shadow:0 0 16px rgba(255,209,102,.44)}
+.hall-motto{position:absolute;top:69px;left:50%;transform:translateX(-50%);color:rgba(245,251,255,.7);font-size:.54rem;font-weight:900;letter-spacing:2.2px}
+.hall-banner{position:absolute;top:82px;width:78px;height:166px;display:grid;place-items:center;color:#ffd166;font-size:2rem;background:linear-gradient(180deg,rgba(146,87,255,.58),rgba(20,12,42,.8));border:2px solid rgba(255,209,102,.25);clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);filter:drop-shadow(0 10px 18px rgba(0,0,0,.38))}
+.hall-banner-left{left:86px}.hall-banner-right{right:86px}
+.hall-stage{position:absolute;left:50%;top:210px;width:590px;height:270px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse,rgba(255,209,102,.13),rgba(146,87,255,.06) 54%,transparent 72%)}
+.hall-stage-ring{position:absolute;inset:35px 25px 0;border:2px solid rgba(255,209,102,.18);border-radius:50%;box-shadow:inset 0 0 32px rgba(255,209,102,.06)}
+.hall-podium-label{position:absolute;bottom:30px;width:118px;display:grid;place-items:center;font-size:2.4rem;font-weight:1000;color:rgba(2,4,13,.8)}
+.hall-podium-label-first{left:236px;height:150px;background:linear-gradient(#ffe599,#c89e36)}.hall-podium-label-second{left:64px;height:100px;background:linear-gradient(#e5edf8,#7d8b9f)}.hall-podium-label-third{right:64px;height:72px;background:linear-gradient(#e0a36c,#86532f)}
+.hall-ranking-wall{position:absolute;left:50%;top:510px;width:610px;padding:18px 22px;transform:translateX(-50%);border-radius:18px;text-align:center;background:rgba(4,7,18,.76);border:1px solid rgba(120,247,255,.18);box-shadow:0 0 34px rgba(146,87,255,.09)}
+.hall-ranking-wall strong{display:block;color:#ffd166;font-size:.72rem;letter-spacing:2px}.hall-ranking-wall span{display:block;margin-top:7px;color:rgba(245,251,255,.67);font-size:.58rem;line-height:1.5}
+.hall-floor-lines{position:absolute;inset:38px;border:1px solid rgba(255,209,102,.07);border-radius:25px;pointer-events:none}
+.decor-hall-podium-first,.decor-hall-podium-second,.decor-hall-podium-third{border-radius:12px 12px 3px 3px;border:2px solid rgba(255,255,255,.2);box-shadow:0 16px 22px rgba(0,0,0,.34),inset 0 0 24px rgba(255,255,255,.08)}
+.decor-hall-podium-first{background:linear-gradient(180deg,#ffe599,#a87a16)}.decor-hall-podium-second{background:linear-gradient(180deg,#e6edf8,#68788f)}.decor-hall-podium-third{background:linear-gradient(180deg,#e4a46d,#704226)}
+.decor-hall-console{border-radius:14px;background:linear-gradient(180deg,rgba(120,247,255,.16),transparent 35%),rgba(8,12,29,.96);border:2px solid rgba(120,247,255,.25);box-shadow:0 12px 18px rgba(0,0,0,.3),inset 0 0 22px rgba(0,234,255,.05)}
+.decor-hall-console::after{content:"◈  DATA  ◈";position:absolute;inset:0;display:grid;place-items:center;color:rgba(120,247,255,.78);font-size:.62rem;font-weight:900;letter-spacing:1.5px}
+
+.hall-fame-panel{position:absolute;inset:34px;z-index:940;display:none;overflow:auto;border-radius:26px;background:radial-gradient(circle at 50% 0%,rgba(255,209,102,.12),transparent 30%),linear-gradient(145deg,rgba(9,12,28,.985),rgba(3,5,15,.99));border:1px solid rgba(255,209,102,.36);box-shadow:0 26px 80px rgba(0,0,0,.62),inset 0 0 60px rgba(146,87,255,.06);padding:28px}
+.hall-fame-panel.visible{display:block}.hall-fame-header{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:22px}
+.hall-fame-kicker{color:#ffd166;text-transform:uppercase;letter-spacing:2.2px;font-size:.7rem;font-weight:1000}.hall-fame-title{margin-top:4px;color:#f5fbff;font-size:clamp(1.45rem,3vw,2.25rem);font-weight:1000}
+.hall-fame-subtitle{max-width:720px;margin:7px 0 0;color:rgba(245,251,255,.68);line-height:1.55}
+.hall-fame-close,.hall-fame-refresh{border:1px solid rgba(120,247,255,.28);background:rgba(120,247,255,.08);color:#dffcff;border-radius:12px;padding:10px 14px;font:inherit;font-weight:900;cursor:pointer}
+.hall-fame-close:hover,.hall-fame-refresh:hover{background:rgba(120,247,255,.15)}
+.hall-fame-rule{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}.hall-fame-rule span{padding:8px 11px;border-radius:999px;background:rgba(146,87,255,.09);border:1px solid rgba(146,87,255,.18);color:rgba(245,251,255,.78);font-size:.72rem;font-weight:800}
+.hall-fame-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:end;margin-bottom:20px}
+.hall-fame-card{min-height:154px;border-radius:18px;padding:17px;background:rgba(255,255,255,.035);border:1px solid rgba(245,251,255,.12);text-align:center}.hall-fame-card.first{min-height:184px;border-color:rgba(255,209,102,.46);box-shadow:0 0 30px rgba(255,209,102,.09)}.hall-fame-card.current{outline:2px solid rgba(120,247,255,.62);outline-offset:2px}
+.hall-fame-medal{font-size:1.8rem}.hall-fame-name{margin-top:8px;color:#fff;font-weight:1000;overflow-wrap:anywhere}.hall-fame-stats{margin-top:8px;display:grid;gap:3px;color:rgba(245,251,255,.68);font-size:.74rem}
+.hall-fame-list{display:grid;gap:8px}.hall-fame-row{display:grid;grid-template-columns:54px minmax(160px,1fr) repeat(3,minmax(92px,auto));gap:12px;align-items:center;padding:11px 14px;border-radius:13px;background:rgba(255,255,255,.028);border:1px solid rgba(245,251,255,.07);color:rgba(245,251,255,.78)}
+.hall-fame-row.current{border-color:rgba(120,247,255,.45);background:rgba(0,234,255,.055)}.hall-fame-row strong{color:#fff}.hall-fame-position{color:#ffd166;font-weight:1000}
+.hall-fame-current-box,.hall-fame-status{margin-top:16px;border-radius:14px;padding:13px 15px;background:rgba(0,234,255,.055);border:1px solid rgba(120,247,255,.14);color:rgba(245,251,255,.73)}.hall-fame-status.error{border-color:rgba(255,77,125,.35);color:#ffafc4}
+.hall-fame-footer{margin-top:18px;display:flex;justify-content:space-between;gap:12px;align-items:center;color:rgba(245,251,255,.48);font-size:.68rem}
+@media(max-width:760px){.hall-fame-panel{inset:12px;padding:18px}.hall-fame-header{flex-direction:column}.hall-fame-podium{grid-template-columns:1fr}.hall-fame-card.first{order:-1}.hall-fame-row{grid-template-columns:42px 1fr}.hall-fame-row>span:nth-last-child(-n+3){grid-column:2}.hall-fame-footer{flex-direction:column;align-items:stretch}}
