@@ -1,6 +1,8 @@
 (function initializeSportsMinigames(global) {
   const REALM_ID = "reino-educacao-fisica";
   const SPORT_IDS = ["football", "basketball", "athletics", "volleyball", "dodgeball"];
+  const CAPITAO_RUBRO_IMAGE = "assets/images/rivals/capitao-rubro.png";
+
   const SPORT_META = {
     football: { icon: "⚽", name: "Futebol", zone: "Campo das Decisões" },
     basketball: { icon: "🏀", name: "Basquete", zone: "Quadra do Ritmo" },
@@ -707,27 +709,119 @@
     }
   }
 
-  // -------------------------------------------------------
-  // Queimada — ataque + esquiva
-  // -------------------------------------------------------
+
+
+  function renderDodgeballRival(g, phase = "command") {
+    const opponentLost = Math.max(0, g.opponentMaxHp - g.opponentHp);
+    const playerLost = Math.max(0, g.playerMaxHp - g.playerHp);
+    const stance = phase === "defense" ? "rival-throwing" : phase === "aim" ? "rival-ready" : "rival-waiting";
+    return `
+      <section class="dodgeball-rival-stage ${stance}" aria-label="Capitão Rubro">
+        <div class="dodgeball-rival-aura"></div>
+        <img class="dodgeball-rival-image" src="${CAPITAO_RUBRO_IMAGE}" alt="Capitão Rubro segurando uma bola de queimada" draggable="false" />
+        <div class="dodgeball-rival-card">
+          <div>
+            <span class="dodgeball-rival-kicker">RIVAL DA ARENA</span>
+            <strong>CAPITÃO RUBRO</strong>
+          </div>
+          <div class="dodgeball-scoreboard">
+            <span title="Pontos restantes do Capitão Rubro">Rubro ${"●".repeat(g.opponentHp)}${"○".repeat(opponentLost)}</span>
+            <span title="Seus pontos restantes">Você ${"●".repeat(g.playerHp)}${"○".repeat(playerLost)}</span>
+          </div>
+        </div>
+      </section>`;
+  }
+
+  function getDodgeballRootActions() {
+    return [
+      { id: "throw", label: "ARREMESSAR", icon: "⚡", description: "Ataque direto com escolha de estilo." },
+      { id: "tactic", label: "TÁTICA", icon: "◈", description: "Ler o rival, fintar ou observar o próximo padrão." },
+      { id: "item", label: "ITEM", icon: "✦", description: "Recuperar fôlego ou reforçar a defesa." },
+      { id: "stance", label: "POSTURA", icon: "⬢", description: "Preparar bônus para o próximo turno." }
+    ];
+  }
+
+  function getDodgeballThrowOptions() {
+    return [
+      { id: "straight", label: "Reto", description: "Janela equilibrada e dano estável.", baseDamage: 1, min: 34, max: 66 },
+      { id: "curve", label: "Curva", description: "Mais difícil, mas engana melhor o rival.", baseDamage: 1, min: 42, max: 58, graze: 8 },
+      { id: "power", label: "Forte", description: "Janela menor, porém mais impacto.", baseDamage: 2, min: 47, max: 53 }
+    ];
+  }
+
+  function getDodgeballTacticOptions() {
+    return [
+      { id: "observe", label: "Observar padrão", description: "Revela o tipo de ataque do próximo turno inimigo." },
+      { id: "feint", label: "Finta", description: "Amplia a janela do seu próximo arremesso." },
+      { id: "read", label: "Ler postura", description: "Prepara um lançamento mais incisivo no próximo turno." }
+    ];
+  }
+
+  function getDodgeballItemOptions(g) {
+    return [
+      { id: "water", label: `Água (${g.items.water})`, available: g.items.water > 0, description: "Recupera 1 ponto, até o máximo." },
+      { id: "band", label: `Faixa (${g.items.band})`, available: g.items.band > 0, description: "Absorve o próximo impacto na esquiva." },
+      { id: "whistle", label: `Apito (${g.items.whistle})`, available: g.items.whistle > 0, description: "Desacelera as bolas do próximo turno inimigo." }
+    ];
+  }
+
+  function getDodgeballStanceOptions() {
+    return [
+      { id: "defense", label: "Defensiva", description: "Aumenta a velocidade de movimento no próximo turno inimigo." },
+      { id: "focus", label: "Concentração", description: "Amplia a janela do próximo arremesso." },
+      { id: "prepare", label: "Preparar lançamento", description: "Adiciona dano ao próximo arremesso." }
+    ];
+  }
+
+  function chooseNextDodgePattern(g) {
+    const patterns = [
+      { id: "sides", label: "Dupla lateral", spawnEvery: state.mode === "championship" ? 360 : 430, duration: state.mode === "championship" ? 3800 : 5200 },
+      { id: "rain", label: "Chuva diagonal", spawnEvery: state.mode === "championship" ? 320 : 390, duration: state.mode === "championship" ? 3800 : 5200 },
+      { id: "corners", label: "Quatro cantos", spawnEvery: state.mode === "championship" ? 560 : 720, duration: state.mode === "championship" ? 3600 : 5000 },
+      { id: "aimed", label: "Mira direta", spawnEvery: state.mode === "championship" ? 430 : 520, duration: state.mode === "championship" ? 3600 : 4900 }
+    ];
+    const options = patterns.filter((pattern) => pattern.id !== g.lastPatternId);
+    const chosen = options[Math.floor(Math.random() * options.length)] || patterns[0];
+    g.nextPattern = chosen;
+    g.lastPatternId = chosen.id;
+    return chosen;
+  }
+
   function startDodgeball() {
+    const playerMaxHp = state.mode === "championship" ? 2 : 3;
+    const opponentMaxHp = state.mode === "championship" ? 2 : 3;
     state.current = {
       type: "dodgeball",
-      phase: "attack",
-      opponentHp: state.mode === "championship" ? 1 : 2,
-      opponentMaxHp: state.mode === "championship" ? 1 : 2,
-      playerHp: state.mode === "championship" ? 2 : 3,
-      cursor: 12,
+      phase: "command",
+      menu: "root",
+      playerHp: playerMaxHp,
+      playerMaxHp,
+      opponentHp: opponentMaxHp,
+      opponentMaxHp,
+      cursor: 16,
       dir: 1,
-      rounds: 0,
-      maxRounds: state.mode === "championship" ? 2 : 4,
       locked: false,
+      turn: 1,
       balls: [],
       player: { x: 50, y: 50, invulnerableUntil: 0 },
       defenseEnd: 0,
-      lastSpawn: 0
+      lastSpawn: 0,
+      lastPatternId: "",
+      nextPattern: null,
+      selectedThrow: null,
+      throwWindowBonus: 0,
+      damageBonus: 0,
+      moveBoost: 1,
+      defenseShield: 0,
+      enemySlowMultiplier: 1,
+      items: { water: 2, band: 1, whistle: 1 },
+      dialogue: "Capitão Rubro gira a bola na mão e mede a distância. Escolha sua ação.",
+      statusText: "Sua vez.",
+      styleUsed: "",
+      pendingObservedPattern: false
     };
-    renderDodgeballAttack("Seu turno. Acerte o centro da barra para lançar.");
+    chooseNextDodgePattern(state.current);
+    renderDodgeballCommand();
 
     let last = performance.now();
     const tick = (now) => {
@@ -736,7 +830,7 @@
       const dt = Math.min(32, now - last);
       last = now;
 
-      if (g.phase === "attack") {
+      if (g.phase === "aim") {
         g.cursor += g.dir * dt * 0.105;
         if (g.cursor >= 100) { g.cursor = 100; g.dir = -1; }
         if (g.cursor <= 0) { g.cursor = 0; g.dir = 1; }
@@ -751,44 +845,272 @@
     state.rafId = requestAnimationFrame(tick);
   }
 
-  function renderDodgeballAttack(feedback = "") {
+  function renderDodgeballLayout(title, subtitle, dialogue, body, phase = "command") {
     const g = state.current;
     openPanelShell(
-      "🔴 Queimada · Turno de Ataque",
+      title,
       "Arena da Esquiva",
-      "Ataque com precisão; depois sobreviva ao turno adversário.",
-      `<div class="sports-game-card dodgeball-attack-stage">
-        <div class="sports-status-row"><span class="sports-stat-pill">Adversário ${g.opponentHp}/${g.opponentMaxHp}</span><span class="sports-stat-pill">Seus pontos ${g.playerHp}</span><span class="sports-stat-pill">Rodada ${g.rounds + 1}/${g.maxRounds}</span></div>
-        <div class="dodgeball-turn-label">SEU TURNO · ARREMESSO</div>
-        <div class="sports-meter"><div class="sports-meter-perfect"></div><div id="dodgeAttackCursor" class="sports-meter-cursor" style="left:${g.cursor}%"></div></div>
-        <div style="text-align:center;"><button class="sports-primary-btn" type="button" onclick="VoltzSports.throwDodgeball()" ${g.locked ? "disabled" : ""}>Arremessar [Espaço]</button></div>
-        <div class="sports-feedback">${escapeHtml(feedback)}</div>
-        <div class="sports-help">Acerte a região central da barra. Depois use WASD ou Setas para esquivar.</div>
-      </div>`
+      subtitle,
+      `${renderDodgeballRival(g, phase)}
+      <section class="dodgeball-battle-card">
+        <div class="dodgeball-status-strip">
+          <span>Turno ${g.turn}</span>
+          <span>Você ${"♥".repeat(g.playerHp)}${"♡".repeat(Math.max(0, g.playerMaxHp - g.playerHp))}</span>
+          <span>Rubro ${"●".repeat(g.opponentHp)}${"○".repeat(Math.max(0, g.opponentMaxHp - g.opponentHp))}</span>
+        </div>
+        <div class="dodgeball-dialogue-box"><p>${escapeHtml(dialogue)}</p></div>
+        ${body}
+      </section>`
     );
+  }
+
+  function renderDodgeMenuButtons(menuTitle, options, backLabel = "Voltar") {
+    return `
+      <div class="dodgeball-command-area">
+        <div class="dodgeball-command-title">${escapeHtml(menuTitle)}</div>
+        <div class="dodgeball-command-grid ${options.length > 3 ? "is-four" : ""}">
+          ${options.map((option, index) => `
+            <button class="dodgeball-command-btn ${option.available === false ? "is-disabled" : ""}" type="button" onclick="${option.onclick}" ${option.available === false ? "disabled" : ""}>
+              <span class="dodgeball-command-index">${index + 1}</span>
+              <strong>${escapeHtml(option.label)}</strong>
+              <small>${escapeHtml(option.description)}</small>
+            </button>
+          `).join("")}
+        </div>
+        <div class="dodgeball-command-footer">Pressione 1–4 para escolher · Esc para sair · 0 para ${escapeHtml(backLabel.toLowerCase())}</div>
+      </div>`;
+  }
+
+  function renderDodgeballCommand() {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return;
+    g.phase = "command";
+    g.menu = "root";
+    const options = getDodgeballRootActions().map((option) => ({
+      ...option,
+      onclick: `VoltzSports.selectDodgeRoot('${option.id}')`
+    }));
+    renderDodgeballLayout(
+      "🔴 Queimada · Duelo Tático",
+      "Escolha como lidar com o próximo turno da partida.",
+      g.dialogue,
+      `${renderDodgeMenuButtons("Comando", options)}
+      <div class="sports-help dodgeball-extra-help">A alma Voltz só aparece no turno de esquiva. No seu turno, a decisão vem antes da ação.</div>`,
+      "command"
+    );
+  }
+
+  function renderDodgeballSubmenu(kind) {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return;
+    g.menu = kind;
+
+    let title = "";
+    let options = [];
+    if (kind === "throw") {
+      title = "Escolha o estilo de arremesso";
+      options = getDodgeballThrowOptions().map((option) => ({
+        label: option.label,
+        description: option.description,
+        onclick: `VoltzSports.selectDodgeThrow('${option.id}')`
+      }));
+    } else if (kind === "tactic") {
+      title = "Escolha uma tática";
+      options = getDodgeballTacticOptions().map((option) => ({
+        label: option.label,
+        description: option.description,
+        onclick: `VoltzSports.selectDodgeTactic('${option.id}')`
+      }));
+    } else if (kind === "item") {
+      title = "Escolha um item";
+      options = getDodgeballItemOptions(g).map((option) => ({
+        label: option.label,
+        description: option.description,
+        available: option.available,
+        onclick: `VoltzSports.useDodgeItem('${option.id}')`
+      }));
+    } else if (kind === "stance") {
+      title = "Escolha uma postura";
+      options = getDodgeballStanceOptions().map((option) => ({
+        label: option.label,
+        description: option.description,
+        onclick: `VoltzSports.useDodgeStance('${option.id}')`
+      }));
+    }
+
+    renderDodgeballLayout(
+      "🔴 Queimada · Duelo Tático",
+      "Cada escolha altera o fluxo do próximo turno.",
+      g.dialogue,
+      `${renderDodgeMenuButtons(title, options, "Voltar")}
+      <div style="text-align:center;margin-top:12px;"><button class="sports-close-btn" type="button" onclick="VoltzSports.backDodgeMenu()">0 · Voltar</button></div>`,
+      "command"
+    );
+  }
+
+  function selectDodgeRoot(id) {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball" || g.phase !== "command") return;
+    if (!["throw","tactic","item","stance"].includes(id)) return;
+    renderDodgeballSubmenu(id);
+  }
+
+  function backDodgeMenu() {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball" || g.phase !== "command") return;
+    renderDodgeballCommand();
+  }
+
+  function selectDodgeThrow(id) {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return;
+    const option = getDodgeballThrowOptions().find((entry) => entry.id === id);
+    if (!option) return;
+    g.selectedThrow = option;
+    g.phase = "aim";
+    g.menu = "aim";
+    g.cursor = 16;
+    g.dir = 1;
+    g.dialogue = `Você segura a bola e prepara um arremesso ${option.label.toLowerCase()}.`;
+    renderDodgeballAim();
+  }
+
+  function renderDodgeballAim(feedback = "") {
+    const g = state.current;
+    const option = g.selectedThrow;
+    const min = clamp(option.min - g.throwWindowBonus, 5, 90);
+    const max = clamp(option.max + g.throwWindowBonus, 10, 95);
+    renderDodgeballLayout(
+      `🔴 Queimada · ${option.label}`,
+      "Segure o tempo do lançamento e solte no momento certo.",
+      g.dialogue,
+      `<div class="sports-game-card dodgeball-aim-stage">
+        <div class="sports-status-row">
+          <span class="sports-stat-pill">Estilo ${escapeHtml(option.label)}</span>
+          <span class="sports-stat-pill">Bônus de dano +${g.damageBonus}</span>
+          <span class="sports-stat-pill">Janela ${Math.round(max - min)}%</span>
+        </div>
+        <div class="sports-meter"><div class="sports-meter-perfect" style="left:${min}%;width:${Math.max(6, max - min)}%;"></div><div id="dodgeAttackCursor" class="sports-meter-cursor" style="left:${g.cursor}%"></div></div>
+        <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+          <button class="sports-primary-btn" type="button" onclick="VoltzSports.throwDodgeball()">Lançar [Espaço]</button>
+          <button class="sports-close-btn" type="button" onclick="VoltzSports.backDodgeMenu()">Voltar</button>
+        </div>
+        <div class="sports-feedback">${escapeHtml(feedback || "Acerte a zona colorida para superar a marcação de Capitão Rubro.")}</div>
+      </div>`,
+      "aim"
+    );
+  }
+
+  function performDodgeNonAttack(dialogue) {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return;
+    g.turn += 1;
+    g.dialogue = dialogue;
+    startDodgeDefense();
+  }
+
+  function selectDodgeTactic(id) {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return;
+    if (id === "observe") {
+      const pattern = g.nextPattern || chooseNextDodgePattern(g);
+      performDodgeNonAttack(`Você observou a postura de Capitão Rubro. Próximo padrão: ${pattern.label}.`);
+      return;
+    }
+    if (id === "feint") {
+      g.throwWindowBonus = Math.max(g.throwWindowBonus, 8);
+      performDodgeNonAttack("Você fintou o corpo e desequilibrou a leitura do rival. Seu próximo arremesso terá janela ampliada.");
+      return;
+    }
+    if (id === "read") {
+      g.damageBonus += 1;
+      performDodgeNonAttack("Você leu a postura de Capitão Rubro. Seu próximo arremesso ficará mais incisivo.");
+    }
+  }
+
+  function useDodgeItem(id) {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return;
+    if (id === "water") {
+      if (g.items.water <= 0) return;
+      g.items.water -= 1;
+      g.playerHp = Math.min(g.playerMaxHp, g.playerHp + 1);
+      performDodgeNonAttack("Você tomou água e recuperou o fôlego antes do próximo turno.");
+      return;
+    }
+    if (id === "band") {
+      if (g.items.band <= 0) return;
+      g.items.band -= 1;
+      g.defenseShield += 1;
+      performDodgeNonAttack("A faixa esportiva ficou firme. O próximo impacto será absorvido.");
+      return;
+    }
+    if (id === "whistle") {
+      if (g.items.whistle <= 0) return;
+      g.items.whistle -= 1;
+      g.enemySlowMultiplier = 0.82;
+      performDodgeNonAttack("O apito do treinador desacelerou o ritmo do próximo turno inimigo.");
+    }
+  }
+
+  function useDodgeStance(id) {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return;
+    if (id === "defense") {
+      g.moveBoost = Math.max(g.moveBoost, 1.18);
+      performDodgeNonAttack("Você baixou o centro de gravidade. No próximo turno, sua esquiva ficará mais rápida.");
+      return;
+    }
+    if (id === "focus") {
+      g.throwWindowBonus = Math.max(g.throwWindowBonus, 10);
+      performDodgeNonAttack("Você respirou fundo e entrou em concentração. O próximo arremesso terá mais precisão.");
+      return;
+    }
+    if (id === "prepare") {
+      g.damageBonus += 1;
+      performDodgeNonAttack("Você segurou a bola por um instante a mais. O próximo arremesso virá mais pesado.");
+    }
   }
 
   function throwDodgeball() {
     const g = state.current;
-    if (!g || g.type !== "dodgeball" || g.phase !== "attack" || g.locked) return;
+    if (!g || g.type !== "dodgeball" || g.phase !== "aim" || !g.selectedThrow) return;
+    const option = g.selectedThrow;
     g.locked = true;
-    g.rounds += 1;
-    const hit = g.cursor >= 37 && g.cursor <= 63;
-    if (hit) g.opponentHp -= 1;
-    renderDodgeballAttack(hit ? "ACERTO! A bola atingiu o adversário." : "O arremesso passou fora da zona ideal.");
+    const min = clamp(option.min - g.throwWindowBonus, 5, 90);
+    const max = clamp(option.max + g.throwWindowBonus, 10, 95);
+    const hit = g.cursor >= min && g.cursor <= max;
+    const graze = option.graze ? (g.cursor >= min - option.graze && g.cursor <= max + option.graze) : false;
+    let damage = 0;
+    let message = "";
+
+    if (hit) {
+      damage = option.baseDamage + g.damageBonus;
+      g.opponentHp = Math.max(0, g.opponentHp - damage);
+      message = `Acerto direto! O arremesso ${option.label.toLowerCase()} atingiu Capitão Rubro e causou ${damage} ponto${damage === 1 ? "" : "s"}.`;
+    } else if (graze) {
+      damage = Math.max(1, Math.floor((option.baseDamage + g.damageBonus) / 2));
+      g.opponentHp = Math.max(0, g.opponentHp - damage);
+      message = `Quase perfeito, mas suficiente. O arremesso passou raspando e ainda causou ${damage} ponto.`;
+    } else {
+      message = `Capitão Rubro leu o seu ${option.label.toLowerCase()} e saiu da trajetória.`;
+    }
+
+    g.throwWindowBonus = 0;
+    g.damageBonus = 0;
+    g.selectedThrow = null;
+    g.turn += 1;
+    g.dialogue = message;
+    renderDodgeballAim(message);
 
     addTimer(() => {
       if (!state.current || state.current !== g) return;
       if (g.opponentHp <= 0) {
-        finishSport("dodgeball", true, "Você venceu os turnos de ataque e manteve o controle da Arena da Esquiva.");
-        return;
-      }
-      if (g.rounds >= g.maxRounds) {
-        finishSport("dodgeball", false, "Seus turnos de ataque acabaram antes de acertar o adversário vezes suficientes.");
+        finishSport("dodgeball", true, "Você venceu o Capitão Rubro e dominou a Arena da Esquiva.");
         return;
       }
       startDodgeDefense();
-    }, 700);
+    }, 950);
   }
 
   function startDodgeDefense() {
@@ -798,51 +1120,74 @@
     g.locked = false;
     g.balls = [];
     g.player = { x: 50, y: 50, invulnerableUntil: 0 };
-    g.defenseEnd = performance.now() + (state.mode === "championship" ? 3500 : 5000);
+    const pattern = g.nextPattern || chooseNextDodgePattern(g);
+    g.activePattern = pattern;
+    g.defenseEnd = performance.now() + pattern.duration;
     g.lastSpawn = 0;
     renderDodgeDefense();
   }
 
   function renderDodgeDefense() {
     const g = state.current;
-    openPanelShell(
-      "🔴 Queimada · Turno de Esquiva",
-      "Arena da Esquiva",
-      "O adversário está arremessando. Mova o Núcleo Voltz e sobreviva até o cronômetro zerar.",
-      `<div class="sports-game-card">
-        <div class="dodgeball-turn-label">TURNO ADVERSÁRIO · ESQUIVA</div>
-        <div class="dodgeball-hearts">${"♥ ".repeat(g.playerHp)}${"♡ ".repeat(Math.max(0, 3 - g.playerHp))}</div>
+    const patternText = g.activePattern ? `Padrão ativo: ${g.activePattern.label}.` : "Sobreviva ao turno inimigo.";
+    renderDodgeballLayout(
+      "🔴 Queimada · Turno Inimigo",
+      "Agora a alma Voltz entra em quadra. Sobreviva até o cronômetro acabar.",
+      `${g.dialogue} ${patternText}`,
+      `<div class="sports-game-card dodgeball-defense-stage">
+        <div class="dodgeball-turn-label">TURNO DO CAPITÃO RUBRO · ESQUIVA</div>
+        <div class="dodgeball-hearts">${"♥ ".repeat(g.playerHp)}${"♡ ".repeat(Math.max(0, g.playerMaxHp - g.playerHp))}</div>
         <div id="dodgeArena" class="dodgeball-arena"><div id="dodgePlayer" class="dodge-player">⚡</div></div>
         <div id="dodgeTimer" class="sports-feedback">Sobreviva...</div>
-        <div class="sports-help">WASD / Setas. Encostar numa bola remove um ponto e concede alguns instantes de invulnerabilidade.</div>
-      </div>`
+        <div class="sports-help">WASD / Setas. ${g.defenseShield > 0 ? "Você tem um escudo pronto. " : ""}${g.moveBoost > 1 ? "Sua postura defensiva aumenta a velocidade. " : ""}${g.enemySlowMultiplier < 1 ? "O apito desacelerou as bolas. " : ""}</div>
+      </div>`,
+      "defense"
     );
     updateDodgePlayerDom();
   }
 
-  function spawnDodgeBall(now, arenaWidth, arenaHeight) {
+  function spawnPatternBall(arenaWidth, arenaHeight, x, y, targetX, targetY, speed, extraClass = "") {
     const g = state.current;
-    const edge = Math.floor(Math.random() * 4);
-    let x, y;
-    if (edge === 0) { x = -20; y = Math.random() * arenaHeight; }
-    else if (edge === 1) { x = arenaWidth + 20; y = Math.random() * arenaHeight; }
-    else if (edge === 2) { x = Math.random() * arenaWidth; y = -20; }
-    else { x = Math.random() * arenaWidth; y = arenaHeight + 20; }
-
-    const targetX = (g.player.x / 100) * arenaWidth + (Math.random() - .5) * 120;
-    const targetY = (g.player.y / 100) * arenaHeight + (Math.random() - .5) * 90;
     const dx = targetX - x;
     const dy = targetY - y;
     const len = Math.hypot(dx, dy) || 1;
-    const speed = state.mode === "championship" ? 260 : 225;
+    g.balls.push({ x, y, vx: dx / len * speed, vy: dy / len * speed, el: null, extraClass });
+  }
 
-    g.balls.push({
-      x, y,
-      vx: dx / len * speed,
-      vy: dy / len * speed,
-      el: null
-    });
-    g.lastSpawn = now;
+  function spawnDodgePattern(now, rect) {
+    const g = state.current;
+    const pattern = g.activePattern || chooseNextDodgePattern(g);
+    const playerX = (g.player.x / 100) * rect.width;
+    const playerY = (g.player.y / 100) * rect.height;
+    const speedBase = (state.mode === "championship" ? 260 : 225) * g.enemySlowMultiplier;
+
+    if (pattern.id === "sides") {
+      const fromLeft = Math.floor((now / pattern.spawnEvery)) % 2 === 0;
+      const x = fromLeft ? -20 : rect.width + 20;
+      const y = 40 + Math.random() * (rect.height - 80);
+      spawnPatternBall(rect.width, rect.height, x, y, playerX + (Math.random() - .5) * 80, playerY + (Math.random() - .5) * 50, speedBase + 10);
+      return;
+    }
+
+    if (pattern.id === "rain") {
+      const fromLeft = Math.random() > 0.5;
+      const x = fromLeft ? 40 + Math.random() * (rect.width * .35) : rect.width * .65 + Math.random() * (rect.width * .25);
+      const y = -20;
+      const targetX = fromLeft ? x + rect.width * .32 : x - rect.width * .32;
+      spawnPatternBall(rect.width, rect.height, x, y, targetX, rect.height + 30, speedBase + 15);
+      return;
+    }
+
+    if (pattern.id === "corners") {
+      [[-20,-20],[rect.width+20,-20],[-20,rect.height+20],[rect.width+20,rect.height+20]].forEach(([x,y]) => {
+        spawnPatternBall(rect.width, rect.height, x, y, playerX + (Math.random() - .5) * 45, playerY + (Math.random() - .5) * 45, speedBase - 8);
+      });
+      return;
+    }
+
+    const x = Math.random() > 0.5 ? -20 : rect.width + 20;
+    const y = 30 + Math.random() * (rect.height - 60);
+    spawnPatternBall(rect.width, rect.height, x, y, playerX, playerY, speedBase + 5);
   }
 
   function updateDodgeDefense(now, dt) {
@@ -850,7 +1195,7 @@
     const arena = document.getElementById("dodgeArena");
     if (!arena) return;
     const rect = arena.getBoundingClientRect();
-    const speedPct = 58 * dt;
+    const speedPct = 58 * dt * (g.moveBoost || 1);
 
     let dx = 0, dy = 0;
     if (state.pressed.has("a") || state.pressed.has("arrowleft")) dx -= 1;
@@ -859,12 +1204,15 @@
     if (state.pressed.has("s") || state.pressed.has("arrowdown")) dy += 1;
     if (dx && dy) { dx *= .707; dy *= .707; }
 
-    g.player.x = clamp(g.player.x + dx * speedPct, 3, 97);
-    g.player.y = clamp(g.player.y + dy * speedPct, 5, 95);
+    g.player.x = clamp(g.player.x + dx * speedPct, 4, 96);
+    g.player.y = clamp(g.player.y + dy * speedPct, 7, 93);
     updateDodgePlayerDom();
 
-    const spawnEvery = state.mode === "championship" ? 400 : 470;
-    if (!g.lastSpawn || now - g.lastSpawn >= spawnEvery) spawnDodgeBall(now, rect.width, rect.height);
+    const spawnEvery = g.activePattern?.spawnEvery || 450;
+    if (!g.lastSpawn || now - g.lastSpawn >= spawnEvery) {
+      spawnDodgePattern(now, rect);
+      g.lastSpawn = now;
+    }
 
     const playerX = (g.player.x / 100) * rect.width;
     const playerY = (g.player.y / 100) * rect.height;
@@ -875,13 +1223,13 @@
 
       if (!ball.el) {
         ball.el = document.createElement("div");
-        ball.el.className = "dodge-ball";
+        ball.el.className = `dodge-ball ${ball.extraClass || ""}`;
         arena.appendChild(ball.el);
       }
       ball.el.style.left = `${ball.x - 12}px`;
       ball.el.style.top = `${ball.y - 12}px`;
 
-      const outside = ball.x < -70 || ball.x > rect.width + 70 || ball.y < -70 || ball.y > rect.height + 70;
+      const outside = ball.x < -80 || ball.x > rect.width + 80 || ball.y < -80 || ball.y > rect.height + 80;
       if (outside) {
         ball.el.remove();
         return false;
@@ -889,15 +1237,23 @@
 
       const hit = Math.hypot(ball.x - playerX, ball.y - playerY) < 26;
       if (hit && now >= g.player.invulnerableUntil) {
+        ball.el.remove();
+        if (g.defenseShield > 0) {
+          g.defenseShield -= 1;
+          g.player.invulnerableUntil = now + 450;
+          const timer = document.getElementById("dodgeTimer");
+          if (timer) timer.textContent = "Escudo absorveu o impacto!";
+          return false;
+        }
+
         g.playerHp -= 1;
         g.player.invulnerableUntil = now + 700;
-        ball.el.remove();
         updateDodgePlayerDom();
         const hearts = document.querySelector(".dodgeball-hearts");
-        if (hearts) hearts.textContent = `${"♥ ".repeat(g.playerHp)}${"♡ ".repeat(Math.max(0, 3 - g.playerHp))}`;
+        if (hearts) hearts.textContent = `${"♥ ".repeat(g.playerHp)}${"♡ ".repeat(Math.max(0, g.playerMaxHp - g.playerHp))}`;
 
         if (g.playerHp <= 0) {
-          finishSport("dodgeball", false, "Você foi atingido vezes demais durante o turno de esquiva.");
+          finishSport("dodgeball", false, "Capitão Rubro te eliminou da quadra antes do apito final.");
           return false;
         }
         return false;
@@ -911,14 +1267,16 @@
 
     const remaining = Math.max(0, (g.defenseEnd - now) / 1000);
     const timer = document.getElementById("dodgeTimer");
-    if (timer) timer.textContent = `${remaining.toFixed(1)}s`;
+    if (timer) timer.textContent = `${remaining.toFixed(1)}s · ${g.activePattern?.label || "Esquiva"}`;
 
     if (remaining <= 0) {
       g.balls.forEach((ball) => ball.el?.remove());
       g.balls = [];
-      g.phase = "attack";
-      g.locked = false;
-      renderDodgeballAttack("Você sobreviveu ao turno adversário. Sua vez!");
+      g.moveBoost = 1;
+      g.enemySlowMultiplier = 1;
+      chooseNextDodgePattern(g);
+      g.dialogue = "Você sobreviveu ao turno de Capitão Rubro. Sua vez novamente.";
+      renderDodgeballCommand();
     }
   }
 
@@ -930,8 +1288,61 @@
     el.style.top = `calc(${g.player.y}% - 15px)`;
   }
 
+  function handleDodgeballKeyDown(key, event) {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return false;
+
+    if (g.phase === "defense") return false;
+
+    if (["0","backspace"].includes(key) && g.phase === "command" && g.menu !== "root") {
+      event.preventDefault();
+      backDodgeMenu();
+      return true;
+    }
+
+    const mapIndex = { "1": 0, "2": 1, "3": 2, "4": 3 };
+    if (g.phase === "command" && mapIndex[key] != null) {
+      event.preventDefault();
+      const index = mapIndex[key];
+      if (g.menu === "root") {
+        const root = getDodgeballRootActions()[index];
+        if (root) selectDodgeRoot(root.id);
+        return true;
+      }
+      if (g.menu === "throw") {
+        const opt = getDodgeballThrowOptions()[index];
+        if (opt) selectDodgeThrow(opt.id);
+        return true;
+      }
+      if (g.menu === "tactic") {
+        const opt = getDodgeballTacticOptions()[index];
+        if (opt) selectDodgeTactic(opt.id);
+        return true;
+      }
+      if (g.menu === "item") {
+        const opt = getDodgeballItemOptions(g)[index];
+        if (opt && opt.available) useDodgeItem(opt.id);
+        return true;
+      }
+      if (g.menu === "stance") {
+        const opt = getDodgeballStanceOptions()[index];
+        if (opt) useDodgeStance(opt.id);
+        return true;
+      }
+    }
+
+    if ((key === " " || key === "spacebar") && g.phase === "aim") {
+      event.preventDefault();
+      throwDodgeball();
+      return true;
+    }
+
+    return false;
+  }
+
   // -------------------------------------------------------
   // Campeonato
+
   // -------------------------------------------------------
   function startChampionship() {
     if (!allSportsCompleted()) {
@@ -1058,12 +1469,16 @@
     const game = state.current;
     if (!game) return;
 
+    if (game.type === "dodgeball") {
+      if (handleDodgeballKeyDown(key, event)) return;
+      if (game.phase === "defense") return;
+    }
+
     if (key === " " || key === "spacebar") {
       event.preventDefault();
       if (game.type === "football") shootFootball();
       else if (game.type === "basketball") shootBasketball();
       else if (game.type === "athletics") athleticsSpace();
-      else if (game.type === "dodgeball" && game.phase === "attack") throwDodgeball();
       return;
     }
 
@@ -1090,6 +1505,12 @@
     shootFootball,
     shootBasketball,
     beginAthletics,
+    selectDodgeRoot,
+    selectDodgeThrow,
+    selectDodgeTactic,
+    useDodgeItem,
+    useDodgeStance,
+    backDodgeMenu,
     throwDodgeball,
     startChampionship,
     continueChampionship,

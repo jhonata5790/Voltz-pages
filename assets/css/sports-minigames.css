@@ -184,3 +184,231 @@
   .sports-game-topbar{flex-direction:column}
   .football-goal-ui{min-height:150px}
 }
+
+/* Capitão Rubro — rival visual da Queimada */
+.dodgeball-rival-stage {
+  position: relative;
+  width: min(820px, 100%);
+  min-height: 300px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: end center;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255,107,122,.20);
+  background:
+    radial-gradient(ellipse at 50% 92%, rgba(255,107,122,.14), transparent 48%),
+    linear-gradient(180deg, rgba(255,107,122,.025), rgba(3,7,14,.30));
+}
+.dodgeball-rival-aura {
+  position: absolute;
+  left: 50%;
+  bottom: 44px;
+  width: 300px;
+  height: 220px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,72,82,.16), rgba(255,107,122,.045) 48%, transparent 72%);
+  filter: blur(4px);
+  pointer-events: none;
+}
+.dodgeball-rival-image {
+  position: relative;
+  z-index: 2;
+  width: auto;
+  height: 260px;
+  max-width: 78%;
+  object-fit: contain;
+  object-position: center bottom;
+  user-select: none;
+  filter: drop-shadow(0 18px 22px rgba(0,0,0,.48));
+  transform-origin: center bottom;
+  transition: transform .18s ease, filter .18s ease;
+}
+.dodgeball-rival-stage.rival-throwing .dodgeball-rival-image {
+  transform: translateY(3px) scale(1.025);
+  filter: drop-shadow(0 18px 22px rgba(0,0,0,.48)) drop-shadow(0 0 13px rgba(255,82,92,.16));
+}
+.dodgeball-rival-card {
+  position: absolute;
+  z-index: 3;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 13px;
+  border-radius: 13px;
+  background: rgba(3,8,14,.86);
+  border: 1px solid rgba(255,107,122,.22);
+  box-shadow: 0 10px 25px rgba(0,0,0,.30);
+  backdrop-filter: blur(8px);
+}
+.dodgeball-rival-kicker {
+  display: block;
+  margin-bottom: 2px;
+  color: rgba(255,180,188,.62);
+  font-size: .56rem;
+  font-weight: 1000;
+  letter-spacing: 1.7px;
+}
+.dodgeball-rival-card strong {
+  color: #ffb4bc;
+  font-size: .96rem;
+  letter-spacing: 1px;
+}
+.dodgeball-scoreboard {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  color: rgba(245,251,255,.78);
+  font-size: .68rem;
+  font-weight: 900;
+}
+.dodgeball-scoreboard span:first-child { color: #ff9ca7; }
+.dodgeball-scoreboard span:last-child { color: #9bffce; }
+.dodgeball-defense-stage { max-width: 850px; margin: 0 auto; }
+
+@media (max-width: 760px) {
+  .dodgeball-rival-stage { min-height: 245px; }
+  .dodgeball-rival-image { height: 215px; }
+  .dodgeball-rival-card { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .dodgeball-scoreboard { justify-content: flex-start; }
+}
+
+
+/* Queimada — interface tática estilo batalha */
+.dodgeball-battle-card {
+  max-width: 900px;
+  margin: 0 auto;
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: inset 0 0 30px rgba(255,255,255,.015);
+}
+.dodgeball-status-strip {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.dodgeball-status-strip span {
+  padding:8px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.09);
+  color:rgba(245,251,255,.78);
+  font-size:.72rem;
+  font-weight:900;
+}
+.dodgeball-dialogue-box {
+  min-height:120px;
+  padding:18px 20px;
+  margin-bottom:16px;
+  border:4px solid rgba(245,251,255,.88);
+  background:rgba(0,0,0,.72);
+  box-shadow: inset 0 0 20px rgba(255,255,255,.02);
+}
+.dodgeball-dialogue-box p {
+  margin:0;
+  color:#f5fbff;
+  font-size:1rem;
+  line-height:1.6;
+}
+.dodgeball-dialogue-box p::before {
+  content:"✱ ";
+  color:#fff;
+}
+.dodgeball-command-area {
+  margin-top:6px;
+}
+.dodgeball-command-title {
+  margin-bottom:10px;
+  text-align:center;
+  color:#ffb4bc;
+  font-size:.76rem;
+  font-weight:1000;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
+}
+.dodgeball-command-grid {
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+}
+.dodgeball-command-grid.is-four {
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+.dodgeball-command-btn {
+  position:relative;
+  min-height:92px;
+  padding:14px 14px 14px 44px;
+  border-radius:14px;
+  border:1px solid rgba(255,107,122,.22);
+  background:linear-gradient(180deg, rgba(255,107,122,.07), rgba(255,255,255,.03));
+  color:#fff;
+  text-align:left;
+  cursor:pointer;
+  transition:transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.dodgeball-command-btn:hover {
+  transform:translateY(-2px);
+  background:linear-gradient(180deg, rgba(255,107,122,.12), rgba(255,255,255,.05));
+  border-color:rgba(255,180,188,.35);
+}
+.dodgeball-command-btn strong {
+  display:block;
+  margin-bottom:5px;
+  color:#ffd166;
+  font-size:.95rem;
+  letter-spacing:.4px;
+}
+.dodgeball-command-btn small {
+  display:block;
+  color:rgba(245,251,255,.66);
+  line-height:1.35;
+}
+.dodgeball-command-index {
+  position:absolute;
+  left:12px;
+  top:12px;
+  width:22px;
+  height:22px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#111923;
+  border:1px solid rgba(255,255,255,.16);
+  color:#ffb4bc;
+  font-size:.72rem;
+  font-weight:1000;
+}
+.dodgeball-command-btn.is-disabled {
+  opacity:.45;
+  cursor:not-allowed;
+}
+.dodgeball-command-footer {
+  margin-top:10px;
+  text-align:center;
+  color:rgba(245,251,255,.42);
+  font-size:.67rem;
+}
+.dodgeball-aim-stage { max-width:700px; margin:0 auto; }
+.dodgeball-extra-help {
+  margin-top:12px;
+}
+.dodgeball-rival-stage.rival-ready .dodgeball-rival-image {
+  transform: translateY(-3px) scale(1.02);
+  filter: drop-shadow(0 18px 22px rgba(0,0,0,.48)) drop-shadow(0 0 14px rgba(255,209,102,.16));
+}
+@media(max-width:760px){
+  .dodgeball-command-grid,
+  .dodgeball-command-grid.is-four { grid-template-columns:1fr; }
+  .dodgeball-dialogue-box { min-height:150px; padding:14px; }
+  .dodgeball-command-btn { min-height:84px; }
+}
