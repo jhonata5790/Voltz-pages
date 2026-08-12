@@ -96,7 +96,7 @@
       colorA: "#ffd166",
       colorB: "#9257ff",
       aura: "#ffd166",
-      portrait: "assets/images/npcs/arquivista-das-questoes.webp",
+      portrait: "assets/images/npcs/curador-do-hall.webp",
       opensHallOfFame: true,
       dialogue: [
         "Bem-vindo ao Hall da Fama. Aqui não basta acumular pontos: a jornada vem primeiro.",
