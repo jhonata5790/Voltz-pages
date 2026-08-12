@@ -1,0 +1,27 @@
+.audio-settings-panel {
+  position: fixed;
+  top: 82px;
+  right: 18px;
+  z-index: 12000;
+  width: min(310px, calc(100vw - 24px));
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(120,247,255,.20);
+  background: rgba(5,10,20,.96);
+  box-shadow: 0 18px 55px rgba(0,0,0,.48);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateY(-8px) scale(.98);
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+.audio-settings-panel.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.audio-settings-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.audio-settings-head strong { color:#dffcff; letter-spacing:.5px; }
+.audio-settings-head button { border:0; background:transparent; color:rgba(245,251,255,.65); cursor:pointer; font-size:1rem; }
+.audio-settings-panel label { display:grid; grid-template-columns:1fr auto; gap:6px 10px; align-items:center; margin:12px 0; color:rgba(245,251,255,.78); font-size:.76rem; font-weight:850; }
+.audio-settings-panel label span { color:#78f7ff; font-size:.7rem; }
+.audio-settings-panel input[type="range"] { grid-column:1/-1; width:100%; accent-color:#78f7ff; cursor:pointer; }
+.audio-mute-btn { width:100%; margin-top:5px; padding:9px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.11); background:rgba(255,255,255,.045); color:#f5fbff; cursor:pointer; font-weight:850; }
+.audio-settings-button { cursor:pointer; }
+@media(max-width:760px){ .audio-settings-panel{top:68px;right:8px;} }

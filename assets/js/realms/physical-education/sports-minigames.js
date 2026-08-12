@@ -50,6 +50,12 @@
     return Math.max(min, Math.min(max, value));
   }
 
+  function sportSfx(name, options) { global.VoltzAudio?.playSfx?.(name, options); }
+  function playDodgeballMusic(intensity = .55) { global.VoltzAudio?.playMusic?.("dodgeball", { intensity }); }
+  function setDodgeballMusicIntensity(value) { global.VoltzAudio?.setMusicIntensity?.(value); }
+  function stopDodgeballMusic(fadeMs = 350) { global.VoltzAudio?.stopMusic?.(fadeMs); }
+  function duckDodgeballMusic(amount = .22, ms = 150) { global.VoltzAudio?.duckMusic?.(amount, ms); }
+
   function getProgress() {
     const progress = global.VoltzProfile?.getRealmProgress?.(REALM_ID) || {};
     return {
@@ -250,6 +256,7 @@
   }
 
   function close() {
+    if (state.activeId === "dodgeball" || state.current?.type === "dodgeball") stopDodgeballMusic(280);
     clearRuntime();
     state.open = false;
     state.activeId = "";
@@ -282,6 +289,11 @@
   }
 
   async function finishSport(id, success, message) {
+    if (id === "dodgeball") {
+      sportSfx(success ? "victory" : "failure");
+      if (success) duckDodgeballMusic(.10, 300);
+      stopDodgeballMusic(success ? 900 : 600);
+    }
     clearRuntime();
 
     if (state.championship?.active) {
@@ -827,6 +839,8 @@
   }
 
   function startDodgeball() {
+    playDodgeballMusic(state.mode === "championship" ? .72 : .56);
+    sportSfx("whistle");
     const playerMaxHp = state.mode === "championship" ? 2 : 3;
     const opponentMaxHp = state.mode === "championship" ? 2 : 3;
     state.current = {
@@ -933,6 +947,8 @@
   function renderDodgeballCommand() {
     const g = state.current;
     if (!g || g.type !== "dodgeball") return;
+    const phaseIntensity = getRubroPhase(g) === 3 ? .72 : getRubroPhase(g) === 2 ? .61 : .50;
+    setDodgeballMusicIntensity(phaseIntensity);
     g.phase = "command";
     g.menu = "root";
     const options = getDodgeballRootActions().map((option) => ({
@@ -1001,12 +1017,14 @@
     const g = state.current;
     if (!g || g.type !== "dodgeball" || g.phase !== "command") return;
     if (!["throw","tactic","item","stance"].includes(id)) return;
+    sportSfx("menuConfirm");
     renderDodgeballSubmenu(id);
   }
 
   function backDodgeMenu() {
     const g = state.current;
     if (!g || g.type !== "dodgeball" || g.phase !== "command") return;
+    sportSfx("menuBack");
     renderDodgeballCommand();
   }
 
@@ -1015,6 +1033,7 @@
     if (!g || g.type !== "dodgeball") return;
     const option = getDodgeballThrowOptions().find((entry) => entry.id === id);
     if (!option) return;
+    sportSfx("menuConfirm");
     g.selectedThrow = option;
     g.phase = "aim";
     g.menu = "aim";
@@ -1061,6 +1080,7 @@
   function selectDodgeTactic(id) {
     const g = state.current;
     if (!g || g.type !== "dodgeball") return;
+    sportSfx("menuConfirm");
     if (id === "observe") {
       const pattern = g.nextPattern || chooseNextDodgePattern(g);
       performDodgeNonAttack(`Você observou a postura de Capitão Rubro. Próximo padrão: ${pattern.label}.`);
@@ -1080,6 +1100,7 @@
   function useDodgeItem(id) {
     const g = state.current;
     if (!g || g.type !== "dodgeball") return;
+    sportSfx("menuConfirm");
     if (id === "water") {
       if (g.items.water <= 0) return;
       g.items.water -= 1;
@@ -1105,6 +1126,7 @@
   function useDodgeStance(id) {
     const g = state.current;
     if (!g || g.type !== "dodgeball") return;
+    sportSfx("menuConfirm");
     if (id === "defense") {
       g.moveBoost = Math.max(g.moveBoost, 1.18);
       performDodgeNonAttack("Você baixou o centro de gravidade. No próximo turno, sua esquiva ficará mais rápida.");
@@ -1240,6 +1262,8 @@
     if (!connected) return;
 
     onImpact?.();
+    sportSfx(styleId === "power" ? "impactPower" : "impact");
+    if (styleId === "power") duckDodgeballMusic(.16, 180);
     createDodgeballImpact(targetX, targetY, styleId);
     await flashDodgeballRival(styleId);
   }
@@ -1249,6 +1273,7 @@
     if (!g || g.type !== "dodgeball" || g.phase !== "aim" || !g.selectedThrow || g.locked) return;
     const option = g.selectedThrow;
     g.locked = true;
+    sportSfx(option.id === "power" ? "throwPower" : option.id === "curve" ? "throwCurve" : "throwStraight");
     const min = clamp(option.min - g.throwWindowBonus, 5, 90);
     const max = clamp(option.max + g.throwWindowBonus, 10, 95);
     const hit = g.cursor >= min && g.cursor <= max;
@@ -1318,6 +1343,7 @@
     g.player = { x: 50, y: 62, invulnerableUntil: 0 };
     const attack = g.nextPattern || chooseNextDodgePattern(g);
     g.activePattern = attack;
+    setDodgeballMusicIntensity(getRubroPhase(g) === 3 ? .98 : getRubroPhase(g) === 2 ? .86 : .74);
     g.enemyAttackStart = performance.now();
     g.enemyAttackStep = 0;
     g.enemyAttackDone = false;
@@ -1474,14 +1500,18 @@
       if (event.kind === "telegraph") {
         setRubroDefenseVisual(event.side, event.tone === "feint" ? "feint" : "ready");
         showDodgeTelegraph(event.text, event.tone, event.side);
+        if (event.tone === "feint") sportSfx("feint");
       } else if (event.kind === "charge") {
         setRubroDefenseVisual(event.side, "charge");
+        sportSfx("enemyPower");
         showDodgeTelegraph("!", "power", event.side);
       } else if (event.kind === "fake") {
         setRubroDefenseVisual(event.side, "feint");
+        sportSfx("feint");
         showDodgeTelegraph("FALSO", "feint", event.side);
       } else if (event.kind === "throw") {
         setRubroDefenseVisual(event.side, "throw");
+        sportSfx(event.style === "power" ? "enemyPower" : "enemyThrow");
         spawnRubroThrow(event, rect);
         addTimer(() => setRubroDefenseVisual(event.side, "recover"), 180);
       }
@@ -1501,6 +1531,9 @@
     g.damageBonus += 1;
 
     const perfect = distance <= DODGE_CATCH_PERFECT_DISTANCE;
+    sportSfx(perfect ? "perfectCatch" : "catch");
+    duckDodgeballMusic(perfect ? .06 : .18, perfect ? 260 : 150);
+    addTimer(() => sportSfx("counterReady"), perfect ? 150 : 110);
     g.dialogue = perfect
       ? "AGARROU PERFEITO! Você tomou a posse da bola no instante exato. Contra-ataque carregado."
       : "Você agarrou a bola! O turno de Rubro acabou e seu próximo arremesso recebeu Contra-ataque.";
@@ -1554,6 +1587,8 @@
   }
 
   function playDodgePlayerHitEffect(style = "straight") {
+    sportSfx("playerHit");
+    if (style === "power") duckDodgeballMusic(.14, 180);
     const player = document.getElementById("dodgePlayer");
     const arena = document.getElementById("dodgeArena");
     if (!player || !arena) return;
@@ -1614,8 +1649,8 @@
       if (ball.y >= 0 && ball.y <= rect.height) ball.hasEnteredArena = true;
 
       if (ball.style === "ricochet" && ball.hasEnteredArena && ball.bouncesRemaining > 0) {
-        if (ball.x <= 13 && ball.vx < 0) { ball.x = 13; ball.vx *= -1; ball.bouncesRemaining -= 1; ball.el?.classList.add("just-bounced"); }
-        else if (ball.x >= rect.width - 13 && ball.vx > 0) { ball.x = rect.width - 13; ball.vx *= -1; ball.bouncesRemaining -= 1; ball.el?.classList.add("just-bounced"); }
+        if (ball.x <= 13 && ball.vx < 0) { ball.x = 13; ball.vx *= -1; ball.bouncesRemaining -= 1; sportSfx("ricochet"); ball.el?.classList.add("just-bounced"); }
+        else if (ball.x >= rect.width - 13 && ball.vx > 0) { ball.x = rect.width - 13; ball.vx *= -1; ball.bouncesRemaining -= 1; sportSfx("ricochet"); ball.el?.classList.add("just-bounced"); }
       }
 
       if (!ball.el) {
@@ -1646,6 +1681,7 @@
         ball.el.remove();
         if (g.defenseShield > 0) {
           g.defenseShield -= 1;
+          sportSfx("shield");
           g.player.invulnerableUntil = now + 440;
           const timer = document.getElementById("dodgeTimer");
           if (timer) timer.textContent = "Escudo absorveu a bolada!";
@@ -1796,6 +1832,8 @@
   }
 
   async function finishChampionship() {
+    sportSfx("victory");
+    stopDodgeballMusic(700);
     clearRuntime();
     const alreadyCompleted = getProgress().guardianChallengeCompleted;
     let result = { alreadyCompleted: true, xpReward: 0, coinReward: 0 };
