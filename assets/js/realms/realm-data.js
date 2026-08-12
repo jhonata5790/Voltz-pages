@@ -30,6 +30,14 @@ window.VoltzData.realmOptions = [
     description: "Segundo reino jogável. Reconstrua palavras, sentidos e estruturas para impedir que a linguagem se desfaça."
   },
   {
+    id: "reino-educacao-fisica",
+    name: "Reino de Educação Física",
+    icon: "🏅",
+    unlocked: true,
+    status: "Disponível",
+    description: "Terceiro reino jogável. Supere modalidades esportivas em minigames de precisão, ritmo, reação, coordenação e esquiva."
+  },
+  {
     id: "reino-ciencias",
     name: "Reino do Laboratório",
     icon: "🧪",

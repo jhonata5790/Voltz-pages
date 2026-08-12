@@ -3663,3 +3663,10 @@ body.world-inventory-open .interaction-text {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.dialogue-box.dialogue-no-portrait .dialogue-layout {
+  grid-template-columns: 1fr;
+}
+.dialogue-box.dialogue-no-portrait .dialogue-content {
+  padding-left: 28px;
+}

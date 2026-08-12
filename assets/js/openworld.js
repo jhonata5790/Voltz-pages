@@ -1515,7 +1515,7 @@ const viewport = document.getElementById("gameViewport");
         worldInventoryAbilities.innerHTML = abilities.length
           ? abilities.map((diploma) => `
               <article class="world-inventory-card ability">
-                <div class="world-inventory-card-icon">${diploma.abilityId === "leitura-critica" ? "📖" : "🧠"}</div>
+                <div class="world-inventory-card-icon">${diploma.abilityId === "leitura-critica" ? "📖" : diploma.abilityId === "reflexos-treinados" ? "🏅" : "🧠"}</div>
                 <div class="world-inventory-card-body">
                   <div class="world-inventory-card-topline">
                     <strong>${escapeHtml(diploma.abilityName || "Competência")}</strong>
@@ -1554,6 +1554,10 @@ const viewport = document.getElementById("gameViewport");
         pieces.push(`Palavras ${equations}/3`);
         pieces.push(progress.miniBossDefeated ? "Ortcepse ✓" : "Ortcepse —");
         pieces.push(progress.guardianChallengeCompleted || progress.bossDefeated ? "Espectro ✓" : "Espectro —");
+      } else if (realm.id === "reino-educacao-fisica") {
+        const sports = Array.isArray(progress.completedMinigameIds) ? progress.completedMinigameIds.length : 0;
+        pieces.push(`Modalidades ${sports}/5`);
+        pieces.push(progress.guardianChallengeCompleted || progress.bossDefeated ? "Pentatlo ✓" : sports >= 5 ? "Pentatlo liberado" : "Pentatlo —");
       } else {
         pieces.push(realm.unlocked ? "Disponível" : "Ainda não liberado");
       }
@@ -1601,7 +1605,7 @@ const viewport = document.getElementById("gameViewport");
         studentTerminalAbilities.innerHTML = abilities.length
           ? abilities.map((item) => `
               <article class="student-ability-card">
-                <strong>🧠 ${escapeHtml(item.abilityName || "Competência")}</strong>
+                <strong>${item.abilityId === "leitura-critica" ? "📖" : item.abilityId === "reflexos-treinados" ? "🏅" : "🧠"} ${escapeHtml(item.abilityName || "Competência")}</strong>
                 <p>${escapeHtml(item.abilityDescription || "Competência permanente desbloqueada por um diploma.")}</p>
               </article>`).join("")
           : `<div class="student-terminal-empty">Conclua um Reino e conquiste seu diploma para desbloquear competências permanentes.</div>`;
@@ -2008,6 +2012,7 @@ const viewport = document.getElementById("gameViewport");
       updateMathBuffHud();
       updateDebug();
       interactionText.textContent = scene.defaultHint;
+      window.VoltzSports?.onSceneChanged?.(scene.id);
     }
 
     function resolveSceneById(sceneId) {
@@ -2514,8 +2519,19 @@ const viewport = document.getElementById("gameViewport");
       dialogueRole.textContent = currentDialogueNpc.role;
       dialogueName.textContent = currentDialogueNpc.name;
       dialogueText.textContent = currentLine;
-      dialoguePortrait.src = currentDialogueNpc.portrait;
-      dialoguePortrait.alt = `Retrato de ${currentDialogueNpc.name}`;
+
+      const hasDialoguePortrait = Boolean(currentDialogueNpc.portrait);
+      dialogueBox.classList.toggle("dialogue-no-portrait", !hasDialoguePortrait);
+      if (dialoguePortrait?.parentElement) {
+        dialoguePortrait.parentElement.style.display = hasDialoguePortrait ? "" : "none";
+      }
+      if (hasDialoguePortrait) {
+        dialoguePortrait.src = currentDialogueNpc.portrait;
+        dialoguePortrait.alt = `Retrato de ${currentDialogueNpc.name}`;
+      } else {
+        dialoguePortrait.removeAttribute("src");
+        dialoguePortrait.alt = "";
+      }
 
       dialogueFooter.innerHTML = `
         <span class="dialogue-progress">${currentNumber}/${totalLines}</span>
@@ -2557,6 +2573,7 @@ const viewport = document.getElementById("gameViewport");
       const shouldOpenHallOfFame = Boolean(currentDialogueNpc && currentDialogueNpc.opensHallOfFame);
       const shouldOpenStudentTerminal = Boolean(currentDialogueNpc && currentDialogueNpc.opensStudentTerminal);
       const shouldOpenLibraryArchive = Boolean(currentDialogueNpc && currentDialogueNpc.opensLibraryArchive);
+      const sportsMinigameId = currentDialogueNpc?.opensSportsMinigame || "";
       const shouldReturnToVillage = Boolean(currentDialogueNpc && currentDialogueNpc.returnToVillage);
       const shouldResetMath = Boolean(currentDialogueNpc && currentDialogueNpc.resetsMathProgress);
       closeDialogue();
@@ -2583,6 +2600,10 @@ const viewport = document.getElementById("gameViewport");
 
       if (shouldOpenLibraryArchive) {
         openLibraryArchivePanel();
+      }
+
+      if (sportsMinigameId) {
+        window.VoltzSports?.open?.(sportsMinigameId);
       }
 
       if (shouldReturnToVillage) {
@@ -3072,7 +3093,7 @@ const viewport = document.getElementById("gameViewport");
     function updateMovement() {
       updateVisualTransition();
 
-      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldInventoryOpen || hallFamePanelOpen || studentTerminalOpen || libraryArchiveOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzDevMenu?.isOpen?.()) {
+      if (dialogueOpen || realmPanelOpen || shopPanelOpen || worldInventoryOpen || hallFamePanelOpen || studentTerminalOpen || libraryArchiveOpen || worldEquationPanelOpen || enemyPanelOpen || window.VoltzSports?.isOpen?.() || window.VoltzDevMenu?.isOpen?.()) {
         playerState.moving = false;
         updatePlayerPosition();
         updatePlayerAnimation();
@@ -3476,6 +3497,8 @@ const viewport = document.getElementById("gameViewport");
     document.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
 
+      if (window.VoltzSports?.isOpen?.()) return;
+
       if (enemyPanelOpen) {
         if (key === "escape") {
           closeEnemyPanel();
@@ -3633,6 +3656,16 @@ const viewport = document.getElementById("gameViewport");
       espectro: { x: 2500, y: 470, label: "Catedral da Gramática" }
     };
 
+    const sportsDevTeleportPoints = {
+      praca: { x: 2500, y: 2960, label: "Praça dos Atletas" },
+      futebol: { x: 1260, y: 2470, label: "Campo das Decisões" },
+      basquete: { x: 3740, y: 2470, label: "Quadra do Ritmo" },
+      atletismo: { x: 1260, y: 1730, label: "Pista do Impulso" },
+      volei: { x: 3740, y: 1730, label: "Quadra da Sequência" },
+      queimada: { x: 2500, y: 1050, label: "Arena da Esquiva" },
+      estadio: { x: 2500, y: 520, label: "Estádio Voltz" }
+    };
+
     function refreshAfterDevProgressChange() {
       if (currentScene?.id === "reino-matematica") {
         refreshRealmEnemyObjectsAfterProgress("reino-matematica");
@@ -3733,6 +3766,21 @@ const viewport = document.getElementById("gameViewport");
       const point = portugueseDevTeleportPoints[zoneId] || portugueseDevTeleportPoints.praca;
       if (currentScene?.id !== "reino-gramatica") {
         const scene = getSceneForRealm("reino-gramatica");
+        if (!scene) return false;
+        changeScene(scene, { spawn: { x: point.x, y: point.y } });
+      } else {
+        devTeleportPosition(point.x, point.y);
+      }
+      interactionText.textContent = `[DEV] Teleporte: ${point.label}.`;
+      return true;
+    }
+
+    function devTeleportSports(zoneId) {
+      devCloseBlockingPanels();
+      window.VoltzSports?.close?.();
+      const point = sportsDevTeleportPoints[zoneId] || sportsDevTeleportPoints.praca;
+      if (currentScene?.id !== "reino-educacao-fisica") {
+        const scene = getSceneForRealm("reino-educacao-fisica");
         if (!scene) return false;
         changeScene(scene, { spawn: { x: point.x, y: point.y } });
       } else {
@@ -3932,6 +3980,7 @@ const viewport = document.getElementById("gameViewport");
       pauseMovement: devPauseMovement,
       teleportMath: devTeleportMath,
       teleportPortuguese: devTeleportPortuguese,
+      teleportSports: devTeleportSports,
       teleportVillage: devTeleportVillage,
       defeatNearestEnemy: devDefeatNearestEnemy,
       setCommonsDefeated: devSetCommonsDefeated,

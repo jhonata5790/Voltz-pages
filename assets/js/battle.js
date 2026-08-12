@@ -23,6 +23,7 @@ const battleState = {
   eliminatedOptionLetter: "",
   criticalReadingUsed: false,
   criticalReadingMarkedLetter: "",
+  trainedReflexesUsed: false,
   guardianRecognitionActive: false,
   guardianDialogueIndex: 0,
   guardianSaveResult: null,
@@ -159,6 +160,7 @@ function clearBattleTimer() {
       battleState.eliminatedOptionLetter = "";
       battleState.criticalReadingUsed = false;
       battleState.criticalReadingMarkedLetter = "";
+      battleState.trainedReflexesUsed = false;
       battleState.guardianRecognitionActive = false;
       battleState.guardianDialogueIndex = 0;
       battleState.guardianSaveResult = null;
@@ -191,6 +193,8 @@ function clearBattleTimer() {
       const canUseStructuredReasoning = hasStructuredReasoning && !battleState.structuredReasoningUsed && !battleState.locked;
       const hasCriticalReading = Boolean(window.VoltzProfile?.hasRealmDiploma?.("reino-gramatica"));
       const canUseCriticalReading = hasCriticalReading && !battleState.criticalReadingUsed && !battleState.locked;
+      const hasTrainedReflexes = Boolean(window.VoltzProfile?.hasRealmDiploma?.("reino-educacao-fisica"));
+      const canUseTrainedReflexes = hasTrainedReflexes && !battleState.trainedReflexesUsed && !battleState.locked;
 
       enemyPanel.innerHTML = `
         <div class="battle-panel-inner enemy-theme-${type.id}">
@@ -341,6 +345,25 @@ function clearBattleTimer() {
                 </article>
               ` : ""}
 
+              ${hasTrainedReflexes ? `
+                <article class="battle-bag-item battle-bag-item-permanent">
+                  <div class="battle-bag-item-icon">🏅</div>
+                  <div class="battle-bag-item-copy">
+                    <div class="battle-bag-item-name">Reflexos Treinados</div>
+                    <p>Competência do Diploma de Educação Física. Adiciona 6 segundos ao cronômetro da pergunta atual.</p>
+                    <span class="battle-bag-item-count">Permanente · 1 uso por batalha</span>
+                  </div>
+                  <button
+                    class="battle-item-use-btn"
+                    type="button"
+                    onclick="useTrainedReflexes()"
+                    ${canUseTrainedReflexes ? "" : "disabled"}
+                  >
+                    ${battleState.trainedReflexesUsed ? "Usado nesta batalha" : "+6 segundos"}
+                  </button>
+                </article>
+              ` : ""}
+
               <div id="battleBagMessage" class="battle-bag-message ${battleState.bagMessage ? "visible" : ""}">
                 ${escapeHtml(battleState.bagMessage || (isTrainingBattle
                   ? "Arena de Treino: consumíveis ficam protegidos e não podem ser gastos nesta simulação."
@@ -460,6 +483,25 @@ function clearBattleTimer() {
       renderBattleScreen();
       setBattleTab("question");
     }
+
+    function useTrainedReflexes() {
+      if (
+        !battleState.active ||
+        battleState.locked ||
+        battleState.trainedReflexesUsed ||
+        !window.VoltzProfile?.hasRealmDiploma?.("reino-educacao-fisica")
+      ) return;
+
+      battleState.trainedReflexesUsed = true;
+      battleState.timeLeft += 6;
+      battleState.bagMessage = "Reflexos Treinados adicionou 6 segundos à pergunta atual. A competência já foi usada nesta batalha.";
+      battleState.currentTab = "question";
+      updateBattleHud();
+      renderBattleScreen();
+      setBattleTab("question");
+    }
+
+    window.useTrainedReflexes = useTrainedReflexes;
 
     function setBattleTab(tab) {
       battleState.currentTab = tab;
@@ -1019,6 +1061,7 @@ function clearBattleTimer() {
       battleState.eliminatedOptionLetter = "";
       battleState.criticalReadingUsed = false;
       battleState.criticalReadingMarkedLetter = "";
+      battleState.trainedReflexesUsed = false;
       battleState.guardianRecognitionActive = false;
       battleState.guardianDialogueIndex = 0;
       battleState.guardianSaveResult = null;

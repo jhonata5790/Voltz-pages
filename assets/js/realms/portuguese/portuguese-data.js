@@ -163,7 +163,7 @@
       battleImage: "assets/images/bosses/espectro-da-gramatica.webp",
       battleImageSize: "boss",
       description: "A forma completa da linguagem corrompida: regras, sentidos e estruturas giram dentro dele como páginas arrancadas de um livro vivo.",
-      maxHp: 520,
+      maxHp: 300,
       playerDamageOnWrong: 23,
       playerDamageOnTimeout: 10,
       enemyDamageOnCorrect: 52,

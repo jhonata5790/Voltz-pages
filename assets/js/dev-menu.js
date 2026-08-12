@@ -82,6 +82,24 @@
       </section>
 
 
+
+      <section class="dev-section">
+        <div class="dev-section-title">Teleporte Educação Física · sessão</div>
+        <div class="dev-grid dev-grid-3">
+          <button class="dev-btn session" data-action="teleport-sports" data-value="praca">Praça Atletas</button>
+          <button class="dev-btn session" data-action="teleport-sports" data-value="futebol">Futebol</button>
+          <button class="dev-btn session" data-action="teleport-sports" data-value="basquete">Basquete</button>
+          <button class="dev-btn session" data-action="teleport-sports" data-value="atletismo">Atletismo</button>
+          <button class="dev-btn session" data-action="teleport-sports" data-value="volei">Vôlei</button>
+          <button class="dev-btn session" data-action="teleport-sports" data-value="queimada">Queimada</button>
+          <button class="dev-btn session" data-action="teleport-sports" data-value="estadio">Estádio Voltz</button>
+        </div>
+        <div class="dev-grid dev-grid-3" style="margin-top:8px;">
+          <button class="dev-btn save" data-action="sports-complete-all">Concluir 5 modalidades</button>
+          <button class="dev-btn danger" data-action="sports-reset">Resetar Educação Física</button>
+        </div>
+      </section>
+
       <section class="dev-section">
         <div class="dev-section-title">Batalha · sessão</div>
         <div class="dev-grid dev-grid-3">
@@ -219,6 +237,9 @@
       switch (action) {
         case "teleport": api.teleportMath(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
         case "teleport-port": api.teleportPortuguese(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
+        case "teleport-sports": api.teleportSports(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
+        case "sports-complete-all": { const result = await window.VoltzSports?.devCompleteAll?.(); setLog(result?.persisted === false ? "⚠ Modalidades alteradas apenas localmente." : "✓ Cinco modalidades concluídas no SAVE."); break; }
+        case "sports-reset": { await window.VoltzSports?.devReset?.(); setLog("Educação Física resetada."); break; }
         case "village": api.teleportVillage(); setLog("Teleporte executado: Vila Central."); break;
         case "nearest": {
           const result = await api.defeatNearestEnemy();

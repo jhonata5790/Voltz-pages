@@ -1,0 +1,246 @@
+
+.world.scene-physical-education {
+  width: 5000px;
+  height: 3200px;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(255,209,102,.12), transparent 23%),
+    radial-gradient(circle at 20% 66%, rgba(99,245,181,.10), transparent 28%),
+    radial-gradient(circle at 80% 66%, rgba(69,163,255,.10), transparent 28%),
+    linear-gradient(180deg, #07151a 0%, #06131c 42%, #08131b 100%);
+}
+
+.world.scene-physical-education .map-layer {
+  background:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+.world.scene-physical-education .map-glow {
+  background:
+    radial-gradient(circle at 50% 88%, rgba(99,245,181,.16), transparent 26%),
+    radial-gradient(circle at 50% 17%, rgba(255,209,102,.12), transparent 24%);
+}
+
+.world.scene-physical-education .center-plaza {
+  left: 2230px;
+  top: 2850px;
+  width: 540px;
+  height: 250px;
+  border-color: rgba(99,245,181,.34);
+  color: #baffdf;
+  background: radial-gradient(circle, rgba(99,245,181,.10), rgba(6,19,28,.72));
+  box-shadow: 0 0 48px rgba(99,245,181,.08);
+}
+
+.world.scene-physical-education .ground-path {
+  background: linear-gradient(90deg, rgba(99,245,181,.10), rgba(69,163,255,.12), rgba(255,209,102,.09));
+  border-color: rgba(140,247,255,.13);
+}
+
+.world.scene-physical-education .ground-path.main-vertical { left: 2420px; top: 450px; width: 160px; height: 2500px; opacity:.78; }
+.world.scene-physical-education .ground-path.main-horizontal { left: 640px; top: 2310px; width: 3720px; height: 150px; opacity:.70; }
+.world.scene-physical-education .ground-path.branch-west-bottom { left: 900px; top: 1900px; width: 1750px; height: 110px; transform:rotate(-18deg); opacity:.66; }
+.world.scene-physical-education .ground-path.branch-east-bottom { left: 2350px; top: 1900px; width: 1750px; height: 110px; transform:rotate(18deg); opacity:.66; }
+.world.scene-physical-education .ground-path.branch-west-top { left: 1050px; top: 1250px; width: 1650px; height: 105px; transform:rotate(15deg); opacity:.58; }
+.world.scene-physical-education .ground-path.branch-east-top { left: 2300px; top: 1250px; width: 1650px; height: 105px; transform:rotate(-15deg); opacity:.58; }
+.world.scene-physical-education .ground-path.branch-north { left: 2190px; top: 600px; width: 620px; height: 110px; opacity:.68; }
+
+.world.scene-physical-education .building-roof {
+  background: linear-gradient(180deg, rgba(69,163,255,.48), rgba(10,35,55,.94));
+  border-color: rgba(140,247,255,.22);
+}
+
+.world.scene-physical-education .building-base {
+  background: linear-gradient(180deg, rgba(20,54,65,.95), rgba(5,19,28,.98));
+  border-color: rgba(99,245,181,.18);
+}
+
+.decor-sports-plaza,
+.decor-sports-field,
+.decor-sports-court,
+.decor-sports-track,
+.decor-sports-dodgeball-zone,
+.decor-sports-stadium-zone {
+  border-radius: 30px;
+  border: 3px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 0 50px rgba(0,0,0,.25), 0 0 28px rgba(0,0,0,.18);
+}
+
+.decor-sports-plaza {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(99,245,181,.13), transparent 55%),
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 52px, rgba(140,247,255,.055) 54px 56px);
+  border-color: rgba(99,245,181,.26);
+}
+
+.decor-sports-field {
+  background:
+    repeating-linear-gradient(90deg, rgba(40,165,96,.18) 0 130px, rgba(24,125,75,.12) 130px 260px),
+    rgba(20,97,58,.16);
+  border-color: rgba(99,245,181,.30);
+}
+.decor-sports-field::after {
+  content:"";
+  position:absolute;
+  inset:45px;
+  border:3px solid rgba(220,255,235,.22);
+  border-radius:8px;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.03);
+}
+
+.decor-sports-court.sport-basketball {
+  background:
+    linear-gradient(90deg, transparent 49.6%, rgba(255,255,255,.16) 49.6% 50.4%, transparent 50.4%),
+    radial-gradient(circle at 50% 50%, transparent 0 115px, rgba(255,255,255,.12) 117px 121px, transparent 123px),
+    rgba(186,94,34,.15);
+  border-color: rgba(255,179,71,.30);
+}
+.decor-sports-court.sport-volleyball {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,209,102,.055) 0 160px, rgba(146,87,255,.055) 160px 320px),
+    rgba(79,59,145,.12);
+  border-color: rgba(255,209,102,.28);
+}
+
+.decor-sports-track {
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.13) 0 3px, transparent 3px 70px),
+    linear-gradient(90deg, rgba(41,113,200,.16), rgba(140,247,255,.08));
+  border-color: rgba(140,247,255,.28);
+}
+
+.decor-sports-dodgeball-zone {
+  background:
+    linear-gradient(90deg, rgba(255,107,122,.10), rgba(255,107,122,.025) 49%, rgba(69,163,255,.025) 51%, rgba(69,163,255,.10));
+  border-color: rgba(255,107,122,.30);
+}
+
+.decor-sports-stadium-zone {
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(255,209,102,.12), transparent 50%),
+    rgba(146,87,255,.055);
+  border-color: rgba(255,209,102,.34);
+  box-shadow: inset 0 0 90px rgba(255,209,102,.05), 0 0 55px rgba(255,209,102,.06);
+}
+
+.world.scene-physical-education .decor-sports-zone-title .decor-label {
+  background: rgba(4,13,20,.82);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #f6fbff;
+  font-weight: 1000;
+  letter-spacing: 1.5px;
+  box-shadow: 0 7px 22px rgba(0,0,0,.22);
+}
+.world.scene-physical-education .decor-sports-zone-title.sport-football .decor-label { color:#baffdf; border-color:rgba(99,245,181,.30); }
+.world.scene-physical-education .decor-sports-zone-title.sport-basketball .decor-label { color:#ffd19a; border-color:rgba(255,179,71,.30); }
+.world.scene-physical-education .decor-sports-zone-title.sport-athletics .decor-label { color:#bcecff; border-color:rgba(140,247,255,.28); }
+.world.scene-physical-education .decor-sports-zone-title.sport-volleyball .decor-label { color:#ffe5a1; border-color:rgba(255,209,102,.30); }
+.world.scene-physical-education .decor-sports-zone-title.sport-dodgeball .decor-label { color:#ffb4bc; border-color:rgba(255,107,122,.30); }
+.world.scene-physical-education .decor-sports-zone-title.sport-championship .decor-label { color:#ffe29a; border-color:rgba(255,209,102,.36); }
+
+.decor-sports-goal {
+  border: 7px solid rgba(245,251,255,.78);
+  border-bottom-width: 12px;
+  background:
+    repeating-linear-gradient(45deg, transparent 0 24px, rgba(255,255,255,.10) 25px 27px),
+    repeating-linear-gradient(-45deg, transparent 0 24px, rgba(255,255,255,.10) 25px 27px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+}
+
+.decor-sports-hoop {
+  border-radius: 20px;
+  border: 3px solid rgba(255,179,71,.22);
+  background: linear-gradient(180deg, rgba(255,179,71,.08), transparent);
+}
+.decor-sports-hoop::before {
+  content:"";
+  position:absolute;
+  left:50%; top:20px;
+  width:180px; height:100px;
+  transform:translateX(-50%);
+  border:8px solid rgba(245,251,255,.74);
+  border-radius:8px;
+}
+.decor-sports-hoop::after {
+  content:"";
+  position:absolute;
+  left:50%; top:110px;
+  width:120px; height:35px;
+  transform:translateX(-50%);
+  border:8px solid #ff9c45;
+  border-radius:50%;
+}
+
+.decor-sports-net {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 29px, rgba(245,251,255,.15) 30px 33px),
+    repeating-linear-gradient(90deg, transparent 0 29px, rgba(245,251,255,.15) 30px 33px);
+  border-left:8px solid rgba(245,251,255,.64);
+  border-right:8px solid rgba(245,251,255,.64);
+}
+
+.decor-sports-center-line {
+  background: rgba(245,251,255,.28);
+  border-radius:999px;
+}
+
+.decor-sports-start-line,
+.decor-sports-finish-line {
+  border-radius:8px;
+  background: repeating-linear-gradient(0deg, rgba(245,251,255,.78) 0 18px, rgba(2,4,13,.72) 18px 36px);
+  opacity:.72;
+}
+.decor-sports-start-line .decor-label,
+.decor-sports-finish-line .decor-label {
+  writing-mode: vertical-rl;
+  font-size:.7rem;
+  font-weight:1000;
+  color:#fff;
+}
+
+.decor-sports-podium {
+  border-radius:18px 18px 6px 6px;
+  background:
+    linear-gradient(90deg, #8995a7 0 30%, #d5a739 30% 70%, #9e6335 70%);
+  border:3px solid rgba(255,255,255,.20);
+  box-shadow:0 18px 34px rgba(0,0,0,.30), 0 0 38px rgba(255,209,102,.10);
+}
+
+.decor-sports-banner .decor-label {
+  color:#dffcff;
+  font-weight:1000;
+  letter-spacing:3px;
+  text-shadow:0 0 20px rgba(99,245,181,.22);
+}
+
+.decor-sports-mark .decor-label {
+  color:#fff;
+  font-size:2rem;
+  text-shadow:0 0 12px rgba(255,255,255,.45);
+}
+
+.sports-progress-hud {
+  position:absolute;
+  left:20px;
+  top:20px;
+  z-index:125;
+  display:none;
+  width:min(440px, calc(100% - 40px));
+  padding:14px;
+  border-radius:16px;
+  background:rgba(4,12,18,.88);
+  border:1px solid rgba(99,245,181,.28);
+  box-shadow:0 14px 36px rgba(0,0,0,.32), inset 0 0 28px rgba(99,245,181,.035);
+  backdrop-filter:blur(12px);
+}
+.sports-progress-hud.visible { display:block; }
+body.sports-minigame-active .sports-progress-hud { display:none !important; }
+.sports-hud-head { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+.sports-hud-head strong { color:#baffdf; font-size:.82rem; letter-spacing:.7px; }
+.sports-hud-head span { color:#ffd166; font-weight:1000; font-size:.78rem; }
+.sports-hud-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.sports-hud-chip { padding:6px 8px; border-radius:999px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); color:rgba(245,251,255,.65); font-size:.64rem; font-weight:800; }
+.sports-hud-chip.done { color:#baffdf; border-color:rgba(99,245,181,.28); background:rgba(99,245,181,.06); }
+.sports-hud-final { margin-top:9px; font-size:.68rem; color:rgba(245,251,255,.58); }
+.sports-hud-final.ready { color:#ffe29a; font-weight:900; }
