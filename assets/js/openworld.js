@@ -2013,6 +2013,7 @@ const viewport = document.getElementById("gameViewport");
       updateDebug();
       interactionText.textContent = scene.defaultHint;
       window.VoltzSports?.onSceneChanged?.(scene.id);
+      window.VoltzAudio?.playSceneMusic?.(scene.id);
     }
 
     function resolveSceneById(sceneId) {

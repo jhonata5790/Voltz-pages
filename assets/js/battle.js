@@ -176,6 +176,8 @@ function clearBattleTimer() {
 
       renderBattleScreen();
       enemyPanel.classList.add("visible", "battle-mode");
+      window.VoltzAudio?.playMusic?.("battle", { intensity: type.battleImageSize === "boss" ? .92 : .72 });
+      window.VoltzAudio?.playSfx?.("menuConfirm");
       startBattleTimer();
       interactionText.textContent = `Combate iniciado contra ${type.name}. Responda antes do tempo acabar!`;
     }
@@ -733,6 +735,7 @@ function clearBattleTimer() {
       let guardianRecognitionTriggered = false;
 
       if (isCorrect) {
+        window.VoltzAudio?.playSfx?.("impact");
         const damage = type.enemyDamageOnCorrect || 25;
         const rawNextHp = Math.max(0, battleState.enemyHp - damage);
         guardianRecognitionTriggered = shouldTriggerGuardianRecognition(type, rawNextHp);
@@ -743,6 +746,7 @@ function clearBattleTimer() {
           : `Acertou! ${currentEnemyQuestion.explanation} O ${type.name} sofreu ${damage} de dano.`);
         triggerBattleEffect("enemy-hit", guardianRecognitionTriggered ? "50%" : `-${damage}`);
       } else {
+        window.VoltzAudio?.playSfx?.("damage");
         const damage = type.playerDamageOnWrong || 15;
         battleState.playerHp = Math.max(0, battleState.playerHp - damage);
         const correctText = currentEnemyQuestion.options[currentEnemyQuestion.answer];
@@ -909,6 +913,9 @@ function clearBattleTimer() {
       const xpReward = type.xpReward || 40;
       const coinReward = type.coinReward || 12;
       const victoryDiploma = type.victoryDiploma && typeof type.victoryDiploma === "object" ? type.victoryDiploma : null;
+      window.VoltzAudio?.duckMusic?.(.12, 220);
+      window.VoltzAudio?.playSfx?.(victoryDiploma ? "diploma" : "victory");
+      window.VoltzAudio?.stopMusic?.(650);
 
       if (defeatedEnemySnapshot.trainingBattle) {
         battleState.locked = true;
@@ -1005,6 +1012,8 @@ function clearBattleTimer() {
 
     function showBattleDefeat() {
       clearBattleTimer();
+      window.VoltzAudio?.playSfx?.("failure");
+      window.VoltzAudio?.stopMusic?.(500);
       battleState.locked = true;
       battleState.active = false;
       battleState.resultMode = true;
@@ -1069,6 +1078,7 @@ function clearBattleTimer() {
       enemyPanel.classList.remove("visible", "battle-mode", "player-damaged");
       enemyPanel.innerHTML = "";
       document.body.classList.remove("battle-active");
+      window.VoltzAudio?.restoreSceneMusic?.();
 
       // O estado salvo pode ter feito um NPC/objeto surgir no ponto onde a batalha
       // começou. Garante que o jogador nunca volte ao mapa preso dentro do novo colisor.

@@ -13,6 +13,7 @@
   let musicGain = null;
   let sfxGain = null;
   let currentMusic = null;
+  let pendingMusicRequest = null;
   let uiReady = false;
 
   const settings = loadSettings();
@@ -50,11 +51,23 @@
     return ctx;
   }
 
-  function unlock() {
+  async function resumeContext() {
     const context = ensureContext();
-    if (!context) return Promise.resolve(false);
-    if (context.state === "suspended") return context.resume().then(() => true).catch(() => false);
-    return Promise.resolve(true);
+    if (!context) return false;
+    if (context.state === "suspended") {
+      try { await context.resume(); } catch { return false; }
+    }
+    return context.state === "running";
+  }
+
+  async function unlock() {
+    const ok = await resumeContext();
+    if (ok && pendingMusicRequest && !currentMusic) {
+      const request = pendingMusicRequest;
+      pendingMusicRequest = null;
+      global.setTimeout(() => playMusic(request.name, request.options), 0);
+    }
+    return ok;
   }
 
   function applyVolumes(immediate = false) {
@@ -251,8 +264,12 @@
   }
 
   async function playMusic(name, options = {}) {
-    await unlock();
     const intensity = clamp(options.intensity ?? .55);
+    pendingMusicRequest = { name, options: { ...options, intensity } };
+    const ok = await resumeContext();
+    if (!ok) return;
+    pendingMusicRequest = null;
+
     if (currentMusic?.name === name) { setMusicIntensity(intensity); return; }
     stopCurrentMusicSource();
 
@@ -266,6 +283,25 @@
       }
     }
     if (name === "dodgeball") startProceduralDodgeball(intensity);
+  }
+
+  function resolveSceneMusic(sceneId) {
+    const id = String(sceneId || "");
+    if (!id || id === "vila-central" || id.startsWith("interior-")) return "village";
+    if (id === "reino-matematica") return "math";
+    if (id === "reino-gramatica") return "portuguese";
+    if (id === "reino-educacao-fisica") return "physical";
+    return "village";
+  }
+
+  function playSceneMusic(sceneId, options = {}) {
+    const name = resolveSceneMusic(sceneId);
+    return playMusic(name, { intensity: options.intensity ?? .50 });
+  }
+
+  function restoreSceneMusic(options = {}) {
+    const sceneId = typeof global.getActiveSceneId === "function" ? global.getActiveSceneId() : "vila-central";
+    return playSceneMusic(sceneId, options);
   }
 
   function stopMusic(fadeMs = 300) {
@@ -355,13 +391,58 @@
     if (mute) mute.textContent = settings.muted ? "🔇 Ativar áudio" : "🔊 Silenciar tudo";
   }
 
+  const BUILTIN_MUSIC = Object.freeze({
+    village: "assets/audio/music/voltz-vila.ogg",
+    math: "assets/audio/music/voltz-matematica.ogg",
+    portuguese: "assets/audio/music/voltz-portugues.ogg",
+    physical: "assets/audio/music/voltz-educacao-fisica.ogg",
+    battle: "assets/audio/music/voltz-batalha.ogg",
+    dodgeball: "assets/audio/music/voltz-capitao-rubro.ogg"
+  });
+
+  const BUILTIN_SFX = Object.freeze({
+    menuMove: "assets/audio/sfx/menu-move.ogg",
+    menuConfirm: "assets/audio/sfx/menu-confirm.ogg",
+    menuBack: "assets/audio/sfx/menu-back.ogg",
+    interact: "assets/audio/sfx/interact.ogg",
+    item: "assets/audio/sfx/item.ogg",
+    coin: "assets/audio/sfx/coin.ogg",
+    xp: "assets/audio/sfx/xp.ogg",
+    unlock: "assets/audio/sfx/unlock.ogg",
+    error: "assets/audio/sfx/error.ogg",
+    damage: "assets/audio/sfx/damage.ogg",
+    heal: "assets/audio/sfx/heal.ogg",
+    diploma: "assets/audio/sfx/diploma.ogg",
+    victory: "assets/audio/sfx/victory.ogg",
+    failure: "assets/audio/sfx/failure.ogg",
+    portal: "assets/audio/sfx/portal.ogg",
+    throwStraight: "assets/audio/sfx/throw-straight.ogg",
+    throwCurve: "assets/audio/sfx/throw-curve.ogg",
+    throwPower: "assets/audio/sfx/throw-power.ogg",
+    enemyThrow: "assets/audio/sfx/enemy-throw.ogg",
+    enemyPower: "assets/audio/sfx/enemy-power.ogg",
+    feint: "assets/audio/sfx/feint.ogg",
+    ricochet: "assets/audio/sfx/ricochet.ogg",
+    impact: "assets/audio/sfx/impact.ogg",
+    impactPower: "assets/audio/sfx/impact-power.ogg",
+    playerHit: "assets/audio/sfx/player-hit.ogg",
+    shield: "assets/audio/sfx/shield.ogg",
+    catch: "assets/audio/sfx/catch.ogg",
+    perfectCatch: "assets/audio/sfx/perfect-catch.ogg",
+    counterReady: "assets/audio/sfx/counter-ready.ogg",
+    whistle: "assets/audio/sfx/whistle.ogg"
+  });
+
+  Object.entries(BUILTIN_MUSIC).forEach(([name, url]) => registerMusic(name, url));
+  Object.entries(BUILTIN_SFX).forEach(([name, url]) => registerSfx(name, url));
+
   document.addEventListener("pointerdown", unlock, { once:true, passive:true });
   document.addEventListener("keydown", unlock, { once:true });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", createUi, { once:true });
   else createUi();
 
   global.VoltzAudio = Object.freeze({
-    unlock, playSfx, playMusic, stopMusic, setMusicIntensity, duckMusic,
+    unlock, playSfx, playMusic, playSceneMusic, restoreSceneMusic, stopMusic, setMusicIntensity, duckMusic,
     setMasterVolume, setMusicVolume, setSfxVolume, setMuted, toggleMute, getSettings,
     registerSfx, registerMusic, preloadSfx
   });

@@ -1,19 +1,16 @@
 # Áudio Voltz
 
-A primeira versão usa **Web Audio API** para SFX e uma música procedural original da Queimada, portanto funciona sem arquivos externos.
+Todos os arquivos desta pasta são assets originais sintetizados para o projeto Voltz Education.
 
-Pastas reservadas:
-- `music/` para faixas definitivas `.ogg/.mp3`;
-- `sfx/` para efeitos definitivos.
+## music/
+- voltz-vila.ogg
+- voltz-matematica.ogg
+- voltz-portugues.ogg
+- voltz-educacao-fisica.ogg
+- voltz-batalha.ogg
+- voltz-capitao-rubro.ogg
 
-Para substituir um efeito sintetizado por arquivo:
-```js
-VoltzAudio.registerSfx("impact", "assets/audio/sfx/impacto.ogg");
-```
+## sfx/
+Contém sons globais de interface/progresso e efeitos específicos da Queimada.
 
-Para substituir a música procedural:
-```js
-VoltzAudio.registerMusic("dodgeball", "assets/audio/music/queimada.ogg");
-```
-
-Volumes e mute são salvos em `localStorage`.
+O sistema usa `assets/js/core/audio-manager.js`. Se um arquivo registrado não puder ser carregado, o jogo mantém o sintetizador Web Audio como fallback.

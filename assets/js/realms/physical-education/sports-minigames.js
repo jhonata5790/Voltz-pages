@@ -269,6 +269,7 @@
     if (interactionText) interactionText.textContent = state.sceneId === REALM_ID
       ? "Explore o Complexo Esportivo Voltz e escolha uma modalidade."
       : "Explore o mundo.";
+    global.setTimeout(() => global.VoltzAudio?.restoreSceneMusic?.(), 320);
   }
 
   function isOpen() {
