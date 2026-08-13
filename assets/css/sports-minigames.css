@@ -1799,3 +1799,414 @@
   .soul-frame-1 { opacity:1 !important; }
   .soul-frame-2,.soul-frame-3 { opacity:0 !important; }
 }
+
+
+/* =========================================================
+   QUEIMADA HUD V3
+   Arena em tela cheia + barra horizontal + diálogo -> esquiva
+   ========================================================= */
+.sports-minigame-panel.dodgeball-hud-v3 {
+  overflow:hidden !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 #sportsMinigameContent {
+  overflow:hidden !important;
+}
+.dodgeball-shell-v3 {
+  padding:7px !important;
+  gap:6px !important;
+}
+
+/* topo menor para devolver espaço ao cenário */
+.dodgeball-top-hud-v3 {
+  min-height:58px !important;
+  grid-template-columns:minmax(230px,.75fr) 92px minmax(330px,1.25fr) 45px !important;
+}
+
+/* A área principal inteira agora É a arena. */
+.dodgeball-main-v3 {
+  position:relative !important;
+  display:block !important;
+  width:100% !important;
+  max-width:none !important;
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  margin:0 !important;
+  overflow:hidden;
+}
+.dodgeball-scene-v3 {
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  border-radius:14px !important;
+}
+
+/* Título fica discreto no próprio cenário. */
+.dodgeball-scene-title-v3 {
+  left:24px !important;
+  top:18px !important;
+  z-index:7 !important;
+}
+
+/* Rubro agora usa o espaço grande da arena. */
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-stage {
+  inset:14px 8% 14px !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-image {
+  bottom:156px !important;
+  height:min(390px,62vh) !important;
+  max-width:48% !important;
+  transition:transform .18s ease,filter .18s ease,opacity .18s ease;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-aura {
+  bottom:145px !important;
+  width:520px !important;
+  height:310px !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-card {
+  left:27% !important;
+  right:27% !important;
+  bottom:148px !important;
+  min-height:48px !important;
+  z-index:8;
+}
+
+/* HUD inferior passa a flutuar sobre a arena. */
+.dodgeball-actions-v3 {
+  position:absolute !important;
+  z-index:24;
+  left:50%;
+  bottom:10px;
+  transform:translateX(-50%);
+  width:min(1500px,calc(100% - 30px)) !important;
+  height:auto !important;
+  margin:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:6px !important;
+  pointer-events:none;
+}
+.dodgeball-actions-v3 > * {
+  pointer-events:auto;
+}
+
+/* diálogo normal compacto */
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-dialogue {
+  width:min(980px,76vw) !important;
+  min-height:48px !important;
+  max-height:58px !important;
+  padding:7px 12px !important;
+  border-radius:9px !important;
+  background:linear-gradient(90deg,rgba(3,11,23,.94),rgba(5,20,35,.90)) !important;
+  backdrop-filter:blur(8px);
+  box-shadow:
+    0 9px 26px rgba(0,0,0,.34),
+    inset 0 0 22px rgba(49,226,255,.035);
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-dialogue p {
+  font-size:.64rem !important;
+}
+
+/* Comandos agora são UMA fileira horizontal. */
+.dodgeball-body-v3 {
+  width:100% !important;
+  min-height:0 !important;
+  overflow:visible !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-area {
+  width:100%;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-title {
+  display:none;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-grid {
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr)) !important;
+  grid-template-rows:72px !important;
+  gap:6px !important;
+  width:100%;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-grid.is-four {
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-grid.is-four::before,
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-grid.is-four::after {
+  display:none !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-btn {
+  min-height:72px !important;
+  height:72px !important;
+  padding:8px 10px 8px 50px !important;
+  border-radius:9px !important;
+  backdrop-filter:blur(8px);
+  background:
+    linear-gradient(105deg,rgba(4,20,38,.94),rgba(7,18,34,.88)) !important;
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.28),
+    inset 0 0 18px rgba(45,200,255,.025) !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-icon {
+  left:9px !important;
+  width:31px !important;
+  height:31px !important;
+  border-radius:8px !important;
+  font-size:.90rem !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-index {
+  font-size:.82rem !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-btn strong {
+  font-size:.68rem !important;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-btn small {
+  margin-top:3px !important;
+  font-size:.47rem !important;
+  white-space:normal;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-footer {
+  margin-top:3px !important;
+  font-size:.43rem !important;
+  text-shadow:0 1px 5px rgba(0,0,0,.9);
+}
+
+/* Submenus continuam horizontais, mas compactos. */
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-body-v3 > div[style*="text-align:center"] {
+  display:none;
+}
+
+/* Mira do jogador vira painel inferior curto. */
+.sports-minigame-panel.dodgeball-hud-v3 .sports-game-card.dodgeball-aim-stage {
+  width:min(900px,80vw) !important;
+  min-height:118px !important;
+  max-height:150px !important;
+  margin:0 auto !important;
+  padding:8px 11px !important;
+  background:rgba(3,12,24,.94) !important;
+  backdrop-filter:blur(8px);
+  box-shadow:0 10px 28px rgba(0,0,0,.35);
+}
+
+/* ---------------------------------------------------------
+   Transformação: a própria caixa de diálogo vira arena.
+   --------------------------------------------------------- */
+.dodgeball-actions-v3.is-defense {
+  inset:0 !important;
+  left:0 !important;
+  bottom:0 !important;
+  width:100% !important;
+  height:100% !important;
+  transform:none !important;
+  display:block !important;
+  pointer-events:none;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense {
+  position:absolute;
+  z-index:32;
+  left:50%;
+  bottom:34px;
+  width:min(760px,58vw) !important;
+  height:min(470px,57vh) !important;
+  min-height:330px !important;
+  max-height:none !important;
+  transform:translateX(-50%);
+  display:flex !important;
+  flex-direction:column;
+  gap:6px;
+  padding:9px !important;
+  overflow:hidden;
+  border:2px solid rgba(64,233,255,.78) !important;
+  border-radius:12px !important;
+  background:rgba(2,8,18,.965) !important;
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.68),
+    0 0 32px rgba(49,226,255,.10),
+    inset 0 0 30px rgba(49,226,255,.035) !important;
+  pointer-events:auto;
+  transform-origin:center bottom;
+}
+
+/* nasce com dimensões visuais de diálogo e se transforma */
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense.is-morph-enter {
+  clip-path:inset(calc(100% - 54px) 8% 0 8% round 10px);
+  opacity:.90;
+}
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense.is-morph-enter.is-morph-expanded {
+  animation:dodgeDialogueMorphV3 .38s cubic-bezier(.18,.84,.18,1) both;
+}
+@keyframes dodgeDialogueMorphV3 {
+  0% {
+    clip-path:inset(calc(100% - 54px) 8% 0 8% round 10px);
+    filter:brightness(1.18);
+  }
+  38% {
+    filter:brightness(1.38);
+  }
+  100% {
+    clip-path:inset(0 0 0 0 round 12px);
+    filter:brightness(1);
+  }
+}
+
+.dodgeball-dialogue-defense-head {
+  flex:0 0 auto;
+  min-height:39px;
+  display:grid;
+  grid-template-columns:30px 1fr;
+  align-items:center;
+  gap:8px;
+  padding:3px 5px 6px;
+  border-bottom:1px solid rgba(64,233,255,.18);
+}
+.dodgeball-dialogue-defense-head .dodgeball-dialogue-icon {
+  width:27px !important;
+  height:27px !important;
+  font-size:.68rem;
+}
+.dodgeball-dialogue-defense-head p {
+  margin:0;
+  color:#eafaff;
+  font-size:.56rem;
+  line-height:1.25;
+}
+.dodgeball-defense-transform-slot {
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+}
+.dodgeball-defense-stage-v3 {
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.dodgeball-defense-meta-v3 {
+  flex:0 0 auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  min-height:22px;
+  padding:0 3px;
+  color:rgba(222,247,255,.78);
+  font-size:.48rem;
+}
+.dodgeball-defense-meta-v3 strong {
+  color:#ff7b88;
+  letter-spacing:.5px;
+}
+.dodgeball-defense-meta-v3 #dodgeTimer {
+  color:#66f8e2;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+/* a caixa de esquiva ocupa quase tudo dentro do diálogo expandido */
+.sports-minigame-panel.dodgeball-hud-v3 .dodgeball-arena-v3 {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  width:100% !important;
+  height:auto !important;
+  margin:0 !important;
+  border:1px solid rgba(69,163,255,.50) !important;
+  border-radius:9px !important;
+  background:
+    linear-gradient(rgba(1,7,17,.26),rgba(1,7,17,.26)),
+    url("assets/images/realms/physical-education/dodgeball/arena-floor.webp") center/cover no-repeat !important;
+  box-shadow:
+    inset 0 0 38px rgba(0,0,0,.42),
+    0 0 18px rgba(69,163,255,.06) !important;
+}
+.dodgeball-defense-help-v3 {
+  flex:0 0 auto;
+  min-height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:5px;
+  color:rgba(220,241,255,.62);
+  font-size:.43rem;
+}
+.dodgeball-defense-help-v3 span {
+  padding:3px 6px;
+  border:1px solid rgba(69,163,255,.14);
+  border-radius:999px;
+  background:rgba(255,255,255,.018);
+}
+
+/* No turno inimigo a caixa grande pode encobrir parte do Rubro de propósito. */
+.dodgeball-main-v3.phase-defense .dodgeball-rival-image {
+  bottom:118px !important;
+  height:min(410px,66vh) !important;
+}
+.dodgeball-main-v3.phase-defense .dodgeball-rival-card {
+  bottom:28px !important;
+  opacity:.72;
+}
+
+/* O cenário continua visível atrás da arena de esquiva. */
+.dodgeball-main-v3.phase-defense .dodgeball-scene-v3::after {
+  background:
+    linear-gradient(180deg,rgba(1,5,13,.02),rgba(1,5,13,.08)),
+    radial-gradient(ellipse at center 78%,transparent 0 28%,rgba(1,5,13,.18) 82%) !important;
+}
+
+/* Ajustes de proporção */
+@media(max-height:800px){
+  .dodgeball-top-hud-v3 { min-height:52px !important; }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-image {
+    bottom:136px !important;
+    height:min(300px,57vh) !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-card {
+    bottom:132px !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-dialogue {
+    min-height:42px !important;
+    max-height:48px !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-grid {
+    grid-template-rows:62px !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-btn {
+    min-height:62px !important;
+    height:62px !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense {
+    height:min(410px,58vh) !important;
+    bottom:18px;
+  }
+}
+@media(max-width:1000px){
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-card {
+    left:20% !important;
+    right:20% !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense {
+    width:min(720px,72vw) !important;
+  }
+}
+@media(max-width:760px){
+  .dodgeball-top-hud-v3 {
+    grid-template-columns:minmax(150px,.8fr) 60px minmax(180px,1.1fr) 38px !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-grid.is-four {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    grid-template-rows:58px 58px !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-command-btn {
+    height:58px !important;
+    min-height:58px !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense {
+    width:90vw !important;
+    height:min(440px,58vh) !important;
+  }
+  .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-card {
+    left:10% !important;
+    right:10% !important;
+  }
+}

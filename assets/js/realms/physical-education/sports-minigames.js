@@ -286,7 +286,7 @@
     state.activeId = "";
     state.mode = "normal";
     state.championship = null;
-    panel?.classList.remove("visible", "dodgeball-fit", "dodgeball-hud-v2");
+    panel?.classList.remove("visible", "dodgeball-fit", "dodgeball-hud-v2", "dodgeball-hud-v3");
     panel?.setAttribute("aria-hidden", "true");
     document.body.classList.remove("sports-minigame-active");
     updateHud();
@@ -1074,17 +1074,19 @@
     state.rafId = requestAnimationFrame(tick);
   }
 
+
   function renderDodgeballLayout(title, subtitle, dialogue, body, phase = "command") {
     const g = state.current;
     if (!panel || !content || !g) return;
 
-    panel.classList.add("dodgeball-fit", "dodgeball-hud-v2");
+    panel.classList.add("dodgeball-fit", "dodgeball-hud-v2", "dodgeball-hud-v3");
     const playerPct = hpPercent(g.playerHp, g.playerMaxHp);
     const turnLabel = String(Math.max(1, Number(g.turn || 1))).padStart(2, "0");
+    const defenseMode = phase === "defense";
 
     content.innerHTML = `
-      <div class="dodgeball-shell-v2">
-        <header class="dodgeball-top-hud-v2">
+      <div class="dodgeball-shell-v2 dodgeball-shell-v3 phase-${escapeHtml(phase)}">
+        <header class="dodgeball-top-hud-v2 dodgeball-top-hud-v3">
           <div class="dodgeball-brand-v2">
             <div class="dodgeball-brand-mark">⚡</div>
             <div><strong>VOLTZ EDUCATION</strong><span>REINO DE EDUCAÇÃO FÍSICA</span></div>
@@ -1112,10 +1114,10 @@
 
         ${state.championship?.active ? renderChampionshipHeader() : ""}
 
-        <main class="dodgeball-main-v2">
-          <section class="dodgeball-scene-v2">
+        <main class="dodgeball-main-v2 dodgeball-main-v3 phase-${escapeHtml(phase)}">
+          <section class="dodgeball-scene-v2 dodgeball-scene-v3">
             ${renderDodgeballArenaLayers()}
-            <div class="dodgeball-scene-title-v2">
+            <div class="dodgeball-scene-title-v2 dodgeball-scene-title-v3">
               <span>ARENA DA ESQUIVA</span>
               <strong>${escapeHtml(title)}</strong>
               <small>${escapeHtml(subtitle)}</small>
@@ -1123,12 +1125,22 @@
             ${renderDodgeballRival(g, phase)}
           </section>
 
-          <section class="dodgeball-actions-v2">
-            <div class="dodgeball-dialogue-box">
-              <span class="dodgeball-dialogue-icon" aria-hidden="true">≡</span>
-              <p>${escapeHtml(dialogue)}</p>
-            </div>
-            <div class="dodgeball-body-v2">${body}</div>
+          <section class="dodgeball-actions-v2 dodgeball-actions-v3 ${defenseMode ? "is-defense" : "is-command"}">
+            ${defenseMode ? `
+              <div class="dodgeball-dialogue-box dodgeball-dialogue-arena is-defense">
+                <div class="dodgeball-dialogue-defense-head">
+                  <span class="dodgeball-dialogue-icon" aria-hidden="true">⚡</span>
+                  <p>${escapeHtml(dialogue)}</p>
+                </div>
+                <div class="dodgeball-defense-transform-slot">${body}</div>
+              </div>
+            ` : `
+              <div class="dodgeball-dialogue-box dodgeball-dialogue-arena is-dialogue">
+                <span class="dodgeball-dialogue-icon" aria-hidden="true">≡</span>
+                <p>${escapeHtml(dialogue)}</p>
+              </div>
+              <div class="dodgeball-body-v2 dodgeball-body-v3">${body}</div>
+            `}
           </section>
         </main>
       </div>
@@ -1892,22 +1904,27 @@
     finishSport("dodgeball", true, "DEVOLUÇÃO PERFEITA. Você leu o Capitão Rubro até o último movimento.");
   }
 
+
   function renderDodgeDefense() {
     const g = state.current;
     const attack = g.activePattern;
     const catchHelp = attack?.id === "rally"
       ? "RALLY: aguente até o fim. Só a última bola ficará verde e poderá ser agarrada."
       : attack?.catchable
-        ? "Algumas bolas brilham quando podem ser agarradas: pressione Espaço no timing certo para contra-atacar."
-        : "Este ataque não pode ser agarrado: a resposta é esquivar.";
+        ? "Bola verde = agarrável. Pressione Espaço quando ela entrar no alcance."
+        : "Este padrão não pode ser agarrado. Priorize a esquiva.";
+
     renderDodgeballLayout(
       "🔴 Queimada · Turno Inimigo",
-      "Leia o corpo de Capitão Rubro. Agora cada lançamento é coreografado.",
+      "Leia o movimento do Capitão Rubro e sobreviva ao padrão.",
       `${g.dialogue} ${getRubroAttackComment(g, attack)}`,
-      `<div class="sports-game-card dodgeball-defense-stage">
-        <div class="dodgeball-turn-label">CAPITÃO RUBRO · ${escapeHtml(attack?.label || "ATAQUE")}</div>
-        <div class="dodgeball-defense-hp">VOCÊ · <strong>${Math.max(0, Math.round(g.playerHp))} HP</strong></div>
-        <div id="dodgeArena" class="dodgeball-arena dodgeball-dynamic-arena">
+      `<div class="dodgeball-defense-stage-v3">
+        <div class="dodgeball-defense-meta-v3">
+          <strong>CAPITÃO RUBRO · ${escapeHtml(attack?.label || "ATAQUE")}</strong>
+          <span id="dodgeTimer">Leia o movimento...</span>
+        </div>
+
+        <div id="dodgeArena" class="dodgeball-arena dodgeball-dynamic-arena dodgeball-arena-v3">
           <div id="dodgeTelegraph" class="dodge-attack-telegraph"><span id="dodgeTelegraphLabel"></span></div>
           <div id="dodgePlayer" class="dodge-player" aria-label="Alma Voltz">
             <img class="dodge-soul-frame soul-frame-1" src="${DODGEBALL_VISUALS.soulFrames[0]}" alt="" draggable="false">
@@ -1915,11 +1932,28 @@
             <img class="dodge-soul-frame soul-frame-3" src="${DODGEBALL_VISUALS.soulFrames[2]}" alt="" draggable="false">
           </div>
         </div>
-        <div id="dodgeTimer" class="sports-feedback">Leia o movimento...</div>
-        <div class="sports-help">WASD / Setas · ${catchHelp} ${g.defenseShield > 0 ? "Você tem um escudo pronto. " : ""}${g.moveBoost > 1 ? "Sua postura defensiva aumenta a velocidade. " : ""}${g.enemySlowMultiplier < 1 ? "O apito desacelerou as bolas. " : ""}</div>
+
+        <div class="dodgeball-defense-help-v3">
+          <span>WASD / Setas</span>
+          <span>${catchHelp}</span>
+          ${g.defenseShield > 0 ? "<span>Escudo pronto</span>" : ""}
+          ${g.moveBoost > 1 ? "<span>Velocidade aumentada</span>" : ""}
+          ${g.enemySlowMultiplier < 1 ? "<span>Projéteis desacelerados</span>" : ""}
+        </div>
       </div>`,
       "defense"
     );
+
+    // A nova caixa nasce no tamanho do diálogo e expande imediatamente para
+    // a arena de esquiva, simulando a transformação da mesma interface.
+    const morphBox = panel?.querySelector?.(".dodgeball-dialogue-arena.is-defense");
+    if (morphBox) {
+      morphBox.classList.add("is-morph-enter");
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => morphBox.classList.add("is-morph-expanded"));
+      });
+    }
+
     updateDodgePlayerDom();
   }
 
@@ -2652,17 +2686,25 @@
     const arena = document.getElementById("dodgeArena");
     if (!arena || g.enemyAttackDone) return;
     const rect = arena.getBoundingClientRect();
-    const speedPct = 58 * dt * (g.moveBoost || 1);
+
+    // Antes X e Y recebiam a mesma variação em %, então numa arena larga
+    // 58% da largura correspondia a muito mais pixels do que 58% da altura.
+    // Agora preservamos a velocidade horizontal original em px/s e convertemos
+    // cada eixo separadamente para porcentagem.
+    const boost = g.moveBoost || 1;
+    const speedPxPerSecond = rect.width * 0.58 * boost;
+    const xStepPct = rect.width > 0 ? (speedPxPerSecond / rect.width) * 100 * dt : 0;
+    const yStepPct = rect.height > 0 ? (speedPxPerSecond / rect.height) * 100 * dt : 0;
 
     let dx = 0, dy = 0;
     if (state.pressed.has("a") || state.pressed.has("arrowleft")) dx -= 1;
     if (state.pressed.has("d") || state.pressed.has("arrowright")) dx += 1;
     if (state.pressed.has("w") || state.pressed.has("arrowup")) dy -= 1;
     if (state.pressed.has("s") || state.pressed.has("arrowdown")) dy += 1;
-    if (dx && dy) { dx *= .707; dy *= .707; }
+    if (dx && dy) { dx *= .70710678; dy *= .70710678; }
 
-    g.player.x = clamp(g.player.x + dx * speedPct, 4, 96);
-    g.player.y = clamp(g.player.y + dy * speedPct, 8, 92);
+    g.player.x = clamp(g.player.x + dx * xStepPct, 4, 96);
+    g.player.y = clamp(g.player.y + dy * yStepPct, 8, 92);
     updateDodgePlayerDom();
 
     processRubroAttackTimeline(now, rect);
