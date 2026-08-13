@@ -1001,7 +1001,7 @@
     playDodgeballMusic(state.mode === "championship" ? .72 : .56);
     sportSfx("whistle");
     const playerMaxHp = 100;
-    const opponentMaxHp = 100;
+    const opponentMaxHp = 240;
     state.current = {
       type: "dodgeball",
       phase: "command",
