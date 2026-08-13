@@ -738,11 +738,12 @@
 
 
 
+
   function getRubroPhase(g) {
     if (!g?.opponentMaxHp) return 1;
     const ratio = g.opponentHp / g.opponentMaxHp;
-    if (ratio > 0.66) return 1;
-    if (ratio > 0.33) return 2;
+    if (ratio > 0.60) return 1;
+    if (ratio > 0.30) return 2;
     return 3;
   }
 
@@ -849,26 +850,112 @@
     ];
   }
 
+
   function chooseNextDodgePattern(g) {
     const phase = getRubroPhase(g);
-    const baseDuration = state.mode === "championship" ? 3300 : 4200;
     const catalog = {
-      straight: { id: "straight", label: "Arremesso Reto", duration: baseDuration, catchable: true, telegraph: "Rubro alinha o ombro. A bola vem reta." },
-      curve: { id: "curve", label: "Arremesso Curvo", duration: baseDuration + 350, catchable: true, telegraph: "Rubro gira o punho. A trajetória vai dobrar." },
-      power: { id: "power", label: "Arremesso Forte", duration: baseDuration - 450, catchable: false, telegraph: "Rubro planta o pé no chão e carrega força." },
-      feint: { id: "feint", label: "Finta", duration: baseDuration + 500, catchable: true, telegraph: "Rubro ergue a bola... mas o corpo dele ainda não decidiu o lado." },
-      ricochet: { id: "ricochet", label: "Ricochete", duration: baseDuration + 800, catchable: false, telegraph: "Rubro olha para a parede da arena, não para você." },
-      combo: { id: "combo", label: "Sequência Rubra", duration: baseDuration + 1150, catchable: false, telegraph: "Rubro troca a bola de mão e acelera o ritmo." }
+      bounceTrio: {
+        id: "bounce-trio",
+        label: "Três Rebotes",
+        duration: 6800,
+        catchable: true,
+        telegraph: "Rubro solta três bolas de uma vez. Elas ficam mais rápidas a cada rebote."
+      },
+      cornerBarrage: {
+        id: "corner-barrage",
+        label: "Mira Rubra",
+        duration: 7200,
+        catchable: true,
+        telegraph: "Rubro vai para o canto. Observe os avisos de impacto — depois da terceira, não confie neles."
+      },
+      fallingRain: {
+        id: "falling-rain",
+        label: "Chuva Rubra",
+        duration: 6600,
+        catchable: false,
+        telegraph: "Rubro lança as bolas para o alto. As sombras mostram onde elas vão cair."
+      },
+      wallPassage: {
+        id: "wall-passage",
+        label: "Passagem Estreita",
+        duration: 6500,
+        catchable: true,
+        telegraph: "As bolas formam paredes. Sempre existe uma abertura — mas ela muda a cada onda."
+      },
+      siege: {
+        id: "siege",
+        label: "Cerco Rubro",
+        duration: 6700,
+        catchable: true,
+        telegraph: "Quatro bolas fecham o centro e retornam para fora. Uma delas poderá ser tomada na volta."
+      },
+      hunter: {
+        id: "hunter",
+        label: "Caçada",
+        duration: 7200,
+        catchable: true,
+        telegraph: "Uma bola passa a te perseguir enquanto Rubro fecha suas rotas."
+      },
+      bomb: {
+        id: "bomb",
+        label: "Bola-Bomba",
+        duration: 6600,
+        catchable: false,
+        telegraph: "A bola grande não está vindo para te acertar diretamente. Saia de perto antes que ela estoure."
+      },
+      crossfire: {
+        id: "crossfire",
+        label: "Linha de Fogo",
+        duration: 6500,
+        catchable: false,
+        telegraph: "Rubro cruza a quadra com rajadas horizontais. Procure o corredor vazio."
+      },
+      mixRainHunter: {
+        id: "mix-rain-hunter",
+        label: "Caçada sob Chuva",
+        duration: 8200,
+        catchable: true,
+        telegraph: "A bola perseguidora entra primeiro. Rubro então começa a chover bolas perto de você."
+      },
+      mixBounceWalls: {
+        id: "mix-bounce-walls",
+        label: "Rebote Confinado",
+        duration: 8200,
+        catchable: true,
+        telegraph: "Três ricochetes aceleram enquanto paredes de bolas comprimem a arena."
+      },
+      mixBombCorner: {
+        id: "mix-bomb-corner",
+        label: "Mira Explosiva",
+        duration: 8200,
+        catchable: true,
+        telegraph: "Rubro prepara uma Bola-Bomba e usa os avisos de mira para impedir sua fuga."
+      },
+      mixSiegeRain: {
+        id: "mix-siege-rain",
+        label: "Cerco Vertical",
+        duration: 8000,
+        catchable: true,
+        telegraph: "O Cerco Rubro fecha o centro enquanto novas sombras começam a nascer aos seus pés."
+      }
     };
 
-    let pool = phase === 1
-      ? [catalog.straight, catalog.straight, catalog.curve]
-      : phase === 2
-        ? [catalog.straight, catalog.curve, catalog.feint, catalog.ricochet]
-        : [catalog.curve, catalog.power, catalog.feint, catalog.ricochet, catalog.combo, catalog.combo];
+    let pool;
+    if (phase === 1) {
+      pool = [catalog.bounceTrio, catalog.cornerBarrage, catalog.fallingRain, catalog.wallPassage];
+    } else if (phase === 2) {
+      pool = [
+        catalog.bounceTrio, catalog.cornerBarrage, catalog.fallingRain, catalog.wallPassage,
+        catalog.siege, catalog.hunter, catalog.bomb, catalog.crossfire
+      ];
+    } else {
+      // Abaixo de 30% ele para de apresentar ataques isolados e começa a misturá-los.
+      pool = [catalog.mixRainHunter, catalog.mixBounceWalls, catalog.mixBombCorner, catalog.mixSiegeRain];
+    }
 
     const filtered = pool.filter((attack) => attack.id !== g.lastPatternId);
-    const chosen = (filtered.length ? filtered : pool)[Math.floor(Math.random() * (filtered.length ? filtered.length : pool.length))];
+    const choices = filtered.length ? filtered : pool;
+    const chosen = choices[Math.floor(Math.random() * choices.length)];
     g.nextPattern = { ...chosen };
     g.lastPatternId = chosen.id;
     return g.nextPattern;
@@ -903,6 +990,8 @@
       enemyAttackDone: false,
       enemyAttackSequence: [],
       rubroArenaSide: "center",
+      fallingBalls: [],
+      warningTargets: {},
       catchWindowUntil: 0,
       catchCooldownUntil: 0,
       catchBufferedUntil: 0,
@@ -1396,7 +1485,9 @@
     if (!g || g.type !== "dodgeball") return;
     g.phase = "defense";
     g.locked = false;
-    g.balls = [];
+    clearRubroHazards(g);
+    g.fallingBalls = [];
+    g.warningTargets = {};
     g.player = { x: 50, y: 62, invulnerableUntil: 0 };
     const attack = g.nextPattern || chooseNextDodgePattern(g);
     g.activePattern = attack;
@@ -1413,90 +1504,168 @@
     renderDodgeDefense();
   }
 
+
   function buildRubroAttackSequence(g, attack) {
     const phase = getRubroPhase(g);
-    const quick = state.mode === "championship" ? 0.88 : 1;
+    const quick = state.mode === "championship" ? 0.90 : 1;
     const seq = [];
     const add = (at, kind, data = {}) => seq.push({ at: at * quick, kind, done: false, ...data });
 
-    if (attack.id === "straight") {
-      add(0, "telegraph", { text: "RETO", side: "center", tone: "normal" });
-      add(650, "throw", { style: "straight", side: "center", catchable: true });
-    } else if (attack.id === "curve") {
-      const side = Math.random() > 0.5 ? "left" : "right";
-      add(0, "telegraph", { text: `CURVA ${side === "left" ? "↙" : "↘"}`, side, tone: "curve" });
-      add(720, "throw", { style: "curve", side, curveDirection: side === "left" ? 1 : -1, catchable: true });
-    } else if (attack.id === "power") {
-      const side = ["left","center","right"][Math.floor(Math.random()*3)];
-      add(0, "telegraph", { text: "FORTE!", side, tone: "power" });
-      add(480, "charge", { side });
-      add(920, "throw", { style: "power", side, catchable: false });
-    } else if (attack.id === "feint") {
-      const fakeSide = Math.random() > 0.5 ? "left" : "right";
-      const realSide = fakeSide === "left" ? "right" : "left";
-      add(0, "telegraph", { text: "...", side: fakeSide, tone: "feint" });
-      add(520, "fake", { side: fakeSide });
-      add(930, "telegraph", { text: "FINTA!", side: realSide, tone: "feint-real" });
-      add(1280, "throw", { style: phase >= 3 ? "curve" : "straight", side: realSide, curveDirection: realSide === "left" ? 1 : -1, catchable: true });
-    } else if (attack.id === "ricochet") {
-      const side = Math.random() > 0.5 ? "left" : "right";
-      add(0, "telegraph", { text: "RICOCHE!", side, tone: "ricochet" });
-      add(780, "throw", { style: "ricochet", side, catchable: false, bounces: phase >= 3 ? 2 : 1 });
-    } else if (attack.id === "combo") {
-      const first = Math.random() > 0.5 ? "left" : "right";
-      add(0, "telegraph", { text: "SEQUÊNCIA RUBRA", side: first, tone: "combo" });
-      add(500, "throw", { style: "straight", side: first, catchable: false });
-      add(950, "telegraph", { text: "2", side: first === "left" ? "right" : "left", tone: "combo" });
-      add(1160, "throw", { style: "curve", side: first === "left" ? "right" : "left", curveDirection: first === "left" ? -1 : 1, catchable: false });
-      add(1640, "charge", { side: "center" });
-      add(1980, "throw", { style: "power", side: "center", catchable: false });
+    if (attack.id === "bounce-trio") {
+      add(0, "telegraph", { text: "TRÊS REBOTES", side: "center", tone: "ricochet" });
+      add(520, "bounceTrio", { catchAfter: phase >= 2 ? 4300 : 4700, damage: phase >= 2 ? 11 : 9 });
+
+    } else if (attack.id === "corner-barrage") {
+      const side = Math.random() > .5 ? "left" : "right";
+      add(0, "telegraph", { text: "MIRA RUBRA", side, tone: "combo" });
+      add(400, "warning", { key: "c1", mode: "nearPlayer", label: "!" });
+      add(1050, "targetThrow", { key: "c1", side, style: "straight", damage: 10 });
+      add(1650, "warning", { key: "c2", mode: "nearPlayer", label: "!" });
+      add(2300, "targetThrow", { key: "c2", side, style: "curve", curveDirection: side === "left" ? 1 : -1, damage: 11 });
+      add(2900, "warning", { key: "c3", mode: "nearPlayer", label: "!" });
+      add(3550, "targetThrow", { key: "c3", side, style: "straight", damage: 10 });
+      add(4200, "warning", { key: "c4", mode: "random", label: "!" });
+      add(5050, "retargetWarning", { key: "c4", mode: "player", text: "FINTA!" });
+      add(5350, "targetThrow", { key: "c4", side, style: "power", damage: 18, catchable: true });
+
+    } else if (attack.id === "falling-rain") {
+      add(0, "telegraph", { text: "OLHE AS SOMBRAS", side: "center", tone: "combo" });
+      const count = g.opponentHp <= 60 ? 2 : 1;
+      [650, 1350, 2050, 2750, 3450, 4150, 4850, 5550].forEach((at) => add(at, "fallingVolley", { count, damage: 8 }));
+
+    } else if (attack.id === "wall-passage") {
+      add(0, "telegraph", { text: "ENCONTRE A ABERTURA", side: "center", tone: "combo" });
+      [650, 1650, 2650, 3650, 4650].forEach((at, index) => add(at, "wallWave", {
+        wave: index,
+        damage: phase >= 2 ? 9 : 8,
+        catchableEdge: index === 4
+      }));
+
+    } else if (attack.id === "siege") {
+      add(0, "telegraph", { text: "CERCO RUBRO", side: "center", tone: "ricochet" });
+      add(650, "siege", { damage: 10, catchableReturn: true });
+
+    } else if (attack.id === "hunter") {
+      add(0, "telegraph", { text: "NÃO PARE", side: "center", tone: "power" });
+      add(600, "hunter", { damage: 11, catchAfter: 4900 });
+      [1800, 2900, 4000, 5100].forEach((at, index) => add(at, "throw", {
+        style: index % 2 ? "curve" : "straight",
+        side: index % 2 ? "right" : "left",
+        curveDirection: index % 2 ? -1 : 1,
+        catchable: false,
+        damage: 7
+      }));
+
+    } else if (attack.id === "bomb") {
+      add(0, "telegraph", { text: "BOLA-BOMBA", side: "center", tone: "power" });
+      add(650, "bomb", { damage: 7, fragments: phase >= 2 ? 8 : 6 });
+      if (phase >= 2) add(3400, "bomb", { damage: 7, fragments: 8 });
+
+    } else if (attack.id === "crossfire") {
+      add(0, "telegraph", { text: "LINHA DE FOGO", side: "center", tone: "combo" });
+      [650, 1450, 2250, 3050, 3850, 4650, 5450].forEach((at, index) => add(at, "crossfire", {
+        wave: index,
+        damage: 8
+      }));
+
+    } else if (attack.id === "mix-rain-hunter") {
+      add(0, "telegraph", { text: "CAÇADA SOB CHUVA", side: "center", tone: "power" });
+      add(500, "hunter", { damage: 10, catchAfter: 6200 });
+      [900, 1800, 2700, 3600, 4500, 5400, 6300].forEach((at) => add(at, "fallingVolley", { count: 2, damage: 7 }));
+
+    } else if (attack.id === "mix-bounce-walls") {
+      add(0, "telegraph", { text: "REBOQUE CONFINADO", side: "center", tone: "ricochet" });
+      add(450, "bounceTrio", { catchAfter: 6200, damage: 8 });
+      [1300, 2600, 3900, 5200, 6500].forEach((at, index) => add(at, "wallWave", {
+        wave: index,
+        damage: 7,
+        catchableEdge: false
+      }));
+
+    } else if (attack.id === "mix-bomb-corner") {
+      const side = Math.random() > .5 ? "left" : "right";
+      add(0, "telegraph", { text: "MIRA EXPLOSIVA", side, tone: "power" });
+      add(500, "bomb", { damage: 7, fragments: 8 });
+      add(1100, "warning", { key: "m1", mode: "nearPlayer", label: "!" });
+      add(1800, "targetThrow", { key: "m1", side, style: "straight", damage: 8 });
+      add(2700, "warning", { key: "m2", mode: "nearPlayer", label: "!" });
+      add(3400, "targetThrow", { key: "m2", side, style: "curve", curveDirection: side === "left" ? 1 : -1, damage: 9 });
+      add(4300, "bomb", { damage: 7, fragments: 8 });
+      add(5000, "warning", { key: "m3", mode: "random", label: "!" });
+      add(5900, "retargetWarning", { key: "m3", mode: "player", text: "AGORA!" });
+      add(6200, "targetThrow", { key: "m3", side, style: "power", damage: 16, catchable: true });
+
+    } else if (attack.id === "mix-siege-rain") {
+      add(0, "telegraph", { text: "CERCO VERTICAL", side: "center", tone: "combo" });
+      add(500, "siege", { damage: 8, catchableReturn: true });
+      [1200, 2200, 3200, 4200, 5200, 6200].forEach((at) => add(at, "fallingVolley", { count: 2, damage: 7 }));
     }
+
     return seq;
   }
+
 
   function buildRallyRubroSequence(g) {
     const seq = [];
     const add = (at, kind, data = {}) => seq.push({ at, kind, done: false, ...data });
 
-    // ~30 segundos: Rubro revisita tudo o que já mostrou, mas encadeado.
+    // ~30 segundos. Cada trecho reapresenta um padrão completo antes do próximo.
     add(0, "rallyTitle", { text: "RALLY RUBRO" });
-    add(900, "telegraph", { text: "RETO", side: "left", tone: "combo" });
-    add(1350, "throw", { style: "straight", side: "left", catchable: false, damage: 12 });
-    add(2600, "telegraph", { text: "CURVA", side: "right", tone: "curve" });
-    add(3050, "throw", { style: "curve", side: "right", curveDirection: -1, catchable: false, damage: 13 });
-    add(4300, "telegraph", { text: "RICOCHE!", side: "left", tone: "ricochet" });
-    add(4800, "throw", { style: "ricochet", side: "left", catchable: false, bounces: 2, damage: 11 });
-    add(6100, "telegraph", { text: "...", side: "right", tone: "feint" });
-    add(6500, "fake", { side: "right" });
-    add(7000, "telegraph", { text: "FINTA!", side: "left", tone: "feint-real" });
-    add(7350, "throw", { style: "straight", side: "left", catchable: false, damage: 12 });
-    add(8700, "charge", { side: "center" });
-    add(9150, "throw", { style: "power", side: "center", catchable: false, damage: 20 });
 
-    add(10700, "telegraph", { text: "SEQUÊNCIA", side: "left", tone: "combo" });
-    add(11100, "throw", { style: "straight", side: "left", catchable: false, damage: 10 });
-    add(11700, "throw", { style: "curve", side: "right", curveDirection: -1, catchable: false, damage: 11 });
-    add(12400, "throw", { style: "straight", side: "center", catchable: false, damage: 10 });
+    // 0.5–3.5s · três bolas ricocheteando.
+    add(500, "telegraph", { text: "TRÊS REBOTES", side: "center", tone: "ricochet" });
+    add(850, "bounceTrio", { catchAfter: null, damage: 6, rally: true });
+    add(3500, "clearHazards");
 
-    add(14100, "telegraph", { text: "SEM PAUSA", side: "right", tone: "combo" });
-    add(14500, "throw", { style: "ricochet", side: "right", catchable: false, bounces: 2, damage: 10 });
-    add(15200, "throw", { style: "curve", side: "left", curveDirection: 1, catchable: false, damage: 11 });
-    add(16100, "charge", { side: "right" });
-    add(16500, "throw", { style: "power", side: "right", catchable: false, damage: 19 });
+    // 3.7–7.2s · mira + finta.
+    add(3700, "telegraph", { text: "MIRA RUBRA", side: "left", tone: "combo" });
+    add(3950, "warning", { key: "r1", mode: "nearPlayer", label: "!" });
+    add(4450, "targetThrow", { key: "r1", side: "left", style: "straight", damage: 7 });
+    add(4950, "warning", { key: "r2", mode: "nearPlayer", label: "!" });
+    add(5450, "targetThrow", { key: "r2", side: "left", style: "curve", curveDirection: 1, damage: 7 });
+    add(5900, "warning", { key: "r3", mode: "random", label: "!" });
+    add(6500, "retargetWarning", { key: "r3", mode: "player", text: "FINTA!" });
+    add(6800, "targetThrow", { key: "r3", side: "left", style: "power", damage: 10, catchable: false });
+    add(7300, "clearHazards");
 
-    add(18300, "telegraph", { text: "MAIS RÁPIDO", side: "center", tone: "power" });
-    add(18700, "throw", { style: "straight", side: "left", catchable: false, damage: 9 });
-    add(19200, "throw", { style: "straight", side: "right", catchable: false, damage: 9 });
-    add(19800, "throw", { style: "curve", side: "center", curveDirection: Math.random() > .5 ? 1 : -1, catchable: false, damage: 11 });
-    add(20800, "throw", { style: "ricochet", side: "left", catchable: false, bounces: 2, damage: 10 });
-    add(22000, "charge", { side: "center" });
-    add(22400, "throw", { style: "power", side: "center", catchable: false, damage: 18 });
+    // 7.5–10.8s · chuva dupla.
+    add(7500, "telegraph", { text: "CHUVA RUBRA", side: "center", tone: "combo" });
+    [7800, 8500, 9200, 9900].forEach((at) => add(at, "fallingVolley", { count: 2, damage: 6 }));
+    add(10800, "clearHazards");
 
-    add(24100, "telegraph", { text: "ÚLTIMA SEQUÊNCIA", side: "center", tone: "combo" });
-    add(24500, "throw", { style: "curve", side: "left", curveDirection: 1, catchable: false, damage: 10 });
-    add(25200, "throw", { style: "straight", side: "right", catchable: false, damage: 10 });
-    add(26200, "rallyFinalTelegraph", { text: "ÚLTIMA BOLA" });
-    add(27400, "throw", { style: "rallyFinal", side: "center", catchable: true, damage: 18, isRallyFinal: true });
+    // 11–14s · cerco.
+    add(11000, "telegraph", { text: "CERCO", side: "center", tone: "ricochet" });
+    add(11300, "siege", { damage: 6, catchableReturn: false });
+    add(14000, "clearHazards");
+
+    // 14.2–17.5s · caçada.
+    add(14200, "telegraph", { text: "CAÇADA", side: "center", tone: "power" });
+    add(14500, "hunter", { damage: 7, catchAfter: null });
+    add(15300, "throw", { style: "straight", side: "left", catchable: false, damage: 5 });
+    add(16100, "throw", { style: "curve", side: "right", curveDirection: -1, catchable: false, damage: 5 });
+    add(17500, "clearHazards");
+
+    // 17.7–21s · passagem estreita.
+    add(17700, "telegraph", { text: "PASSAGEM", side: "center", tone: "combo" });
+    [18000, 18700, 19400, 20100].forEach((at, index) => add(at, "wallWave", {
+      wave: index, damage: 5, catchableEdge: false
+    }));
+    add(21000, "clearHazards");
+
+    // 21.2–24s · bola-bomba.
+    add(21200, "telegraph", { text: "BOLA-BOMBA", side: "center", tone: "power" });
+    add(21500, "bomb", { damage: 5, fragments: 8 });
+    add(24000, "clearHazards");
+
+    // 24.2–26.7s · linha de fogo.
+    add(24200, "telegraph", { text: "LINHA DE FOGO", side: "center", tone: "combo" });
+    [24500, 25100, 25700, 26300].forEach((at, index) => add(at, "crossfire", { wave: index, damage: 5 }));
+    add(26800, "clearHazards");
+
+    // Clímax: única bola agarrável.
+    add(27000, "rallyFinalTelegraph", { text: "ÚLTIMA BOLA" });
+    add(28200, "throw", { style: "rallyFinal", side: "center", catchable: true, damage: 18, isRallyFinal: true });
+
     return seq;
   }
 
@@ -1510,14 +1679,16 @@
     g.perfectReturnReady = false;
     g.phase = "defense";
     g.locked = false;
-    g.balls = [];
+    clearRubroHazards(g);
+    g.fallingBalls = [];
+    g.warningTargets = {};
     g.player = { x: 50, y: 62, invulnerableUntil: 0 };
     g.activePattern = {
       id: "rally",
       label: "RALLY RUBRO",
       duration: 30000,
       catchable: true,
-      telegraph: "Capitão Rubro parou de sorrir. Agora ele vai usar tudo o que tem."
+      telegraph: "Capitão Rubro parou de sorrir. Agora ele vai atravessar o arsenal inteiro sem te dar descanso."
     };
     g.enemyAttackStart = performance.now();
     g.enemyAttackDone = false;
@@ -1688,12 +1859,35 @@
     showDodgeTelegraph.hideTimer = window.setTimeout(() => telegraph.classList.remove("visible"), tone === "power" ? 620 : 430);
   }
 
-  function createEnemyBall({ x, y, targetX, targetY, speed, style = "straight", catchable = false, curveDirection = 0, bounces = 0, damage = null, isRallyFinal = false }) {
+
+  function createEnemyBall(options) {
     const g = state.current;
+    if (!g || !options) return null;
+
+    const {
+      x, y, targetX, targetY, speed,
+      style = "straight",
+      catchable = false,
+      curveDirection = 0,
+      bounces = 0,
+      damage = null,
+      isRallyFinal = false,
+      bounceAll = false,
+      accelerationPerSecond = 0,
+      maxSpeed = 999,
+      catchableAt = null,
+      lifeUntil = null,
+      homingStrength = 0,
+      siegeStage = null,
+      siegeCatchCandidate = false,
+      explodeAt = null,
+      bombFragments = 0
+    } = options;
+
     const dx = targetX - x;
     const dy = targetY - y;
     const len = Math.hypot(dx, dy) || 1;
-    g.balls.push({
+    const ball = {
       x, y,
       vx: dx / len * speed,
       vy: dy / len * speed,
@@ -1704,7 +1898,373 @@
       bouncesRemaining: bounces,
       damage,
       isRallyFinal,
-      hasEnteredArena: false
+      hasEnteredArena: false,
+      bounceAll,
+      accelerationPerSecond,
+      maxSpeed,
+      catchableAt,
+      lifeUntil,
+      homingStrength,
+      siegeStage,
+      siegeCatchCandidate,
+      explodeAt,
+      bombFragments
+    };
+    g.balls.push(ball);
+    return ball;
+  }
+
+  function clearRubroHazards(g = state.current) {
+    if (!g) return;
+    (g.balls || []).forEach((ball) => ball.el?.remove());
+    g.balls = [];
+
+    (g.fallingBalls || []).forEach((drop) => {
+      drop.ballEl?.remove();
+      drop.shadowEl?.remove();
+    });
+    g.fallingBalls = [];
+
+    Object.values(g.warningTargets || {}).forEach((warning) => warning?.el?.remove());
+    g.warningTargets = {};
+  }
+
+  function getWarningPoint(g, rect, mode = "nearPlayer") {
+    const playerX = rect.width * g.player.x / 100;
+    const playerY = rect.height * g.player.y / 100;
+    if (mode === "player") return { x: playerX, y: playerY };
+    if (mode === "random") {
+      return {
+        x: 40 + Math.random() * Math.max(40, rect.width - 80),
+        y: 45 + Math.random() * Math.max(45, rect.height - 90)
+      };
+    }
+    return {
+      x: clamp(playerX + (Math.random() - .5) * 130, 35, rect.width - 35),
+      y: clamp(playerY + (Math.random() - .5) * 90, 40, rect.height - 40)
+    };
+  }
+
+  function createDodgeWarning(key, rect, mode = "nearPlayer", label = "!") {
+    const g = state.current;
+    const arena = document.getElementById("dodgeArena");
+    if (!g || !arena) return null;
+    g.warningTargets ||= {};
+    g.warningTargets[key]?.el?.remove();
+
+    const point = getWarningPoint(g, rect, mode);
+    const el = document.createElement("div");
+    el.className = "dodge-warning-box";
+    el.textContent = label;
+    el.style.left = `${point.x}px`;
+    el.style.top = `${point.y}px`;
+    arena.appendChild(el);
+
+    g.warningTargets[key] = { ...point, el };
+    return g.warningTargets[key];
+  }
+
+  function retargetDodgeWarning(key, rect, mode = "player") {
+    const g = state.current;
+    if (!g?.warningTargets?.[key]) return null;
+    const point = getWarningPoint(g, rect, mode);
+    const warning = g.warningTargets[key];
+    warning.x = point.x;
+    warning.y = point.y;
+    warning.el?.classList.add("retargeted");
+    if (warning.el) {
+      warning.el.style.left = `${point.x}px`;
+      warning.el.style.top = `${point.y}px`;
+    }
+    return warning;
+  }
+
+  function consumeDodgeWarning(key) {
+    const g = state.current;
+    const warning = g?.warningTargets?.[key];
+    if (!warning) return null;
+    warning.el?.classList.add("fired");
+    addTimer(() => warning.el?.remove(), 180);
+    delete g.warningTargets[key];
+    return warning;
+  }
+
+  function applyDodgeballDamage(g, rawDamage, style, now) {
+    if (!g || g.phase !== "defense" || now < g.player.invulnerableUntil) return false;
+
+    if (g.defenseShield > 0) {
+      g.defenseShield -= 1;
+      sportSfx("shield");
+      g.player.invulnerableUntil = now + 420;
+      const timer = document.getElementById("dodgeTimer");
+      if (timer) timer.textContent = "Escudo absorveu a bolada!";
+      return false;
+    }
+
+    const incomingDamage = Math.max(1, Math.round(rawDamage || 1));
+    g.playerHp = Math.max(0, g.playerHp - incomingDamage);
+    g.player.invulnerableUntil = now + (g.rallyActive ? 390 : 620);
+    playDodgePlayerHitEffect(style);
+
+    const hpReadout = document.querySelector(".dodgeball-defense-hp strong");
+    if (hpReadout) hpReadout.textContent = `${Math.round(g.playerHp)} HP`;
+    const playerBar = document.querySelector(".dodge-hp-block.player .dodge-hp-track i");
+    if (playerBar) playerBar.style.width = `${hpPercent(g.playerHp, g.playerMaxHp)}%`;
+    const timer = document.getElementById("dodgeTimer");
+    if (timer) timer.textContent = `-${incomingDamage} HP`;
+
+    if (g.playerHp <= 0) {
+      finishSport("dodgeball", false, "Capitão Rubro te eliminou da quadra antes do apito final.");
+    }
+    return true;
+  }
+
+  function spawnBounceTrio(event, rect) {
+    const g = state.current;
+    const now = performance.now();
+    const catchIndex = event.catchAfter == null ? -1 : Math.floor(Math.random() * 3);
+    const starts = [24, 50, 76];
+
+    starts.forEach((pct, index) => {
+      const targetX = index === 0 ? rect.width * .78 : index === 1 ? rect.width * .22 : rect.width * .55;
+      const targetY = index === 1 ? rect.height * .82 : rect.height * .70;
+      createEnemyBall({
+        x: rect.width * pct / 100,
+        y: 18,
+        targetX,
+        targetY,
+        speed: 205 + index * 16,
+        style: "chaos-bounce",
+        catchable: false,
+        damage: event.damage || 9,
+        bounceAll: true,
+        accelerationPerSecond: .16,
+        maxSpeed: 560,
+        catchableAt: index === catchIndex ? now + event.catchAfter : null,
+        lifeUntil: g.defenseEnd - 180
+      });
+    });
+  }
+
+  function spawnFallingVolley(event, rect) {
+    const g = state.current;
+    const arena = document.getElementById("dodgeArena");
+    if (!g || !arena) return;
+
+    g.fallingBalls ||= [];
+    const count = Math.max(1, Number(event.count || 1));
+    const now = performance.now();
+
+    for (let i = 0; i < count; i += 1) {
+      const playerX = rect.width * g.player.x / 100;
+      const playerY = rect.height * g.player.y / 100;
+      const spread = count > 1 ? 90 : 115;
+      const x = clamp(playerX + (Math.random() - .5) * spread, 30, rect.width - 30);
+      const y = clamp(playerY + (Math.random() - .5) * spread * .65, 38, rect.height - 38);
+      const duration = 780 + Math.random() * 140;
+
+      const shadowEl = document.createElement("div");
+      shadowEl.className = "dodge-falling-shadow";
+      shadowEl.style.left = `${x}px`;
+      shadowEl.style.top = `${y}px`;
+
+      const ballEl = document.createElement("div");
+      ballEl.className = "dodge-falling-ball";
+      ballEl.style.left = `${x}px`;
+      ballEl.style.top = `${y - 150}px`;
+
+      arena.appendChild(shadowEl);
+      arena.appendChild(ballEl);
+
+      g.fallingBalls.push({
+        x, y,
+        start: now,
+        duration,
+        damage: event.damage || 8,
+        landed: false,
+        shadowEl,
+        ballEl
+      });
+    }
+  }
+
+  function spawnSiege(event, rect) {
+    const g = state.current;
+    const now = performance.now();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const catchIndex = event.catchableReturn ? Math.floor(Math.random() * 4) : -1;
+    const corners = [
+      [18, 18],
+      [rect.width - 18, 18],
+      [18, rect.height - 18],
+      [rect.width - 18, rect.height - 18]
+    ];
+
+    corners.forEach(([x, y], index) => {
+      createEnemyBall({
+        x, y,
+        targetX: centerX,
+        targetY: centerY,
+        speed: 190,
+        style: "siege",
+        catchable: false,
+        damage: event.damage || 10,
+        siegeStage: 0,
+        siegeCatchCandidate: index === catchIndex,
+        lifeUntil: now + 5700
+      });
+    });
+  }
+
+  function spawnHunter(event, rect) {
+    const g = state.current;
+    const now = performance.now();
+    createEnemyBall({
+      x: rect.width / 2,
+      y: 18,
+      targetX: rect.width * g.player.x / 100,
+      targetY: rect.height * g.player.y / 100,
+      speed: 120,
+      style: "hunter",
+      catchable: false,
+      damage: event.damage || 11,
+      accelerationPerSecond: .12,
+      maxSpeed: 330,
+      homingStrength: 2.7,
+      catchableAt: event.catchAfter == null ? null : now + event.catchAfter,
+      lifeUntil: g.defenseEnd - 200
+    });
+  }
+
+  function spawnWallWave(event, rect) {
+    const phase = getRubroPhase(state.current);
+    const columns = phase >= 3 ? 11 : 10;
+    const gapSize = 2;
+    const gapStart = Math.floor(Math.random() * Math.max(1, columns - gapSize));
+    const speed = phase >= 3 ? 265 : phase === 2 ? 245 : 225;
+    const catchableIndex = event.catchableEdge ? (Math.random() > .5 ? gapStart - 1 : gapStart + gapSize) : -1;
+
+    for (let index = 0; index < columns; index += 1) {
+      if (index >= gapStart && index < gapStart + gapSize) continue;
+      const x = ((index + .5) / columns) * rect.width;
+      createEnemyBall({
+        x,
+        y: -20,
+        targetX: x,
+        targetY: rect.height + 30,
+        speed,
+        style: "wall",
+        catchable: index === catchableIndex,
+        damage: event.damage || 8
+      });
+    }
+  }
+
+  function spawnBomb(event, rect) {
+    const g = state.current;
+    const now = performance.now();
+    const playerX = rect.width * g.player.x / 100;
+    const playerY = rect.height * g.player.y / 100;
+    createEnemyBall({
+      x: rect.width * (.25 + Math.random() * .5),
+      y: 18,
+      targetX: clamp(playerX + (Math.random() - .5) * 120, 80, rect.width - 80),
+      targetY: clamp(playerY - 70, 80, rect.height - 80),
+      speed: 90,
+      style: "bomb",
+      catchable: false,
+      damage: event.damage || 7,
+      explodeAt: now + 1550,
+      bombFragments: event.fragments || 6
+    });
+  }
+
+  function explodeBomb(ball, rect) {
+    const g = state.current;
+    if (!g || !ball) return;
+    sportSfx("impactPower");
+
+    const arena = document.getElementById("dodgeArena");
+    if (arena) {
+      const flash = document.createElement("div");
+      flash.className = "dodge-bomb-impact";
+      flash.style.left = `${ball.x}px`;
+      flash.style.top = `${ball.y}px`;
+      arena.appendChild(flash);
+      addTimer(() => flash.remove(), 420);
+    }
+
+    const fragments = Math.max(6, ball.bombFragments || 6);
+    for (let i = 0; i < fragments; i += 1) {
+      const angle = (Math.PI * 2 * i / fragments) + Math.random() * .12;
+      const distance = 180;
+      createEnemyBall({
+        x: ball.x,
+        y: ball.y,
+        targetX: ball.x + Math.cos(angle) * distance,
+        targetY: ball.y + Math.sin(angle) * distance,
+        speed: 245,
+        style: "bomb-fragment",
+        catchable: false,
+        damage: ball.damage || 7
+      });
+    }
+  }
+
+  function spawnCrossfireWave(event, rect) {
+    const rows = 5;
+    const gap = Math.floor(Math.random() * rows);
+    for (let row = 0; row < rows; row += 1) {
+      if (row === gap) continue;
+      const y = ((row + .5) / rows) * rect.height;
+      const fromLeft = (row + Number(event.wave || 0)) % 2 === 0;
+      createEnemyBall({
+        x: fromLeft ? -20 : rect.width + 20,
+        y,
+        targetX: fromLeft ? rect.width + 30 : -30,
+        targetY: y,
+        speed: 290 + Number(event.wave || 0) * 8,
+        style: "crossfire",
+        catchable: false,
+        damage: event.damage || 8
+      });
+    }
+  }
+
+  function updateFallingBalls(now, rect, playerX, playerY) {
+    const g = state.current;
+    if (!g?.fallingBalls?.length) return;
+
+    g.fallingBalls = g.fallingBalls.filter((drop) => {
+      const progress = clamp((now - drop.start) / drop.duration, 0, 1);
+      const height = (1 - progress) * 160;
+      const scale = .58 + progress * .48;
+
+      if (drop.ballEl) {
+        drop.ballEl.style.left = `${drop.x}px`;
+        drop.ballEl.style.top = `${drop.y - height}px`;
+        drop.ballEl.style.transform = `translate(-50%,-50%) scale(${scale})`;
+      }
+      if (drop.shadowEl) {
+        drop.shadowEl.style.transform = `translate(-50%,-50%) scale(${.35 + progress * .95})`;
+        drop.shadowEl.style.opacity = `${.22 + progress * .65}`;
+      }
+
+      if (progress < 1 || drop.landed) return true;
+      drop.landed = true;
+      drop.ballEl?.classList.add("landed");
+      drop.shadowEl?.classList.add("landed");
+      sportSfx("impact");
+
+      const distance = Math.hypot(drop.x - playerX, drop.y - playerY);
+      if (distance < 34) applyDodgeballDamage(g, drop.damage, "falling", now);
+
+      addTimer(() => {
+        drop.ballEl?.remove();
+        drop.shadowEl?.remove();
+      }, 180);
+      return false;
     });
   }
 
@@ -1742,38 +2302,115 @@
     createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:325*slow*phaseSpeed, style:"straight", catchable:event.catchable, damage });
   }
 
+
   function processRubroAttackTimeline(now, rect) {
     const g = state.current;
     const elapsed = now - g.enemyAttackStart;
+
     for (const event of g.enemyAttackSequence) {
       if (event.done || elapsed < event.at) continue;
       event.done = true;
+
       if (event.kind === "rallyTitle") {
         setRubroDefenseVisual("center", "charge");
         showDodgeTelegraph(event.text, "power", "center");
         sportSfx("enemyPower");
+
       } else if (event.kind === "rallyFinalTelegraph") {
         setRubroDefenseVisual("center", "charge");
         showDodgeTelegraph("ÚLTIMA BOLA · PREPARE O ESPAÇO", "power", "center");
         sportSfx("counterReady");
         duckDodgeballMusic(.16, 320);
+
       } else if (event.kind === "telegraph") {
         setRubroDefenseVisual(event.side, event.tone === "feint" ? "feint" : "ready");
         showDodgeTelegraph(event.text, event.tone, event.side);
         if (event.tone === "feint") sportSfx("feint");
+
       } else if (event.kind === "charge") {
         setRubroDefenseVisual(event.side, "charge");
         sportSfx("enemyPower");
         showDodgeTelegraph("!", "power", event.side);
+
       } else if (event.kind === "fake") {
         setRubroDefenseVisual(event.side, "feint");
         sportSfx("feint");
         showDodgeTelegraph("FALSO", "feint", event.side);
+
       } else if (event.kind === "throw") {
         setRubroDefenseVisual(event.side, "throw");
         sportSfx(event.style === "power" ? "enemyPower" : "enemyThrow");
         spawnRubroThrow(event, rect);
         addTimer(() => setRubroDefenseVisual(event.side, "recover"), 180);
+
+      } else if (event.kind === "clearHazards") {
+        clearRubroHazards(g);
+
+      } else if (event.kind === "warning") {
+        createDodgeWarning(event.key, rect, event.mode, event.label || "!");
+        sportSfx("menuMove");
+
+      } else if (event.kind === "retargetWarning") {
+        retargetDodgeWarning(event.key, rect, event.mode || "player");
+        setRubroDefenseVisual("center", "feint");
+        showDodgeTelegraph(event.text || "FINTA!", "feint-real", "center");
+        sportSfx("feint");
+
+      } else if (event.kind === "targetThrow") {
+        const target = consumeDodgeWarning(event.key) || getWarningPoint(g, rect, "player");
+        const sidePct = event.side === "left" ? 10 : event.side === "right" ? 90 : 50;
+        const startX = rect.width * sidePct / 100;
+        const startY = 12;
+        const slow = g.enemySlowMultiplier || 1;
+        const speed = event.style === "power" ? 480 : event.style === "curve" ? 310 : 340;
+        setRubroDefenseVisual(event.side || "center", "throw");
+        sportSfx(event.style === "power" ? "enemyPower" : "enemyThrow");
+        createEnemyBall({
+          x: startX,
+          y: startY,
+          targetX: target.x,
+          targetY: target.y,
+          speed: speed * slow,
+          style: event.style || "straight",
+          catchable: Boolean(event.catchable),
+          curveDirection: event.curveDirection || 0,
+          damage: event.damage || 10
+        });
+        addTimer(() => setRubroDefenseVisual(event.side || "center", "recover"), 180);
+
+      } else if (event.kind === "bounceTrio") {
+        setRubroDefenseVisual("center", "throw");
+        sportSfx("enemyThrow");
+        spawnBounceTrio(event, rect);
+
+      } else if (event.kind === "fallingVolley") {
+        setRubroDefenseVisual("center", "throw");
+        sportSfx("enemyThrow");
+        spawnFallingVolley(event, rect);
+
+      } else if (event.kind === "siege") {
+        setRubroDefenseVisual("center", "throw");
+        sportSfx("ricochet");
+        spawnSiege(event, rect);
+
+      } else if (event.kind === "hunter") {
+        setRubroDefenseVisual("center", "charge");
+        sportSfx("enemyPower");
+        spawnHunter(event, rect);
+
+      } else if (event.kind === "wallWave") {
+        sportSfx("enemyThrow");
+        spawnWallWave(event, rect);
+
+      } else if (event.kind === "bomb") {
+        setRubroDefenseVisual("center", "charge");
+        sportSfx("enemyPower");
+        spawnBomb(event, rect);
+
+      } else if (event.kind === "crossfire") {
+        setRubroDefenseVisual(Number(event.wave || 0) % 2 ? "right" : "left", "throw");
+        sportSfx("enemyThrow");
+        spawnCrossfireWave(event, rect);
       }
     }
   }
@@ -1881,12 +2518,12 @@
     addTimer(() => { player.classList.remove("dodge-player-hit","dodge-player-hit-power"); arena.classList.remove("dodge-arena-hit"); }, style === "power" ? 420 : 260);
   }
 
+
   function finishRubroDefenseTurn(caught = false) {
     const g = state.current;
     if (!g || g.phase !== "defense" || g.enemyAttackDone) return;
     g.enemyAttackDone = true;
-    g.balls.forEach((ball) => ball.el?.remove());
-    g.balls = [];
+    clearRubroHazards(g);
     g.moveBoost = 1;
     g.enemySlowMultiplier = 1;
 
@@ -1912,6 +2549,7 @@
     }, caught ? 240 : 180);
   }
 
+
   function updateDodgeDefense(now, dt) {
     const g = state.current;
     const arena = document.getElementById("dodgeArena");
@@ -1925,6 +2563,7 @@
     if (state.pressed.has("w") || state.pressed.has("arrowup")) dy -= 1;
     if (state.pressed.has("s") || state.pressed.has("arrowdown")) dy += 1;
     if (dx && dy) { dx *= .707; dy *= .707; }
+
     g.player.x = clamp(g.player.x + dx * speedPct, 4, 96);
     g.player.y = clamp(g.player.y + dy * speedPct, 8, 92);
     updateDodgePlayerDom();
@@ -1933,9 +2572,43 @@
 
     const playerX = rect.width * g.player.x / 100;
     const playerY = rect.height * g.player.y / 100;
+    updateFallingBalls(now, rect, playerX, playerY);
+
     g.balls = g.balls.filter((ball) => {
+      if (ball.lifeUntil && now >= ball.lifeUntil) {
+        ball.el?.remove();
+        return false;
+      }
+
+      if (ball.catchableAt && now >= ball.catchableAt && !ball.catchable) {
+        ball.catchable = true;
+        ball.el?.classList.add("is-catchable", "catch-armed");
+        sportSfx("counterReady");
+      }
+
+      let speed = Math.hypot(ball.vx, ball.vy);
+
+      if (ball.homingStrength) {
+        const currentAngle = Math.atan2(ball.vy, ball.vx);
+        const desiredAngle = Math.atan2(playerY - ball.y, playerX - ball.x);
+        let diff = desiredAngle - currentAngle;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        const maxTurn = ball.homingStrength * dt;
+        const nextAngle = currentAngle + clamp(diff, -maxTurn, maxTurn);
+        ball.vx = Math.cos(nextAngle) * speed;
+        ball.vy = Math.sin(nextAngle) * speed;
+      }
+
+      if (ball.accelerationPerSecond) {
+        speed = Math.min(ball.maxSpeed || 999, speed * (1 + ball.accelerationPerSecond * dt));
+        const angle = Math.atan2(ball.vy, ball.vx);
+        ball.vx = Math.cos(angle) * speed;
+        ball.vy = Math.sin(angle) * speed;
+      }
+
       if (ball.turnRate) {
-        const speed = Math.hypot(ball.vx, ball.vy);
+        speed = Math.hypot(ball.vx, ball.vy);
         const angle = Math.atan2(ball.vy, ball.vx) + ball.turnRate * dt;
         ball.vx = Math.cos(angle) * speed;
         ball.vy = Math.sin(angle) * speed;
@@ -1943,11 +2616,52 @@
 
       ball.x += ball.vx * dt;
       ball.y += ball.vy * dt;
-      if (ball.y >= 0 && ball.y <= rect.height) ball.hasEnteredArena = true;
+      if (ball.x >= 0 && ball.x <= rect.width && ball.y >= 0 && ball.y <= rect.height) ball.hasEnteredArena = true;
+
+      // Três Rebotes: quicam em TODAS as bordas e ficam mais rápidos.
+      if (ball.bounceAll && ball.hasEnteredArena) {
+        let bounced = false;
+        if (ball.x <= 13 && ball.vx < 0) { ball.x = 13; ball.vx *= -1; bounced = true; }
+        if (ball.x >= rect.width - 13 && ball.vx > 0) { ball.x = rect.width - 13; ball.vx *= -1; bounced = true; }
+        if (ball.y <= 13 && ball.vy < 0) { ball.y = 13; ball.vy *= -1; bounced = true; }
+        if (ball.y >= rect.height - 13 && ball.vy > 0) { ball.y = rect.height - 13; ball.vy *= -1; bounced = true; }
+        if (bounced) {
+          ball.vx *= 1.035;
+          ball.vy *= 1.035;
+          sportSfx("ricochet");
+          ball.el?.classList.add("just-bounced");
+        }
+      }
 
       if (ball.style === "ricochet" && ball.hasEnteredArena && ball.bouncesRemaining > 0) {
-        if (ball.x <= 13 && ball.vx < 0) { ball.x = 13; ball.vx *= -1; ball.bouncesRemaining -= 1; sportSfx("ricochet"); ball.el?.classList.add("just-bounced"); }
-        else if (ball.x >= rect.width - 13 && ball.vx > 0) { ball.x = rect.width - 13; ball.vx *= -1; ball.bouncesRemaining -= 1; sportSfx("ricochet"); ball.el?.classList.add("just-bounced"); }
+        if (ball.x <= 13 && ball.vx < 0) {
+          ball.x = 13; ball.vx *= -1; ball.bouncesRemaining -= 1; sportSfx("ricochet"); ball.el?.classList.add("just-bounced");
+        } else if (ball.x >= rect.width - 13 && ball.vx > 0) {
+          ball.x = rect.width - 13; ball.vx *= -1; ball.bouncesRemaining -= 1; sportSfx("ricochet"); ball.el?.classList.add("just-bounced");
+        }
+      }
+
+      // Cerco: ao chegar ao centro, as quatro bolas voltam para fora.
+      if (ball.style === "siege" && ball.siegeStage === 0) {
+        const centerDistance = Math.hypot(ball.x - rect.width / 2, ball.y - rect.height / 2);
+        if (centerDistance <= 34) {
+          ball.siegeStage = 1;
+          ball.vx *= -1.20;
+          ball.vy *= -1.20;
+          sportSfx("ricochet");
+          if (ball.siegeCatchCandidate) {
+            ball.catchable = true;
+            ball.el?.classList.add("is-catchable", "catch-armed");
+            sportSfx("counterReady");
+          }
+        }
+      }
+
+      // Bola-bomba explode em fragmentos radiais.
+      if (ball.style === "bomb" && ball.explodeAt && now >= ball.explodeAt) {
+        explodeBomb(ball, rect);
+        ball.el?.remove();
+        return false;
       }
 
       if (!ball.el) {
@@ -1955,6 +2669,8 @@
         ball.el.className = `dodge-ball rubro-ball rubro-ball-${ball.style}${ball.catchable ? " is-catchable" : ""}${ball.isRallyFinal ? " is-rally-final" : ""}`;
         arena.appendChild(ball.el);
       }
+
+      if (ball.catchable) ball.el.classList.add("is-catchable");
       ball.el.style.left = `${ball.x - 12}px`;
       ball.el.style.top = `${ball.y - 12}px`;
 
@@ -1962,49 +2678,42 @@
       const catchWindowActive = ball.catchable && catchDistance <= DODGE_CATCH_DISTANCE && catchDistance > 22;
       ball.el.classList.toggle("catch-window", catchWindowActive);
 
-      // Se o jogador apertou Espaço um pouco cedo, executa o agarrão assim que a bola
-      // entra na MESMA janela indicada pelo brilho verde.
       if (ball.catchable && now <= g.catchBufferedUntil && catchDistance <= DODGE_CATCH_DISTANCE) {
         completeDodgeballCatch(ball, catchDistance);
         return false;
       }
 
-      const outside = ball.x < -90 || ball.x > rect.width + 90 || ball.y < -90 || ball.y > rect.height + 90;
-      if (outside) { ball.el.remove(); return false; }
-
-      const hitRadius = ball.style === "power" ? 29 : 25;
-      const hit = catchDistance < hitRadius;
-      if (hit && now >= g.player.invulnerableUntil) {
+      const outside = ball.x < -100 || ball.x > rect.width + 100 || ball.y < -100 || ball.y > rect.height + 100;
+      if (outside && !ball.bounceAll) {
         ball.el.remove();
-        if (g.defenseShield > 0) {
-          g.defenseShield -= 1;
-          sportSfx("shield");
-          g.player.invulnerableUntil = now + 440;
-          const timer = document.getElementById("dodgeTimer");
-          if (timer) timer.textContent = "Escudo absorveu a bolada!";
-          return false;
-        }
-        const incomingDamage = Math.max(1, Math.round(ball.damage ?? (ball.style === "power" ? 24 : ball.style === "curve" ? 16 : ball.style === "ricochet" ? 14 : 15)));
-        g.playerHp = Math.max(0, g.playerHp - incomingDamage);
-        g.player.invulnerableUntil = now + (g.rallyActive ? 430 : 700);
-        playDodgePlayerHitEffect(ball.style);
-        const hpReadout = document.querySelector(".dodgeball-defense-hp strong");
-        if (hpReadout) hpReadout.textContent = `${Math.round(g.playerHp)} HP`;
-        const playerBar = document.querySelector(".dodge-hp-block.player .dodge-hp-track i");
-        if (playerBar) playerBar.style.width = `${hpPercent(g.playerHp, g.playerMaxHp)}%`;
-        const timer = document.getElementById("dodgeTimer");
-        if (timer) timer.textContent = `-${incomingDamage} HP`;
-        if (g.playerHp <= 0) {
-          finishSport("dodgeball", false, "Capitão Rubro te eliminou da quadra antes do apito final.");
-          return false;
-        }
         return false;
       }
+
+      const hitRadius =
+        ball.style === "power" ? 29 :
+        ball.style === "bomb-fragment" ? 20 :
+        ball.style === "hunter" ? 27 :
+        ball.style === "siege" ? 25 : 24;
+
+      if (catchDistance < hitRadius && now >= g.player.invulnerableUntil) {
+        ball.el.remove();
+        const fallbackDamage =
+          ball.style === "power" ? 24 :
+          ball.style === "curve" ? 16 :
+          ball.style === "ricochet" ? 14 :
+          ball.style === "bomb-fragment" ? 7 : 10;
+        applyDodgeballDamage(g, ball.damage ?? fallbackDamage, ball.style, now);
+        return false;
+      }
+
       return true;
     });
 
+    if (state.current !== g || g.playerHp <= 0) return;
+
     const playerEl = document.getElementById("dodgePlayer");
     if (playerEl) playerEl.classList.toggle("invulnerable", now < g.player.invulnerableUntil);
+
     const remaining = Math.max(0, (g.defenseEnd - now) / 1000);
     const timer = document.getElementById("dodgeTimer");
     const catchableInRange = g.balls.some((ball) => {
@@ -2012,12 +2721,14 @@
       const distance = Math.hypot(ball.x - playerX, ball.y - playerY);
       return distance <= DODGE_CATCH_DISTANCE;
     });
+
     playerEl?.classList.toggle("dodge-catch-ready", catchableInRange || now <= g.catchBufferedUntil);
     if (timer && !timer.textContent.includes("AGARROU") && !timer.textContent.includes("PERFECT")) {
       timer.textContent = catchableInRange
         ? (g.rallyActive ? "ÚLTIMA BOLA · AGARRA! [ESPAÇO]" : "AGARRA! [ESPAÇO]")
         : `${remaining.toFixed(1)}s · ${g.activePattern?.label || "Esquiva"}`;
     }
+
     if (remaining <= 0 && !g.enemyAttackDone) finishRubroDefenseTurn(false);
   }
 
