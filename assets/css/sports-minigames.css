@@ -2002,13 +2002,16 @@
   pointer-events:none;
 }
 .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense {
+  --dodge-defense-size: min(700px,58vw,calc(100vh - 96px),calc(100vw - 34px));
+  --dodge-inner-arena-size: calc(var(--dodge-defense-size) - 126px);
   position:absolute;
   z-index:32;
   left:50%;
   bottom:34px;
-  width:min(760px,58vw) !important;
-  height:min(470px,57vh) !important;
-  min-height:330px !important;
+  width:var(--dodge-defense-size) !important;
+  height:var(--dodge-defense-size) !important;
+  aspect-ratio:1 / 1 !important;
+  min-height:0 !important;
   max-height:none !important;
   transform:translateX(-50%);
   display:flex !important;
@@ -2080,6 +2083,7 @@
   min-height:0;
   display:flex;
   flex-direction:column;
+  align-items:center;
   gap:5px;
 }
 .dodgeball-defense-meta-v3 {
@@ -2105,11 +2109,12 @@
 
 /* a caixa de esquiva ocupa quase tudo dentro do diálogo expandido */
 .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-arena-v3 {
-  flex:1 1 auto !important;
+  flex:0 0 auto !important;
   min-height:0 !important;
-  width:100% !important;
-  height:auto !important;
-  margin:0 !important;
+  width:min(100%,var(--dodge-inner-arena-size)) !important;
+  height:min(100%,var(--dodge-inner-arena-size)) !important;
+  aspect-ratio:1 / 1 !important;
+  margin:0 auto !important;
   border:1px solid rgba(69,163,255,.50) !important;
   border-radius:9px !important;
   background:
@@ -2176,7 +2181,7 @@
     height:62px !important;
   }
   .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense {
-    height:min(410px,58vh) !important;
+    --dodge-defense-size:min(620px,58vw,calc(100vh - 82px),calc(100vw - 34px));
     bottom:18px;
   }
 }
@@ -2186,7 +2191,7 @@
     right:20% !important;
   }
   .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense {
-    width:min(720px,72vw) !important;
+    --dodge-defense-size:min(640px,72vw,calc(100vh - 96px),calc(100vw - 30px));
   }
 }
 @media(max-width:760px){
@@ -2202,8 +2207,7 @@
     min-height:58px !important;
   }
   .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-dialogue-arena.is-defense {
-    width:90vw !important;
-    height:min(440px,58vh) !important;
+    --dodge-defense-size:min(92vw,calc(100vh - 82px));
   }
   .sports-minigame-panel.dodgeball-hud-v3 .dodgeball-rival-card {
     left:10% !important;

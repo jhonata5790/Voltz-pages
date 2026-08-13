@@ -5,6 +5,7 @@
   const DODGE_CATCH_DISTANCE = 104;
   const DODGE_CATCH_PERFECT_DISTANCE = 46;
   const DODGE_CATCH_BUFFER_MS = 160;
+  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 640;
 
   const DODGEBALL_VISUALS = Object.freeze({
     background: "assets/images/realms/physical-education/dodgeball/arena-bg.webp",
@@ -2687,12 +2688,9 @@
     if (!arena || g.enemyAttackDone) return;
     const rect = arena.getBoundingClientRect();
 
-    // Antes X e Y recebiam a mesma variação em %, então numa arena larga
-    // 58% da largura correspondia a muito mais pixels do que 58% da altura.
-    // Agora preservamos a velocidade horizontal original em px/s e convertemos
-    // cada eixo separadamente para porcentagem.
+    // Mantem X/Y com a mesma velocidade real em pixels; ajuste aqui para balancear.
     const boost = g.moveBoost || 1;
-    const speedPxPerSecond = rect.width * 0.58 * boost;
+    const speedPxPerSecond = DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND * boost;
     const xStepPct = rect.width > 0 ? (speedPxPerSecond / rect.width) * 100 * dt : 0;
     const yStepPct = rect.height > 0 ? (speedPxPerSecond / rect.height) * 100 * dt : 0;
 
