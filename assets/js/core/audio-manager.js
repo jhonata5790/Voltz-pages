@@ -14,6 +14,8 @@
   let sfxGain = null;
   let currentMusic = null;
   let pendingMusicRequest = null;
+  let musicRequestId = 0;
+  let musicStopTimer = null;
   let uiReady = false;
 
   const settings = loadSettings();
@@ -67,6 +69,7 @@
     if (pendingMusicRequest && !currentMusic) {
       const request = pendingMusicRequest;
       pendingMusicRequest = null;
+      // playMusic cria um novo requestId e invalida qualquer tentativa antiga.
       global.setTimeout(() => playMusic(request.name, request.options), 0);
     } else if (!currentMusic && typeof global.getActiveSceneId === "function") {
       // Fallback de boot: caso a cena tenha sido carregada antes do pedido de música,
@@ -261,34 +264,89 @@
     state.timer = global.setInterval(scheduler, 35);
   }
 
+  function stopMusicState(state) {
+    if (!state || state.stopped) return;
+    state.stopped = true;
+    if (state.timer) global.clearInterval(state.timer);
+    try { state.source?.stop?.(); } catch {}
+    if (currentMusic === state) currentMusic = null;
+  }
+
   function stopCurrentMusicSource() {
-    if (!currentMusic) return;
-    currentMusic.stopped = true;
-    if (currentMusic.timer) global.clearInterval(currentMusic.timer);
-    try { currentMusic.source?.stop?.(); } catch {}
-    currentMusic = null;
+    stopMusicState(currentMusic);
+  }
+
+  function cancelMusicFade({ restoreVolume = true } = {}) {
+    if (musicStopTimer) {
+      global.clearTimeout(musicStopTimer);
+      musicStopTimer = null;
+    }
+    if (!ctx || !musicGain) return;
+    const now = ctx.currentTime;
+    musicGain.gain.cancelScheduledValues(now);
+    if (restoreVolume) musicGain.gain.setValueAtTime(clamp(settings.music), now);
   }
 
   async function playMusic(name, options = {}) {
     const intensity = clamp(options.intensity ?? .55);
-    pendingMusicRequest = { name, options: { ...options, intensity } };
-    const ok = await resumeContext();
-    if (!ok) return;
-    pendingMusicRequest = null;
+    const requestId = ++musicRequestId;
+    pendingMusicRequest = { id: requestId, name, options: { ...options, intensity } };
 
-    if (currentMusic?.name === name) { setMusicIntensity(intensity); return; }
+    const ok = await resumeContext();
+    if (!ok || requestId !== musicRequestId) return;
+
+    if (pendingMusicRequest?.id === requestId) pendingMusicRequest = null;
+
+    // Uma nova troca de faixa cancela qualquer fade antigo e encerra a música
+    // anterior imediatamente. Assim nunca existem duas trilhas válidas ao mesmo tempo.
+    cancelMusicFade();
+
+    if (currentMusic?.name === name && !currentMusic.stopped) {
+      setMusicIntensity(intensity);
+      return;
+    }
+
     stopCurrentMusicSource();
 
     const url = musicRegistry.get(name);
     if (url) {
       const buffer = await loadAudioBuffer(url, musicBuffers);
+
+      // O carregamento é assíncrono. Se outra cena/batalha pediu música enquanto
+      // esta faixa carregava, este resultado ficou obsoleto e NÃO pode começar.
+      if (requestId !== musicRequestId) return;
+
       if (buffer && ctx) {
+        // Defesa extra: se algum estado musical surgiu durante o await, encerra-o
+        // antes de promover a faixa mais recente.
+        cancelMusicFade();
+        stopCurrentMusicSource();
+
         const source = playBuffer(buffer, 1, "music", true);
-        currentMusic = { name, type:"buffer", source, intensity, stopped:false };
+        if (!source) return;
+
+        // Uma requisição pode mudar até entre decode/play em ambientes lentos.
+        if (requestId !== musicRequestId) {
+          try { source.stop(); } catch {}
+          return;
+        }
+
+        currentMusic = {
+          name,
+          type: "buffer",
+          source,
+          intensity,
+          stopped: false,
+          requestId
+        };
         return;
       }
     }
-    if (name === "dodgeball") startProceduralDodgeball(intensity);
+
+    if (name === "dodgeball" && requestId === musicRequestId) {
+      startProceduralDodgeball(intensity);
+      if (currentMusic) currentMusic.requestId = requestId;
+    }
   }
 
   function resolveSceneMusic(sceneId) {
@@ -311,20 +369,38 @@
   }
 
   function stopMusic(fadeMs = 300) {
-    if (!currentMusic || !ctx || !musicGain) { stopCurrentMusicSource(); return; }
+    // Também invalida qualquer .ogg que ainda esteja carregando.
+    musicRequestId += 1;
+    pendingMusicRequest = null;
+
+    if (!currentMusic || !ctx || !musicGain) {
+      cancelMusicFade();
+      stopCurrentMusicSource();
+      return;
+    }
+
+    cancelMusicFade({ restoreVolume: false });
+
     const state = currentMusic;
     const now = ctx.currentTime;
-    const target = musicGain.gain.value;
+    const duration = Math.max(.04, Number(fadeMs || 0) / 1000);
+
     musicGain.gain.cancelScheduledValues(now);
     musicGain.gain.setValueAtTime(Math.max(.0001, musicGain.gain.value), now);
-    musicGain.gain.exponentialRampToValueAtTime(.0001, now + Math.max(.04, fadeMs/1000));
-    global.setTimeout(() => {
-      if (currentMusic === state) stopCurrentMusicSource();
+    musicGain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+
+    musicStopTimer = global.setTimeout(() => {
+      musicStopTimer = null;
+
+      // Para especificamente A faixa que iniciou este fade. Mesmo que outra
+      // faixa tenha sido solicitada no intervalo, a antiga nunca fica órfã.
+      stopMusicState(state);
+
       if (ctx && musicGain) {
         musicGain.gain.cancelScheduledValues(ctx.currentTime);
         musicGain.gain.setValueAtTime(clamp(settings.music), ctx.currentTime);
       }
-    }, fadeMs + 30);
+    }, Math.max(0, Number(fadeMs || 0)) + 30);
   }
 
   function setMusicIntensity(value) {
@@ -450,6 +526,7 @@
   global.VoltzAudio = Object.freeze({
     unlock, playSfx, playMusic, playSceneMusic, restoreSceneMusic, stopMusic, setMusicIntensity, duckMusic,
     setMasterVolume, setMusicVolume, setSfxVolume, setMuted, toggleMute, getSettings,
-    registerSfx, registerMusic, preloadSfx
+    registerSfx, registerMusic, preloadSfx,
+    getCurrentMusic: () => currentMusic ? { name: currentMusic.name, type: currentMusic.type, requestId: currentMusic.requestId ?? null } : null
   });
 })(window);
