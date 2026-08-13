@@ -1,0 +1,40 @@
+name: Update Rubro HP
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-rubro-hp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-rubro-hp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Capitão Rubro to 240 HP
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('assets/js/realms/physical-education/sports-minigames.js')
+          text = path.read_text(encoding='utf-8')
+          old = '    const opponentMaxHp = 100;'
+          new = '    const opponentMaxHp = 240;'
+          if old not in text:
+              raise SystemExit('Expected opponentMaxHp = 100 not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Commit update and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/update-rubro-hp.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js .github/workflows/update-rubro-hp.yml
+          git commit -m "Balance: Capitão Rubro 240 HP"
+          git push
