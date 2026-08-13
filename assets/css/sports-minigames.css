@@ -1115,3 +1115,687 @@
   70%{opacity:.75;transform:translate(-50%,-50%) scale(3.7)}
   100%{opacity:0;transform:translate(-50%,-50%) scale(5)}
 }
+
+
+/* =========================================================
+   QUEIMADA HUD V2 — arena neon + sprites oficiais
+   ========================================================= */
+.sports-minigame-panel.dodgeball-hud-v2 {
+  inset: 8px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(69,163,255,.42);
+  background: #020712;
+  box-shadow: 0 22px 70px rgba(0,0,0,.72), inset 0 0 70px rgba(69,163,255,.035);
+}
+.sports-minigame-panel.dodgeball-hud-v2 #sportsMinigameContent {
+  width:100%;
+  height:100%;
+  min-height:0;
+}
+.dodgeball-shell-v2 {
+  height:100%;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  padding:8px;
+  gap:7px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 25% -10%,rgba(255,72,82,.08),transparent 34%),
+    radial-gradient(circle at 80% -10%,rgba(69,163,255,.09),transparent 34%),
+    #020712;
+}
+.dodgeball-top-hud-v2 {
+  flex:0 0 auto;
+  min-height:66px;
+  display:grid;
+  grid-template-columns:minmax(255px,1fr) 105px minmax(320px,1.35fr) 48px;
+  align-items:center;
+  gap:0;
+  overflow:hidden;
+  border:1px solid rgba(69,163,255,.44);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(7,17,31,.98),rgba(2,8,20,.98));
+  box-shadow:inset 0 -1px rgba(140,247,255,.05),0 8px 28px rgba(0,0,0,.28);
+}
+.dodgeball-top-hud-v2 > * + * { border-left:1px solid rgba(140,247,255,.13); }
+.dodgeball-brand-v2 {
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:8px 16px;
+}
+.dodgeball-brand-mark {
+  flex:0 0 auto;
+  width:42px;height:42px;
+  display:grid;place-items:center;
+  border-radius:12px;
+  background:linear-gradient(145deg,#35d9ff,#366bff 56%,#7446ff);
+  color:#fff;
+  font-size:1.35rem;
+  box-shadow:0 0 22px rgba(53,217,255,.28);
+}
+.dodgeball-brand-v2 strong {
+  display:block;
+  color:#f5fbff;
+  font-size:.84rem;
+  letter-spacing:.9px;
+}
+.dodgeball-brand-v2 span {
+  display:block;
+  margin-top:2px;
+  color:#40e9ff;
+  font-size:.52rem;
+  font-weight:1000;
+  letter-spacing:1.7px;
+}
+.dodgeball-turn-v2 {
+  height:100%;
+  display:grid;
+  align-content:center;
+  justify-items:center;
+  gap:2px;
+}
+.dodgeball-turn-v2 span {
+  color:#42e9ff;
+  font-size:.50rem;
+  font-weight:1000;
+  letter-spacing:1.4px;
+}
+.dodgeball-turn-v2 b {
+  width:42px;height:36px;
+  display:grid;place-items:center;
+  border-radius:9px;
+  border:1px solid rgba(140,247,255,.20);
+  background:rgba(255,255,255,.025);
+  font-size:1rem;
+  color:#fff;
+}
+.dodgeball-player-status-v2 {
+  min-width:0;
+  display:grid;
+  grid-template-columns:34px auto minmax(150px,1fr);
+  align-items:center;
+  gap:10px;
+  padding:8px 15px;
+}
+.dodgeball-player-status-v2 > img {
+  width:31px;height:31px;
+  object-fit:contain;
+  filter:drop-shadow(0 0 9px rgba(64,233,255,.55));
+}
+.dodgeball-player-status-copy span {
+  display:block;
+  color:#40e9ff;
+  font-size:.49rem;
+  font-weight:1000;
+  letter-spacing:1.4px;
+}
+.dodgeball-player-status-copy strong {
+  display:block;
+  margin-top:1px;
+  color:#f4feff;
+  font-size:.76rem;
+}
+.dodgeball-player-hp-v2 {
+  min-width:0;
+  display:grid;
+  gap:5px;
+}
+.dodgeball-player-hp-v2 > b {
+  justify-self:end;
+  color:#eaffff;
+  font-size:.67rem;
+}
+.dodgeball-player-hp-v2 > div {
+  height:7px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  box-shadow:inset 0 0 8px rgba(0,0,0,.34);
+}
+.dodgeball-player-hp-v2 i {
+  display:block;height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#24d8ef,#62ffd1);
+  box-shadow:0 0 13px rgba(64,233,255,.52);
+}
+.dodgeball-close-v2 {
+  height:100%;
+  border:0;
+  background:transparent;
+  color:#e8faff;
+  font-size:1.55rem;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease;
+}
+.dodgeball-close-v2:hover { background:rgba(255,107,122,.08);color:#ffabb5; }
+
+.dodgeball-main-v2 {
+  flex:1 1 auto;
+  min-height:0;
+  width:min(1180px,100%);
+  margin:0 auto;
+  display:grid;
+  grid-template-rows:minmax(235px,1.12fr) minmax(250px,.88fr);
+  gap:7px;
+}
+.dodgeball-scene-v2 {
+  position:relative;
+  min-height:0;
+  overflow:hidden;
+  border-radius:15px;
+  border:1px solid rgba(69,163,255,.20);
+  background:#030814;
+  isolation:isolate;
+}
+.dodgeball-scene-v2::after {
+  content:"";
+  position:absolute;inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(1,5,13,.06),rgba(1,5,13,.02) 58%,rgba(1,5,13,.28)),
+    radial-gradient(ellipse at center 80%,transparent 0 36%,rgba(1,5,13,.18) 78%);
+}
+.dodgeball-scene-layers { position:absolute;inset:0;z-index:0;pointer-events:none; }
+.dodgeball-scene-layer {
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center center;
+  user-select:none;
+  pointer-events:none;
+}
+.dodgeball-scene-layer.layer-bg { opacity:1; }
+.dodgeball-scene-layer.layer-stands { opacity:.78; mix-blend-mode:screen; }
+.dodgeball-scene-layer.layer-floor { opacity:.78; }
+.dodgeball-scene-layer.layer-overlay { opacity:.42; mix-blend-mode:screen; animation:dodgeArenaOverlayPulse 4.2s ease-in-out infinite alternate; }
+@keyframes dodgeArenaOverlayPulse { from{opacity:.34;filter:brightness(.88)} to{opacity:.51;filter:brightness(1.08)} }
+
+.dodgeball-scene-title-v2 {
+  position:absolute;
+  z-index:4;
+  left:24px;
+  top:19px;
+  display:grid;
+  gap:3px;
+  max-width:390px;
+  pointer-events:none;
+  text-shadow:0 2px 8px rgba(0,0,0,.66);
+}
+.dodgeball-scene-title-v2 > span {
+  color:#45f1e1;
+  font-size:.49rem;
+  font-weight:1000;
+  letter-spacing:1.6px;
+}
+.dodgeball-scene-title-v2 > strong {
+  color:#fff;
+  font-size:clamp(.96rem,1.7vw,1.35rem);
+  letter-spacing:.5px;
+}
+.dodgeball-scene-title-v2 > small {
+  color:rgba(245,251,255,.73);
+  font-size:.58rem;
+}
+
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-stage {
+  position:absolute;
+  z-index:3;
+  inset:10px 13% 10px;
+  width:auto;
+  height:auto;
+  min-height:0;
+  margin:0;
+  border:0;
+  border-radius:0;
+  overflow:visible;
+  background:transparent;
+  box-shadow:none;
+  display:grid;
+  place-items:center;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-aura {
+  bottom:27px;
+  width:360px;
+  height:220px;
+  opacity:1;
+  background:radial-gradient(ellipse,rgba(255,72,82,.28),rgba(255,72,82,.09) 43%,transparent 70%);
+  filter:blur(5px);
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-image {
+  position:absolute;
+  z-index:2;
+  bottom:48px;
+  height:min(235px,74%);
+  max-width:54%;
+  object-fit:contain;
+  filter:drop-shadow(0 14px 22px rgba(0,0,0,.58)) drop-shadow(0 0 13px rgba(255,72,82,.10));
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-card {
+  left:18%;
+  right:18%;
+  bottom:9px;
+  min-height:49px;
+  padding:7px 12px;
+  display:grid;
+  grid-template-columns:38px minmax(150px,1fr) minmax(230px,.95fr);
+  align-items:center;
+  gap:10px;
+  border-radius:10px;
+  border:1px solid rgba(255,72,82,.50);
+  background:linear-gradient(90deg,rgba(26,6,12,.91),rgba(6,7,14,.94));
+  box-shadow:0 10px 24px rgba(0,0,0,.35),inset 0 0 18px rgba(255,72,82,.035);
+  backdrop-filter:blur(8px);
+}
+.dodgeball-rival-emblem {
+  width:32px;height:32px;
+  display:grid;place-items:center;
+  border-radius:9px;
+  border:1px solid rgba(255,72,82,.54);
+  color:#ff4657;
+  background:rgba(255,72,82,.075);
+  font-size:1rem;
+  font-weight:1000;
+  font-style:italic;
+  box-shadow:inset 0 0 10px rgba(255,72,82,.08);
+}
+.dodgeball-rival-identity { min-width:0; }
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-identity strong {
+  display:block;
+  color:#ff6676;
+  font-size:.79rem;
+  letter-spacing:.7px;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-kicker {
+  margin-top:2px;
+  margin-bottom:0;
+  color:rgba(255,220,225,.67);
+  font-size:.43rem;
+  letter-spacing:1.15px;
+}
+.dodgeball-rival-hp {
+  min-width:0;
+  display:grid;
+  grid-template-columns:auto minmax(100px,1fr) auto;
+  align-items:center;
+  gap:8px;
+  color:#fff;
+  font-size:.56rem;
+  font-weight:1000;
+}
+.dodgeball-rival-hp > span { color:#ffb6be; }
+.dodgeball-rival-hp-track {
+  height:7px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+}
+.dodgeball-rival-hp-track i {
+  display:block;height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#ff334a,#ff6680);
+  box-shadow:0 0 12px rgba(255,72,82,.58);
+}
+.dodgeball-rival-hp b { white-space:nowrap;font-size:.55rem; }
+
+.dodgeball-actions-v2 {
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  width:min(830px,92%);
+  margin:0 auto;
+  gap:6px;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-dialogue-box {
+  flex:0 0 auto;
+  min-height:53px;
+  max-height:none;
+  margin:0;
+  padding:8px 13px;
+  display:grid;
+  grid-template-columns:34px 1fr;
+  align-items:center;
+  gap:11px;
+  border:1px solid rgba(49,226,255,.76);
+  border-radius:9px;
+  background:linear-gradient(90deg,rgba(4,12,24,.96),rgba(6,17,31,.91));
+  box-shadow:inset 0 0 18px rgba(49,226,255,.03),0 0 14px rgba(49,226,255,.045);
+}
+.dodgeball-dialogue-icon {
+  width:29px;height:29px;
+  display:grid;place-items:center;
+  border:1px solid rgba(49,226,255,.72);
+  border-radius:8px;
+  color:#42e9ff;
+  font-weight:1000;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-dialogue-box p {
+  margin:0;
+  font-size:.67rem;
+  line-height:1.35;
+  color:#edfaff;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-dialogue-box p::before { content:""; }
+.dodgeball-body-v2 {
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-battle-card { all:unset; }
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-area {
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  margin:0;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-title {
+  margin:0 0 4px;
+  color:#45eaff;
+  font-size:.48rem;
+  letter-spacing:1.4px;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-grid {
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(64px,1fr));
+  gap:5px;
+  padding:0;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-grid.is-four::after {
+  content:"⚡";
+  position:absolute;
+  z-index:5;
+  left:50%;top:50%;
+  width:28px;height:28px;
+  transform:translate(-50%,-50%) rotate(45deg);
+  display:grid;place-items:center;
+  border:1px solid rgba(69,163,255,.62);
+  background:#031024;
+  color:#43eaff;
+  font-size:.78rem;
+  box-shadow:0 0 14px rgba(69,163,255,.18);
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-grid.is-four::after {
+  line-height:28px;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-grid.is-four::before {
+  content:"";
+  position:absolute;
+  z-index:4;
+  left:50%;top:50%;
+  width:28px;height:28px;
+  transform:translate(-50%,-50%);
+  background:#031024;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn {
+  position:relative;
+  min-height:64px;
+  padding:9px 12px 9px 62px;
+  border:1px solid rgba(45,200,255,.43);
+  border-radius:10px;
+  background:
+    linear-gradient(100deg,rgba(5,23,42,.96),rgba(8,24,43,.74)),
+    rgba(5,12,24,.96);
+  color:#fff;
+  box-shadow:inset 0 0 18px rgba(45,200,255,.025);
+  overflow:hidden;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn::after {
+  content:"";
+  position:absolute;inset:0;
+  opacity:0;
+  background:linear-gradient(110deg,rgba(45,226,255,.08),transparent 60%);
+  transition:opacity .15s ease;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn:hover {
+  transform:translateY(-1px);
+  border-color:rgba(49,235,255,.75);
+  background:linear-gradient(100deg,rgba(5,31,55,.98),rgba(7,22,43,.88));
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn:hover::after { opacity:1; }
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-icon {
+  position:absolute;
+  left:12px;top:50%;
+  width:37px;height:37px;
+  transform:translateY(-50%);
+  display:grid;place-items:center;
+  border:1px solid rgba(45,226,255,.50);
+  border-radius:9px;
+  color:#40e9ff;
+  background:rgba(5,20,38,.88);
+  font-size:1.08rem;
+  z-index:2;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-index {
+  position:static;
+  display:inline-block;
+  width:auto;height:auto;
+  margin-right:6px;
+  border:0;
+  border-radius:0;
+  background:none;
+  color:#43eaff;
+  font-size:.95rem;
+  vertical-align:middle;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn strong {
+  display:inline;
+  margin:0;
+  color:#f5fbff;
+  font-size:.74rem;
+  vertical-align:middle;
+  letter-spacing:.35px;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn small {
+  display:block;
+  margin-top:5px;
+  color:rgba(226,245,255,.66);
+  font-size:.53rem;
+  line-height:1.25;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn.is-disabled { opacity:.38; }
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-footer {
+  flex:0 0 auto;
+  margin-top:4px;
+  text-align:center;
+  color:rgba(219,239,255,.43);
+  font-size:.48rem;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-footer b { color:#43eaff; }
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-extra-help { display:none; }
+
+/* Submenus / mira / defesa dentro da nova moldura */
+.sports-minigame-panel.dodgeball-hud-v2 .sports-game-card.dodgeball-aim-stage,
+.sports-minigame-panel.dodgeball-hud-v2 .sports-game-card.dodgeball-defense-stage {
+  flex:1 1 auto;
+  min-height:0;
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:7px 10px;
+  border-radius:10px;
+  background:rgba(5,14,27,.82);
+  border:1px solid rgba(45,200,255,.22);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.sports-minigame-panel.dodgeball-hud-v2 .sports-status-row { margin-bottom:4px;gap:5px; }
+.sports-minigame-panel.dodgeball-hud-v2 .sports-stat-pill { padding:4px 7px;font-size:.54rem; }
+.sports-minigame-panel.dodgeball-hud-v2 .sports-meter { height:25px;margin:7px 0; }
+.sports-minigame-panel.dodgeball-hud-v2 .sports-feedback { min-height:18px;margin-top:4px;font-size:.60rem; }
+.sports-minigame-panel.dodgeball-hud-v2 .sports-help { margin-top:4px;font-size:.49rem;line-height:1.25; }
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-turn-label { margin-bottom:3px;font-size:.55rem; }
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-defense-hp { font-size:.52rem;text-align:center;color:#4ef4df;margin-bottom:3px; }
+.sports-minigame-panel.dodgeball-hud-v2 .dodgeball-arena {
+  flex:1 1 auto;
+  min-height:110px;
+  height:auto;
+  width:min(680px,100%);
+  margin:0 auto;
+  border:1px solid rgba(69,163,255,.38);
+  border-radius:10px;
+  background:
+    linear-gradient(rgba(1,7,17,.35),rgba(1,7,17,.35)),
+    url("assets/images/realms/physical-education/dodgeball/arena-floor.webp") center/cover no-repeat;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.42);
+}
+
+/* Alma Voltz — 3 frames */
+.sports-minigame-panel.dodgeball-hud-v2 .dodge-player {
+  width:34px;height:34px;
+  background:none;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  overflow:visible;
+  z-index:12;
+}
+.dodge-soul-frame {
+  position:absolute;
+  inset:-7px;
+  width:48px;height:48px;
+  object-fit:contain;
+  opacity:0;
+  pointer-events:none;
+  filter:drop-shadow(0 0 9px rgba(55,225,255,.60));
+}
+.soul-frame-1 { animation:dodgeSoulFrame1 .72s steps(1,end) infinite; }
+.soul-frame-2 { animation:dodgeSoulFrame2 .72s steps(1,end) infinite; }
+.soul-frame-3 { animation:dodgeSoulFrame3 .72s steps(1,end) infinite; }
+@keyframes dodgeSoulFrame1 { 0%,32.9%{opacity:1} 33%,100%{opacity:0} }
+@keyframes dodgeSoulFrame2 { 0%,32.9%{opacity:0} 33%,65.9%{opacity:1} 66%,100%{opacity:0} }
+@keyframes dodgeSoulFrame3 { 0%,65.9%{opacity:0} 66%,100%{opacity:1} }
+.dodge-player.invulnerable .dodge-soul-frame { filter:grayscale(.3) brightness(1.6) drop-shadow(0 0 12px rgba(255,255,255,.7)); }
+
+/* Bolas oficiais */
+.dodge-ball,
+.dodgeball-attack-projectile {
+  border:0 !important;
+  border-radius:50%;
+  background-color:transparent !important;
+  background-repeat:no-repeat !important;
+  background-position:center !important;
+  background-size:contain !important;
+  box-shadow:none !important;
+}
+.dodge-ball::after,
+.dodgeball-attack-projectile::after { display:none !important; }
+.dodge-ball {
+  width:27px;height:27px;
+  filter:drop-shadow(0 0 6px rgba(255,72,82,.48));
+}
+.rubro-ball.is-catchable {
+  filter:drop-shadow(0 0 8px rgba(87,255,108,.88)) drop-shadow(0 0 13px rgba(87,255,108,.44));
+}
+.rubro-ball-bomb {
+  width:45px !important;height:45px !important;
+  margin-left:-9px !important;margin-top:-9px !important;
+  animation:dodgeBombSpritePulse .28s ease-in-out infinite alternate !important;
+}
+@keyframes dodgeBombSpritePulse { to{filter:brightness(1.32) drop-shadow(0 0 12px rgba(255,72,82,.72));transform:scale(1.06)} }
+
+.dodgeball-attack-projectile {
+  width:46px;height:46px;
+  z-index:82;
+  filter:drop-shadow(0 0 9px rgba(255,72,82,.48));
+}
+.dodgeball-projectile-curve { width:48px;height:48px; }
+.dodgeball-projectile-power { width:52px;height:52px;filter:drop-shadow(0 0 13px rgba(255,72,82,.70)); }
+.dodgeball-projectile-power::before { display:none !important; }
+
+.dodgeball-attack-trail {
+  position:absolute;
+  z-index:80;
+  width:124px;height:124px;
+  pointer-events:none;
+  background-repeat:no-repeat;
+  background-size:contain;
+  background-position:center;
+  transform-origin:center;
+  filter:drop-shadow(0 0 8px rgba(69,163,255,.26));
+  opacity:.72;
+}
+.dodgeball-trail-power { width:145px;height:145px;filter:brightness(1.2) drop-shadow(0 0 11px rgba(255,72,82,.34)); }
+.dodgeball-trail-curve { width:136px;height:136px; }
+
+/* Impactos sprite */
+.dodgeball-impact {
+  position:absolute;
+  z-index:90;
+  width:100px;height:100px;
+  pointer-events:none;
+  transform:translate(-50%,-50%) scale(.20);
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  animation:dodgeImpactSprite .42s cubic-bezier(.2,.85,.2,1) forwards;
+  filter:drop-shadow(0 0 10px rgba(255,72,82,.42));
+}
+.dodgeball-impact-power {
+  width:154px;height:154px;
+  animation-duration:.52s;
+  filter:drop-shadow(0 0 14px rgba(255,72,82,.62));
+}
+@keyframes dodgeImpactSprite {
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.18)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(.72)}
+  58%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.24)}
+}
+.dodgeball-impact-ring,.dodgeball-impact-core,.dodgeball-impact-particle { display:none !important; }
+
+/* Ajuste de telas menores sem voltar ao scroll gigante */
+@media(max-width:900px){
+  .dodgeball-top-hud-v2 { grid-template-columns:minmax(190px,1fr) 78px minmax(240px,1fr) 42px; }
+  .dodgeball-brand-v2 { padding:7px 10px;gap:8px; }
+  .dodgeball-brand-mark { width:34px;height:34px;font-size:1rem; }
+  .dodgeball-player-status-v2 { padding:6px 8px;gap:6px;grid-template-columns:28px auto minmax(110px,1fr); }
+  .dodgeball-player-status-v2 > img { width:27px;height:27px; }
+  .dodgeball-main-v2 { grid-template-rows:minmax(200px,1fr) minmax(245px,.92fr); }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-card { left:8%;right:8%; }
+}
+@media(max-height:780px){
+  .dodgeball-top-hud-v2 { min-height:56px; }
+  .dodgeball-brand-mark { width:34px;height:34px; }
+  .dodgeball-main-v2 { grid-template-rows:minmax(185px,1fr) minmax(215px,.88fr); }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-image { height:min(190px,72%);bottom:42px; }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-card { min-height:43px;padding:5px 9px; }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-dialogue-box { min-height:45px;padding:6px 10px; }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn { min-height:53px;padding-top:6px;padding-bottom:6px; }
+}
+@media(max-width:690px){
+  .dodgeball-top-hud-v2 { grid-template-columns:1fr 65px 1.15fr 38px; }
+  .dodgeball-brand-v2 span,.dodgeball-player-status-copy span { display:none; }
+  .dodgeball-brand-v2 strong { font-size:.66rem; }
+  .dodgeball-player-status-v2 { grid-template-columns:26px 1fr; }
+  .dodgeball-player-status-copy { display:none; }
+  .dodgeball-player-hp-v2 { grid-column:2; }
+  .dodgeball-main-v2 { grid-template-rows:minmax(180px,.9fr) minmax(280px,1.1fr); }
+  .dodgeball-scene-title-v2 { left:13px;top:12px; }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-rival-card {
+    left:5%;right:5%;
+    grid-template-columns:30px 1fr;
+  }
+  .dodgeball-rival-hp { grid-column:1 / -1;grid-template-columns:auto 1fr auto; }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn { padding-left:49px; }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-icon { width:30px;height:30px;left:9px; }
+  .sports-minigame-panel.dodgeball-hud-v2 .dodgeball-command-btn small { font-size:.48rem; }
+}
+@media(prefers-reduced-motion:reduce){
+  .dodgeball-scene-layer.layer-overlay,
+  .soul-frame-1,.soul-frame-2,.soul-frame-3,
+  .rubro-ball-bomb { animation:none !important; }
+  .soul-frame-1 { opacity:1 !important; }
+  .soul-frame-2,.soul-frame-3 { opacity:0 !important; }
+}

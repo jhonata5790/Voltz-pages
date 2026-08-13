@@ -6,6 +6,26 @@
   const DODGE_CATCH_PERFECT_DISTANCE = 46;
   const DODGE_CATCH_BUFFER_MS = 160;
 
+  const DODGEBALL_VISUALS = Object.freeze({
+    background: "assets/images/realms/physical-education/dodgeball/arena-bg.webp",
+    stands: "assets/images/realms/physical-education/dodgeball/arena-stands.webp",
+    floor: "assets/images/realms/physical-education/dodgeball/arena-floor.webp",
+    overlay: "assets/images/realms/physical-education/dodgeball/arena-overlay.webp",
+    ballStraight: "assets/images/realms/physical-education/dodgeball/ball-straight.webp",
+    ballCurve: "assets/images/realms/physical-education/dodgeball/ball-curve.webp",
+    ballPower: "assets/images/realms/physical-education/dodgeball/ball-power.webp",
+    ballCatch: "assets/images/realms/physical-education/dodgeball/ball-catch.webp",
+    ballBomb: "assets/images/realms/physical-education/dodgeball/ball-bomb.webp",
+    impactLight: "assets/images/realms/physical-education/dodgeball/impact-light.webp",
+    impactPower: "assets/images/realms/physical-education/dodgeball/impact-power.webp",
+    ballTrail: "assets/images/realms/physical-education/dodgeball/ball-trail.webp",
+    soulFrames: [
+      "assets/images/realms/physical-education/dodgeball/soul-1.webp",
+      "assets/images/realms/physical-education/dodgeball/soul-2.webp",
+      "assets/images/realms/physical-education/dodgeball/soul-3.webp"
+    ]
+  });
+
   // Poses extras do Capitão Rubro.
   // attack: usada no telegraph/carga/arremesso durante as fases normais.
   // phase2: usada quando Rubro entra em modo sério (<= 30% HP) e durante o Rally.
@@ -159,6 +179,7 @@
   function openPanelShell(title, kicker, subtitle, body) {
     if (!panel || !content) return;
     panel.classList.toggle("dodgeball-fit", state.current?.type === "dodgeball");
+    panel.classList.toggle("dodgeball-hud-v2", state.current?.type === "dodgeball");
     content.innerHTML = `
       <div class="sports-game-shell">
         <div class="sports-game-topbar">
@@ -265,7 +286,7 @@
     state.activeId = "";
     state.mode = "normal";
     state.championship = null;
-    panel?.classList.remove("visible", "dodgeball-fit");
+    panel?.classList.remove("visible", "dodgeball-fit", "dodgeball-hud-v2");
     panel?.setAttribute("aria-hidden", "true");
     document.body.classList.remove("sports-minigame-active");
     updateHud();
@@ -786,24 +807,38 @@
     </div>`;
   }
 
+
+  function renderDodgeballArenaLayers() {
+    return `
+      <div class="dodgeball-scene-layers" aria-hidden="true">
+        <img class="dodgeball-scene-layer layer-bg" src="${DODGEBALL_VISUALS.background}" alt="" draggable="false">
+        <img class="dodgeball-scene-layer layer-stands" src="${DODGEBALL_VISUALS.stands}" alt="" draggable="false">
+        <img class="dodgeball-scene-layer layer-floor" src="${DODGEBALL_VISUALS.floor}" alt="" draggable="false">
+        <img class="dodgeball-scene-layer layer-overlay" src="${DODGEBALL_VISUALS.overlay}" alt="" draggable="false">
+      </div>`;
+  }
+
   function renderDodgeballRival(g, phase = "command") {
     const rubroPhase = getRubroPhase(g);
     const stance = phase === "defense" ? "rival-throwing" : phase === "aim" ? "rival-ready" : "rival-waiting";
     const pose = getCapitaoRubroPose(g, phase);
     const poseName = getCapitaoRubroPoseName(g, phase);
     const rallyClass = g.rallyActive ? " rally-active" : "";
+    const hpPct = hpPercent(g.opponentHp, g.opponentMaxHp);
     return `
       <section class="dodgeball-rival-stage ${stance} rubro-phase-${rubroPhase}${rallyClass}" aria-label="Capitão Rubro" data-rubro-phase="${rubroPhase}" data-rubro-pose="${poseName}">
         <div class="dodgeball-rival-aura"></div>
         <img class="dodgeball-rival-image" src="${pose}" data-pose="${poseName}" data-fallback-src="${CAPITAO_RUBRO_IMAGE}" onerror="this.onerror=null;this.dataset.pose='base';this.src=this.dataset.fallbackSrc;" alt="Capitão Rubro segurando uma bola de queimada" draggable="false" />
         <div class="dodgeball-rival-card">
-          <div>
-            <span class="dodgeball-rival-kicker">RIVAL DA ARENA · FASE ${rubroPhase}${g.rallyActive ? " · RALLY" : ""}</span>
+          <div class="dodgeball-rival-emblem" aria-hidden="true">R</div>
+          <div class="dodgeball-rival-identity">
             <strong>CAPITÃO RUBRO</strong>
+            <span class="dodgeball-rival-kicker">RIVAL DA ARENA · FASE ${rubroPhase}${g.rallyActive ? " · RALLY" : ""}</span>
           </div>
-          <div class="dodgeball-scoreboard dodgeball-scoreboard-hp">
-            <span>Rubro <b>${Math.max(0, Math.round(g.opponentHp))} HP</b></span>
-            <span>Você <b>${Math.max(0, Math.round(g.playerHp))} HP</b></span>
+          <div class="dodgeball-rival-hp">
+            <span>HP</span>
+            <div class="dodgeball-rival-hp-track"><i style="width:${hpPct}%"></i></div>
+            <b>${Math.max(0, Math.round(g.opponentHp))} / ${g.opponentMaxHp}</b>
           </div>
         </div>
       </section>`;
@@ -811,10 +846,10 @@
 
   function getDodgeballRootActions() {
     return [
-      { id: "throw", label: "ARREMESSAR", icon: "⚡", description: "Ataque direto com escolha de estilo." },
-      { id: "tactic", label: "TÁTICA", icon: "◈", description: "Ler o rival, fintar ou observar o próximo padrão." },
-      { id: "item", label: "ITEM", icon: "✦", description: "Recuperar fôlego ou reforçar a defesa." },
-      { id: "stance", label: "POSTURA", icon: "⬢", description: "Preparar bônus para o próximo turno." }
+      { id: "throw", label: "ARREMESSAR", icon: "⌖", description: "Ataque direto com escolha de estilo." },
+      { id: "tactic", label: "TÁTICA", icon: "◉", description: "Ler o rival, fintar ou observar o próximo padrão." },
+      { id: "item", label: "ITEM", icon: "◆", description: "Recuperar fôlego ou reforçar a defesa." },
+      { id: "stance", label: "POSTURA", icon: "⬡", description: "Preparar a defesa para o próximo turno." }
     ];
   }
 
@@ -1041,37 +1076,81 @@
 
   function renderDodgeballLayout(title, subtitle, dialogue, body, phase = "command") {
     const g = state.current;
-    openPanelShell(
-      title,
-      "Arena da Esquiva",
-      subtitle,
-      `${renderDodgeballRival(g, phase)}
-      <section class="dodgeball-battle-card">
-        <div class="dodgeball-hp-row">
-          ${renderDodgeHpBar("VOCÊ", g.playerHp, g.playerMaxHp, "player")}
-          <span class="dodgeball-turn-chip">T${g.turn}</span>
-          ${renderDodgeHpBar("RUBRO", g.opponentHp, g.opponentMaxHp, "rubro")}
-        </div>
-        <div class="dodgeball-dialogue-box"><p>${escapeHtml(dialogue)}</p></div>
-        ${body}
-      </section>`
-    );
+    if (!panel || !content || !g) return;
+
+    panel.classList.add("dodgeball-fit", "dodgeball-hud-v2");
+    const playerPct = hpPercent(g.playerHp, g.playerMaxHp);
+    const turnLabel = String(Math.max(1, Number(g.turn || 1))).padStart(2, "0");
+
+    content.innerHTML = `
+      <div class="dodgeball-shell-v2">
+        <header class="dodgeball-top-hud-v2">
+          <div class="dodgeball-brand-v2">
+            <div class="dodgeball-brand-mark">⚡</div>
+            <div><strong>VOLTZ EDUCATION</strong><span>REINO DE EDUCAÇÃO FÍSICA</span></div>
+          </div>
+
+          <div class="dodgeball-turn-v2">
+            <span>TURNO</span>
+            <b>${turnLabel}</b>
+          </div>
+
+          <div class="dodgeball-player-status-v2">
+            <img src="${DODGEBALL_VISUALS.soulFrames[0]}" alt="" draggable="false">
+            <div class="dodgeball-player-status-copy">
+              <span>VOCÊ</span>
+              <strong>VOLTZ</strong>
+            </div>
+            <div class="dodgeball-player-hp-v2">
+              <b>${Math.max(0, Math.round(g.playerHp))} / ${g.playerMaxHp} HP</b>
+              <div><i style="width:${playerPct}%"></i></div>
+            </div>
+          </div>
+
+          <button class="dodgeball-close-v2" type="button" onclick="VoltzSports.close()" aria-label="Fechar batalha">×</button>
+        </header>
+
+        ${state.championship?.active ? renderChampionshipHeader() : ""}
+
+        <main class="dodgeball-main-v2">
+          <section class="dodgeball-scene-v2">
+            ${renderDodgeballArenaLayers()}
+            <div class="dodgeball-scene-title-v2">
+              <span>ARENA DA ESQUIVA</span>
+              <strong>${escapeHtml(title)}</strong>
+              <small>${escapeHtml(subtitle)}</small>
+            </div>
+            ${renderDodgeballRival(g, phase)}
+          </section>
+
+          <section class="dodgeball-actions-v2">
+            <div class="dodgeball-dialogue-box">
+              <span class="dodgeball-dialogue-icon" aria-hidden="true">≡</span>
+              <p>${escapeHtml(dialogue)}</p>
+            </div>
+            <div class="dodgeball-body-v2">${body}</div>
+          </section>
+        </main>
+      </div>
+    `;
   }
 
   function renderDodgeMenuButtons(menuTitle, options, backLabel = "Voltar") {
+    const hasIcons = options.some((option) => option.icon);
     return `
-      <div class="dodgeball-command-area">
+      <div class="dodgeball-command-area ${hasIcons ? "has-icons" : ""}">
         <div class="dodgeball-command-title">${escapeHtml(menuTitle)}</div>
         <div class="dodgeball-command-grid ${options.length > 3 ? "is-four" : ""}">
           ${options.map((option, index) => `
             <button class="dodgeball-command-btn ${option.available === false ? "is-disabled" : ""}" type="button" onclick="${option.onclick}" ${option.available === false ? "disabled" : ""}>
-              <span class="dodgeball-command-index">${index + 1}</span>
+              ${option.icon ? `<span class="dodgeball-command-icon">${escapeHtml(option.icon)}</span>` : ""}
+              <span class="dodgeball-command-index">${index + 1}.</span>
               <strong>${escapeHtml(option.label)}</strong>
               <small>${escapeHtml(option.description)}</small>
             </button>
           `).join("")}
         </div>
-        <div class="dodgeball-command-footer">Pressione 1–4 para escolher · Esc para sair · 0 para ${escapeHtml(backLabel.toLowerCase())}</div>
+        <div class="dodgeball-command-footer">Pressione <b>1–4</b> para escolher · <b>Esc</b> para sair · <b>0</b> para ${escapeHtml(backLabel.toLowerCase())}</div>
       </div>`;
   }
 
@@ -1281,15 +1360,9 @@
     impact.className = `dodgeball-impact dodgeball-impact-${styleId}`;
     impact.style.left = `${x}px`;
     impact.style.top = `${y}px`;
-
-    const particleCount = styleId === "power" ? 12 : 8;
-    impact.innerHTML = `
-      <span class="dodgeball-impact-ring"></span>
-      <span class="dodgeball-impact-core"></span>
-      ${Array.from({ length: particleCount }, (_, index) => `<span class="dodgeball-impact-particle" style="--impact-angle:${(360 / particleCount) * index}deg"></span>`).join("")}
-    `;
+    impact.style.backgroundImage = `url("${styleId === "power" ? DODGEBALL_VISUALS.impactPower : DODGEBALL_VISUALS.impactLight}")`;
     panel.appendChild(impact);
-    addTimer(() => impact.remove(), styleId === "power" ? 520 : 430);
+    addTimer(() => impact.remove(), styleId === "power" ? 520 : 410);
   }
 
   function flashDodgeballRival(styleId = "straight") {
@@ -1338,6 +1411,19 @@
     const projectile = document.createElement("div");
     projectile.className = `dodgeball-attack-projectile dodgeball-projectile-${styleId}`;
     projectile.setAttribute("aria-hidden", "true");
+    const ballSprite = styleId === "power"
+      ? DODGEBALL_VISUALS.ballPower
+      : styleId === "curve"
+        ? DODGEBALL_VISUALS.ballCurve
+        : DODGEBALL_VISUALS.ballStraight;
+    projectile.style.backgroundImage = `url("${ballSprite}")`;
+
+    const trail = document.createElement("div");
+    trail.className = `dodgeball-attack-trail dodgeball-trail-${styleId}`;
+    trail.style.backgroundImage = `url("${DODGEBALL_VISUALS.ballTrail}")`;
+    trail.setAttribute("aria-hidden", "true");
+
+    panel.appendChild(trail);
     panel.appendChild(projectile);
 
     const startX = panelRect.width * .50;
@@ -1353,6 +1439,8 @@
 
     projectile.style.left = `${startX - 22}px`;
     projectile.style.top = `${startY - 22}px`;
+    trail.style.left = `${startX - 62}px`;
+    trail.style.top = `${startY - 62}px`;
 
     let duration = 500;
     let frames;
@@ -1382,13 +1470,18 @@
       ];
     }
 
-    const animation = projectile.animate(frames, {
-      duration,
-      easing: styleId === "power" ? "cubic-bezier(.08,.72,.16,1)" : styleId === "curve" ? "cubic-bezier(.32,.02,.22,1)" : "cubic-bezier(.18,.68,.22,1)"
-    });
+    const easing = styleId === "power" ? "cubic-bezier(.08,.72,.16,1)" : styleId === "curve" ? "cubic-bezier(.32,.02,.22,1)" : "cubic-bezier(.18,.68,.22,1)";
+    const animation = projectile.animate(frames, { duration, easing });
+    const trailFrames = frames.map((frame, index) => ({
+      ...frame,
+      opacity: index === frames.length - 1 ? .15 : .72,
+      filter: `${frame.filter || ""} blur(${styleId === "power" ? 0 : 0.4}px)`
+    }));
+    trail.animate(trailFrames, { duration, easing });
 
     await animation.finished.catch(() => {});
     projectile.remove();
+    trail.remove();
 
     if (!connected) return;
 
@@ -1816,7 +1909,11 @@
         <div class="dodgeball-defense-hp">VOCÊ · <strong>${Math.max(0, Math.round(g.playerHp))} HP</strong></div>
         <div id="dodgeArena" class="dodgeball-arena dodgeball-dynamic-arena">
           <div id="dodgeTelegraph" class="dodge-attack-telegraph"><span id="dodgeTelegraphLabel"></span></div>
-          <div id="dodgePlayer" class="dodge-player">⚡</div>
+          <div id="dodgePlayer" class="dodge-player" aria-label="Alma Voltz">
+            <img class="dodge-soul-frame soul-frame-1" src="${DODGEBALL_VISUALS.soulFrames[0]}" alt="" draggable="false">
+            <img class="dodge-soul-frame soul-frame-2" src="${DODGEBALL_VISUALS.soulFrames[1]}" alt="" draggable="false">
+            <img class="dodge-soul-frame soul-frame-3" src="${DODGEBALL_VISUALS.soulFrames[2]}" alt="" draggable="false">
+          </div>
         </div>
         <div id="dodgeTimer" class="sports-feedback">Leia o movimento...</div>
         <div class="sports-help">WASD / Setas · ${catchHelp} ${g.defenseShield > 0 ? "Você tem um escudo pronto. " : ""}${g.moveBoost > 1 ? "Sua postura defensiva aumenta a velocidade. " : ""}${g.enemySlowMultiplier < 1 ? "O apito desacelerou as bolas. " : ""}</div>
@@ -2583,6 +2680,7 @@
       if (ball.catchableAt && now >= ball.catchableAt && !ball.catchable) {
         ball.catchable = true;
         ball.el?.classList.add("is-catchable", "catch-armed");
+        if (ball.el) ball.el.style.backgroundImage = `url("${DODGEBALL_VISUALS.ballCatch}")`;
         sportSfx("counterReady");
       }
 
@@ -2652,6 +2750,7 @@
           if (ball.siegeCatchCandidate) {
             ball.catchable = true;
             ball.el?.classList.add("is-catchable", "catch-armed");
+            if (ball.el) ball.el.style.backgroundImage = `url("${DODGEBALL_VISUALS.ballCatch}")`;
             sportSfx("counterReady");
           }
         }
@@ -2667,10 +2766,23 @@
       if (!ball.el) {
         ball.el = document.createElement("div");
         ball.el.className = `dodge-ball rubro-ball rubro-ball-${ball.style}${ball.catchable ? " is-catchable" : ""}${ball.isRallyFinal ? " is-rally-final" : ""}`;
+        const enemySprite = ball.catchable
+          ? DODGEBALL_VISUALS.ballCatch
+          : ball.style === "bomb"
+            ? DODGEBALL_VISUALS.ballBomb
+            : ball.style === "power"
+              ? DODGEBALL_VISUALS.ballPower
+              : ball.style === "curve"
+                ? DODGEBALL_VISUALS.ballCurve
+                : DODGEBALL_VISUALS.ballStraight;
+        ball.el.style.backgroundImage = `url("${enemySprite}")`;
         arena.appendChild(ball.el);
       }
 
-      if (ball.catchable) ball.el.classList.add("is-catchable");
+      if (ball.catchable) {
+        ball.el.classList.add("is-catchable");
+        ball.el.style.backgroundImage = `url("${DODGEBALL_VISUALS.ballCatch}")`;
+      }
       ball.el.style.left = `${ball.x - 12}px`;
       ball.el.style.top = `${ball.y - 12}px`;
 
