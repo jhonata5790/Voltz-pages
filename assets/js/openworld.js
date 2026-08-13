@@ -883,6 +883,11 @@ const viewport = document.getElementById("gameViewport");
       updateNearbyWorldEquation();
       updateMathBuffHud();
       updateDebug();
+
+      // A cena inicial não passa por changeScene(). Registra sua trilha desde o boot
+      // para que o navegador a inicie assim que o primeiro gesto do usuário liberar áudio.
+      window.VoltzSports?.onSceneChanged?.(currentScene.id);
+      window.VoltzAudio?.playSceneMusic?.(currentScene.id);
     }
 
     function updateWorldSizeFromCss() {

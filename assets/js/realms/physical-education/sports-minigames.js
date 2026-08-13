@@ -6,11 +6,12 @@
   const DODGE_CATCH_PERFECT_DISTANCE = 46;
   const DODGE_CATCH_BUFFER_MS = 160;
 
-  // Slots preparados para futuras poses. Enquanto enabled=false, o jogo usa
-  // automaticamente a arte atual e não tenta carregar arquivos inexistentes.
+  // Poses extras do Capitão Rubro.
+  // attack: usada no telegraph/carga/arremesso durante as fases normais.
+  // phase2: usada quando Rubro entra em modo sério (<= 30% HP) e durante o Rally.
   const CAPITAO_RUBRO_POSE_SLOTS = Object.freeze({
-    attack: { path: "assets/images/rivals/capitao-rubro-ataque.png", enabled: false },
-    phase2: { path: "assets/images/rivals/capitao-rubro-fase2.png", enabled: false }
+    attack: { path: "assets/images/rivals/capitao-rubro-ataque.png", enabled: true },
+    phase2: { path: "assets/images/rivals/capitao-rubro-fase2.png", enabled: true }
   });
 
   const SPORT_META = {
@@ -78,6 +79,8 @@
   }
 
   function clearRuntime() {
+    panel?.classList.remove("perfect-return-mode", "perfect-return-impacting");
+    panel?.querySelectorAll?.(".perfect-return-cinematic")?.forEach?.((node) => node.remove());
     state.cleanupFns.splice(0).forEach((fn) => {
       try { fn(); } catch {}
     });
@@ -744,30 +747,62 @@
   }
 
   function getCapitaoRubroPose(g, stance = "idle") {
-    const phase = getRubroPhase(g);
-    if (phase >= 2 && CAPITAO_RUBRO_POSE_SLOTS.phase2.enabled) return CAPITAO_RUBRO_POSE_SLOTS.phase2.path;
-    if (["defense", "throw", "charge", "feint"].includes(stance) && CAPITAO_RUBRO_POSE_SLOTS.attack.enabled) return CAPITAO_RUBRO_POSE_SLOTS.attack.path;
+    const maxHp = Math.max(1, Number(g?.opponentMaxHp || 100));
+    const hpRatio = Number(g?.opponentHp ?? maxHp) / maxHp;
+    const seriousMode = Boolean(g?.rallyActive) || hpRatio <= 0.30;
+
+    // A pose de fase 2 tem prioridade no trecho mais perigoso da batalha.
+    if (seriousMode && CAPITAO_RUBRO_POSE_SLOTS.phase2.enabled) {
+      return CAPITAO_RUBRO_POSE_SLOTS.phase2.path;
+    }
+
+    // Durante os ataques normais, Rubro troca para a pose preparada de arremesso.
+    // "defense" aqui é o estado geral do turno inimigo; a troca ocorre apenas
+    // quando setRubroDefenseVisual chama charge/throw/feint.
+    if (["throw", "charge", "feint"].includes(stance) && CAPITAO_RUBRO_POSE_SLOTS.attack.enabled) {
+      return CAPITAO_RUBRO_POSE_SLOTS.attack.path;
+    }
+
     return CAPITAO_RUBRO_IMAGE;
   }
 
+  function getCapitaoRubroPoseName(g, stance = "idle") {
+    const pose = getCapitaoRubroPose(g, stance);
+    if (pose === CAPITAO_RUBRO_POSE_SLOTS.phase2.path) return "phase2";
+    if (pose === CAPITAO_RUBRO_POSE_SLOTS.attack.path) return "attack";
+    return "base";
+  }
+
+  function hpPercent(value, max) {
+    return clamp((Number(value || 0) / Math.max(1, Number(max || 1))) * 100, 0, 100);
+  }
+
+  function renderDodgeHpBar(label, value, max, side = "player") {
+    const pct = hpPercent(value, max);
+    return `<div class="dodge-hp-block ${side}">
+      <div class="dodge-hp-label"><strong>${escapeHtml(label)}</strong><span>${Math.max(0, Math.round(value))}/${max} HP</span></div>
+      <div class="dodge-hp-track"><i style="width:${pct}%"></i></div>
+    </div>`;
+  }
+
   function renderDodgeballRival(g, phase = "command") {
-    const opponentLost = Math.max(0, g.opponentMaxHp - g.opponentHp);
-    const playerLost = Math.max(0, g.playerMaxHp - g.playerHp);
     const rubroPhase = getRubroPhase(g);
     const stance = phase === "defense" ? "rival-throwing" : phase === "aim" ? "rival-ready" : "rival-waiting";
     const pose = getCapitaoRubroPose(g, phase);
+    const poseName = getCapitaoRubroPoseName(g, phase);
+    const rallyClass = g.rallyActive ? " rally-active" : "";
     return `
-      <section class="dodgeball-rival-stage ${stance} rubro-phase-${rubroPhase}" aria-label="Capitão Rubro" data-rubro-phase="${rubroPhase}">
+      <section class="dodgeball-rival-stage ${stance} rubro-phase-${rubroPhase}${rallyClass}" aria-label="Capitão Rubro" data-rubro-phase="${rubroPhase}" data-rubro-pose="${poseName}">
         <div class="dodgeball-rival-aura"></div>
-        <img class="dodgeball-rival-image" src="${pose}" alt="Capitão Rubro segurando uma bola de queimada" draggable="false" />
+        <img class="dodgeball-rival-image" src="${pose}" data-pose="${poseName}" data-fallback-src="${CAPITAO_RUBRO_IMAGE}" onerror="this.onerror=null;this.dataset.pose='base';this.src=this.dataset.fallbackSrc;" alt="Capitão Rubro segurando uma bola de queimada" draggable="false" />
         <div class="dodgeball-rival-card">
           <div>
-            <span class="dodgeball-rival-kicker">RIVAL DA ARENA · FASE ${rubroPhase}</span>
+            <span class="dodgeball-rival-kicker">RIVAL DA ARENA · FASE ${rubroPhase}${g.rallyActive ? " · RALLY" : ""}</span>
             <strong>CAPITÃO RUBRO</strong>
           </div>
-          <div class="dodgeball-scoreboard">
-            <span title="Pontos restantes do Capitão Rubro">Rubro ${"●".repeat(g.opponentHp)}${"○".repeat(opponentLost)}</span>
-            <span title="Seus pontos restantes">Você ${"●".repeat(g.playerHp)}${"○".repeat(playerLost)}</span>
+          <div class="dodgeball-scoreboard dodgeball-scoreboard-hp">
+            <span>Rubro <b>${Math.max(0, Math.round(g.opponentHp))} HP</b></span>
+            <span>Você <b>${Math.max(0, Math.round(g.playerHp))} HP</b></span>
           </div>
         </div>
       </section>`;
@@ -784,9 +819,9 @@
 
   function getDodgeballThrowOptions() {
     return [
-      { id: "straight", label: "Reto", description: "Janela equilibrada e dano estável.", baseDamage: 1, min: 34, max: 66 },
-      { id: "curve", label: "Curva", description: "Mais difícil, mas engana melhor o rival.", baseDamage: 1, min: 42, max: 58, graze: 8 },
-      { id: "power", label: "Forte", description: "Janela menor, porém mais impacto.", baseDamage: 2, min: 47, max: 53 }
+      { id: "straight", label: "Reto", description: "Janela equilibrada · 18 de dano.", baseDamage: 18, min: 34, max: 66 },
+      { id: "curve", label: "Curva", description: "Janela menor · 22 de dano e trajetória enganosa.", baseDamage: 22, min: 42, max: 58, graze: 8 },
+      { id: "power", label: "Forte", description: "Janela mínima · 32 de dano e impacto pesado.", baseDamage: 32, min: 47, max: 53 }
     ];
   }
 
@@ -800,7 +835,7 @@
 
   function getDodgeballItemOptions(g) {
     return [
-      { id: "water", label: `Água (${g.items.water})`, available: g.items.water > 0, description: "Recupera 1 ponto, até o máximo." },
+      { id: "water", label: `Água (${g.items.water})`, available: g.items.water > 0, description: "Recupera 25 HP, até o máximo." },
       { id: "band", label: `Faixa (${g.items.band})`, available: g.items.band > 0, description: "Absorve o próximo impacto na esquiva." },
       { id: "whistle", label: `Apito (${g.items.whistle})`, available: g.items.whistle > 0, description: "Desacelera as bolas do próximo turno inimigo." }
     ];
@@ -842,8 +877,8 @@
   function startDodgeball() {
     playDodgeballMusic(state.mode === "championship" ? .72 : .56);
     sportSfx("whistle");
-    const playerMaxHp = state.mode === "championship" ? 2 : 3;
-    const opponentMaxHp = state.mode === "championship" ? 2 : 3;
+    const playerMaxHp = 100;
+    const opponentMaxHp = 100;
     state.current = {
       type: "dodgeball",
       phase: "command",
@@ -872,6 +907,12 @@
       catchCooldownUntil: 0,
       catchBufferedUntil: 0,
       counterAttackReady: false,
+      rallyUsed: false,
+      rallyActive: false,
+      rallyCompleted: false,
+      rallyFinalCaught: false,
+      perfectReturnReady: false,
+      rubroExhausted: false,
       selectedThrow: null,
       throwWindowBonus: 0,
       damageBonus: 0,
@@ -917,10 +958,10 @@
       subtitle,
       `${renderDodgeballRival(g, phase)}
       <section class="dodgeball-battle-card">
-        <div class="dodgeball-status-strip">
-          <span>Turno ${g.turn}</span>
-          <span>Você ${"♥".repeat(g.playerHp)}${"♡".repeat(Math.max(0, g.playerMaxHp - g.playerHp))}</span>
-          <span>Rubro ${"●".repeat(g.opponentHp)}${"○".repeat(Math.max(0, g.opponentMaxHp - g.opponentHp))}</span>
+        <div class="dodgeball-hp-row">
+          ${renderDodgeHpBar("VOCÊ", g.playerHp, g.playerMaxHp, "player")}
+          <span class="dodgeball-turn-chip">T${g.turn}</span>
+          ${renderDodgeHpBar("RUBRO", g.opponentHp, g.opponentMaxHp, "rubro")}
         </div>
         <div class="dodgeball-dialogue-box"><p>${escapeHtml(dialogue)}</p></div>
         ${body}
@@ -1093,7 +1134,7 @@
       return;
     }
     if (id === "read") {
-      g.damageBonus += 1;
+      g.damageBonus += 8;
       performDodgeNonAttack("Você leu a postura de Capitão Rubro. Seu próximo arremesso ficará mais incisivo.");
     }
   }
@@ -1105,7 +1146,7 @@
     if (id === "water") {
       if (g.items.water <= 0) return;
       g.items.water -= 1;
-      g.playerHp = Math.min(g.playerMaxHp, g.playerHp + 1);
+      g.playerHp = Math.min(g.playerMaxHp, g.playerHp + 25);
       performDodgeNonAttack("Você tomou água e recuperou o fôlego antes do próximo turno.");
       return;
     }
@@ -1139,7 +1180,7 @@
       return;
     }
     if (id === "prepare") {
-      g.damageBonus += 1;
+      g.damageBonus += 8;
       performDodgeNonAttack("Você segurou a bola por um instante a mais. O próximo arremesso virá mais pesado.");
     }
   }
@@ -1300,8 +1341,16 @@
     if (throwButton) { throwButton.disabled = true; throwButton.textContent = "Lançado!"; }
     if (backButton) backButton.disabled = true;
 
+    let rallyTriggeredByHit = false;
     await playDodgeballThrowEffect(option.id, connected, g.cursor, min, max, () => {
-      g.opponentHp = Math.max(0, g.opponentHp - damage);
+      const nextHp = Math.max(0, g.opponentHp - damage);
+      if (damage > 0 && !g.rallyUsed && g.opponentHp > 10 && nextHp <= 10) {
+        // Phase gate: a primeira vez que Rubro cruza 10 HP, ele segura em 9 e inicia o Rally.
+        g.opponentHp = 9;
+        rallyTriggeredByHit = true;
+      } else {
+        g.opponentHp = nextHp;
+      }
     });
 
     if (!state.current || state.current !== g) return;
@@ -1309,6 +1358,7 @@
     g.throwWindowBonus = 0;
     g.damageBonus = 0;
     g.counterAttackReady = false;
+    g.rubroExhausted = false;
     g.turn += 1;
     g.dialogue = message;
 
@@ -1320,6 +1370,11 @@
       if (!state.current || state.current !== g) return;
       g.selectedThrow = null;
       g.locked = false;
+      if (rallyTriggeredByHit) {
+        g.dialogue = "O golpe deveria ter encerrado a partida... mas Rubro firma os pés com 9 HP.";
+        startRallyRubro();
+        return;
+      }
       if (g.opponentHp <= 0) {
         finishSport("dodgeball", true, "Você venceu o Capitão Rubro e dominou a Arena da Esquiva.");
         return;
@@ -1329,6 +1384,7 @@
   }
 
   function getRubroAttackComment(g, attack) {
+    if (attack?.id === "rally") return "Sobreviva ao Rally. Nenhuma bola pode ser agarrada até o último arremesso.";
     const phase = getRubroPhase(g);
     if (phase === 1) return attack.telegraph;
     if (phase === 2) return `${attack.telegraph} Ele já não está jogando no mesmo ritmo do início.`;
@@ -1398,19 +1454,195 @@
     return seq;
   }
 
+  function buildRallyRubroSequence(g) {
+    const seq = [];
+    const add = (at, kind, data = {}) => seq.push({ at, kind, done: false, ...data });
+
+    // ~30 segundos: Rubro revisita tudo o que já mostrou, mas encadeado.
+    add(0, "rallyTitle", { text: "RALLY RUBRO" });
+    add(900, "telegraph", { text: "RETO", side: "left", tone: "combo" });
+    add(1350, "throw", { style: "straight", side: "left", catchable: false, damage: 12 });
+    add(2600, "telegraph", { text: "CURVA", side: "right", tone: "curve" });
+    add(3050, "throw", { style: "curve", side: "right", curveDirection: -1, catchable: false, damage: 13 });
+    add(4300, "telegraph", { text: "RICOCHE!", side: "left", tone: "ricochet" });
+    add(4800, "throw", { style: "ricochet", side: "left", catchable: false, bounces: 2, damage: 11 });
+    add(6100, "telegraph", { text: "...", side: "right", tone: "feint" });
+    add(6500, "fake", { side: "right" });
+    add(7000, "telegraph", { text: "FINTA!", side: "left", tone: "feint-real" });
+    add(7350, "throw", { style: "straight", side: "left", catchable: false, damage: 12 });
+    add(8700, "charge", { side: "center" });
+    add(9150, "throw", { style: "power", side: "center", catchable: false, damage: 20 });
+
+    add(10700, "telegraph", { text: "SEQUÊNCIA", side: "left", tone: "combo" });
+    add(11100, "throw", { style: "straight", side: "left", catchable: false, damage: 10 });
+    add(11700, "throw", { style: "curve", side: "right", curveDirection: -1, catchable: false, damage: 11 });
+    add(12400, "throw", { style: "straight", side: "center", catchable: false, damage: 10 });
+
+    add(14100, "telegraph", { text: "SEM PAUSA", side: "right", tone: "combo" });
+    add(14500, "throw", { style: "ricochet", side: "right", catchable: false, bounces: 2, damage: 10 });
+    add(15200, "throw", { style: "curve", side: "left", curveDirection: 1, catchable: false, damage: 11 });
+    add(16100, "charge", { side: "right" });
+    add(16500, "throw", { style: "power", side: "right", catchable: false, damage: 19 });
+
+    add(18300, "telegraph", { text: "MAIS RÁPIDO", side: "center", tone: "power" });
+    add(18700, "throw", { style: "straight", side: "left", catchable: false, damage: 9 });
+    add(19200, "throw", { style: "straight", side: "right", catchable: false, damage: 9 });
+    add(19800, "throw", { style: "curve", side: "center", curveDirection: Math.random() > .5 ? 1 : -1, catchable: false, damage: 11 });
+    add(20800, "throw", { style: "ricochet", side: "left", catchable: false, bounces: 2, damage: 10 });
+    add(22000, "charge", { side: "center" });
+    add(22400, "throw", { style: "power", side: "center", catchable: false, damage: 18 });
+
+    add(24100, "telegraph", { text: "ÚLTIMA SEQUÊNCIA", side: "center", tone: "combo" });
+    add(24500, "throw", { style: "curve", side: "left", curveDirection: 1, catchable: false, damage: 10 });
+    add(25200, "throw", { style: "straight", side: "right", catchable: false, damage: 10 });
+    add(26200, "rallyFinalTelegraph", { text: "ÚLTIMA BOLA" });
+    add(27400, "throw", { style: "rallyFinal", side: "center", catchable: true, damage: 18, isRallyFinal: true });
+    return seq;
+  }
+
+  function startRallyRubro() {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball" || g.rallyUsed) return;
+    g.rallyUsed = true;
+    g.rallyActive = true;
+    g.rallyCompleted = false;
+    g.rallyFinalCaught = false;
+    g.perfectReturnReady = false;
+    g.phase = "defense";
+    g.locked = false;
+    g.balls = [];
+    g.player = { x: 50, y: 62, invulnerableUntil: 0 };
+    g.activePattern = {
+      id: "rally",
+      label: "RALLY RUBRO",
+      duration: 30000,
+      catchable: true,
+      telegraph: "Capitão Rubro parou de sorrir. Agora ele vai usar tudo o que tem."
+    };
+    g.enemyAttackStart = performance.now();
+    g.enemyAttackDone = false;
+    g.enemyAttackSequence = buildRallyRubroSequence(g);
+    g.defenseEnd = g.enemyAttackStart + 30000;
+    g.catchBufferedUntil = 0;
+    setDodgeballMusicIntensity(1);
+    duckDodgeballMusic(.10, 180);
+    sportSfx("whistle");
+    g.dialogue = "Capitão Rubro para de sorrir. Ele pega outra bola. E outra. ...Isso não parece bom.";
+    renderDodgeDefense();
+    addTimer(() => {
+      if (state.current === g && g.rallyActive) showDodgeTelegraph("RALLY RUBRO", "power", "center");
+    }, 120);
+  }
+
+  function renderPerfectReturnCommand() {
+    const g = state.current;
+    if (!g || !g.perfectReturnReady) return;
+    g.phase = "perfect-return";
+    g.menu = "perfect-return";
+    setDodgeballMusicIntensity(.42);
+    renderDodgeballLayout(
+      "⚡ DEVOLUÇÃO PERFEITA",
+      "Você segurou o último arremesso de Rubro. Não existe mais escolha de estilo.",
+      "Você está segurando o último arremesso do Capitão Rubro. Ele já sabe que a bola vai voltar.",
+      `<div class="perfect-return-command">
+        <div class="perfect-return-emblem">⚡</div>
+        <button class="perfect-return-btn" type="button" onclick="VoltzSports.performPerfectReturn()">CONTRA-ATACAR</button>
+        <div class="sports-help">[Espaço / Enter] · Esse ataque não pode errar.</div>
+      </div>`,
+      "command"
+    );
+  }
+
+  async function performPerfectReturn() {
+    const g = state.current;
+    if (!g || g.phase !== "perfect-return" || !g.perfectReturnReady || g.locked) return;
+    g.locked = true;
+    g.phase = "cinematic";
+    sportSfx("counterReady");
+    duckDodgeballMusic(.04, 420);
+
+    const root = panel;
+    const rivalStage = root?.querySelector?.(".dodgeball-rival-stage");
+    const rivalImage = rivalStage?.querySelector?.(".dodgeball-rival-image");
+    if (!root || !rivalStage || !rivalImage) {
+      g.opponentHp = 0;
+      finishSport("dodgeball", true, "Devolução Perfeita. Você venceu o Capitão Rubro.");
+      return;
+    }
+
+    root.classList.add("perfect-return-mode");
+    const overlay = document.createElement("div");
+    overlay.className = "perfect-return-cinematic";
+    overlay.innerHTML = `<div class="perfect-return-caption">VOCÊ JÁ SABIA.</div><div class="perfect-return-ball"></div><div class="perfect-return-impact"></div>`;
+    root.appendChild(overlay);
+
+    const rootRect = root.getBoundingClientRect();
+    const rivalRect = rivalImage.getBoundingClientRect();
+    const startX = rootRect.width * .5;
+    const startY = rootRect.height * .87;
+    const targetX = rivalRect.left - rootRect.left + rivalRect.width * .5;
+    const targetY = rivalRect.top - rootRect.top + rivalRect.height * .42;
+    const dodgeX = Math.min(rootRect.width - 70, targetX + Math.min(150, rootRect.width * .16));
+    const ball = overlay.querySelector(".perfect-return-ball");
+    const impact = overlay.querySelector(".perfect-return-impact");
+    const caption = overlay.querySelector(".perfect-return-caption");
+
+    ball.style.left = `${startX}px`;
+    ball.style.top = `${startY}px`;
+    impact.style.left = `${dodgeX}px`;
+    impact.style.top = `${targetY}px`;
+
+    sportSfx("throwPower");
+    ball.animate([
+      { left:`${startX}px`, top:`${startY}px`, transform:"translate(-50%,-50%) scale(1.8)", offset:0 },
+      { left:`${targetX}px`, top:`${targetY + 65}px`, transform:"translate(-50%,-50%) scale(1.05)", offset:.43 },
+      { left:`${targetX - 20}px`, top:`${targetY}px`, transform:"translate(-50%,-50%) scale(.95)", offset:.58 },
+      { left:`${dodgeX - 55}px`, top:`${targetY - 18}px`, transform:"translate(-50%,-50%) scale(1.0)", offset:.75 },
+      { left:`${dodgeX}px`, top:`${targetY}px`, transform:"translate(-50%,-50%) scale(1.18)", offset:1 }
+    ], { duration: 2050, easing:"cubic-bezier(.16,.72,.18,1)", fill:"forwards" });
+
+    rivalImage.animate([
+      { transform:"translateX(0) rotate(0deg)", offset:0 },
+      { transform:"translateX(0) rotate(0deg)", offset:.42 },
+      { transform:"translateX(135px) rotate(5deg)", offset:.60 },
+      { transform:"translateX(135px) rotate(5deg)", offset:1 }
+    ], { duration:2050, easing:"cubic-bezier(.2,.8,.2,1)", fill:"forwards" });
+
+    await new Promise((resolve) => addTimer(resolve, 880));
+    if (state.current !== g) return;
+    caption.classList.add("visible");
+    sportSfx("feint");
+
+    await new Promise((resolve) => addTimer(resolve, 1160));
+    if (state.current !== g) return;
+    sportSfx("impactPower");
+    duckDodgeballMusic(.01, 250);
+    root.classList.add("perfect-return-impacting");
+    rivalStage.classList.add("perfect-return-rubro-hit");
+    impact.classList.add("active");
+    g.opponentHp = 0;
+
+    await new Promise((resolve) => addTimer(resolve, 850));
+    if (state.current !== g) return;
+    g.dialogue = "Você já sabia que ele tentaria desviar.";
+    finishSport("dodgeball", true, "DEVOLUÇÃO PERFEITA. Você leu o Capitão Rubro até o último movimento.");
+  }
+
   function renderDodgeDefense() {
     const g = state.current;
     const attack = g.activePattern;
-    const catchHelp = attack?.catchable
-      ? "Algumas bolas brilham quando podem ser agarradas: pressione Espaço no timing certo para contra-atacar."
-      : "Este ataque não pode ser agarrado: a resposta é esquivar.";
+    const catchHelp = attack?.id === "rally"
+      ? "RALLY: aguente até o fim. Só a última bola ficará verde e poderá ser agarrada."
+      : attack?.catchable
+        ? "Algumas bolas brilham quando podem ser agarradas: pressione Espaço no timing certo para contra-atacar."
+        : "Este ataque não pode ser agarrado: a resposta é esquivar.";
     renderDodgeballLayout(
       "🔴 Queimada · Turno Inimigo",
       "Leia o corpo de Capitão Rubro. Agora cada lançamento é coreografado.",
       `${g.dialogue} ${getRubroAttackComment(g, attack)}`,
       `<div class="sports-game-card dodgeball-defense-stage">
         <div class="dodgeball-turn-label">CAPITÃO RUBRO · ${escapeHtml(attack?.label || "ATAQUE")}</div>
-        <div class="dodgeball-hearts">${"♥ ".repeat(g.playerHp)}${"♡ ".repeat(Math.max(0, g.playerMaxHp - g.playerHp))}</div>
+        <div class="dodgeball-defense-hp">VOCÊ · <strong>${Math.max(0, Math.round(g.playerHp))} HP</strong></div>
         <div id="dodgeArena" class="dodgeball-arena dodgeball-dynamic-arena">
           <div id="dodgeTelegraph" class="dodge-attack-telegraph"><span id="dodgeTelegraphLabel"></span></div>
           <div id="dodgePlayer" class="dodge-player">⚡</div>
@@ -1431,7 +1663,18 @@
     stage.classList.add(`rubro-action-${action}`);
     const shift = side === "left" ? -95 : side === "right" ? 95 : 0;
     stage.style.setProperty("--rubro-shift", `${shift}px`);
-    const desiredPose = getCapitaoRubroPose(state.current, ["charge","throw","feint"].includes(action) ? "throw" : "defense");
+    const desiredStance = ["charge","throw","feint"].includes(action) ? action : "defense";
+    const desiredPose = getCapitaoRubroPose(state.current, desiredStance);
+    const desiredPoseName = getCapitaoRubroPoseName(state.current, desiredStance);
+    stage.dataset.rubroPose = desiredPoseName;
+    image.dataset.pose = desiredPoseName;
+    image.dataset.fallbackSrc = CAPITAO_RUBRO_IMAGE;
+    image.onerror = () => {
+      image.onerror = null;
+      image.dataset.pose = "base";
+      stage.dataset.rubroPose = "base";
+      image.src = CAPITAO_RUBRO_IMAGE;
+    };
     if (image.getAttribute("src") !== desiredPose) image.setAttribute("src", desiredPose);
   }
 
@@ -1445,7 +1688,7 @@
     showDodgeTelegraph.hideTimer = window.setTimeout(() => telegraph.classList.remove("visible"), tone === "power" ? 620 : 430);
   }
 
-  function createEnemyBall({ x, y, targetX, targetY, speed, style = "straight", catchable = false, curveDirection = 0, bounces = 0 }) {
+  function createEnemyBall({ x, y, targetX, targetY, speed, style = "straight", catchable = false, curveDirection = 0, bounces = 0, damage = null, isRallyFinal = false }) {
     const g = state.current;
     const dx = targetX - x;
     const dy = targetY - y;
@@ -1459,6 +1702,8 @@
       catchable,
       turnRate: style === "curve" ? curveDirection * 0.82 : 0,
       bouncesRemaining: bounces,
+      damage,
+      isRallyFinal,
       hasEnteredArena: false
     });
   }
@@ -1473,23 +1718,28 @@
     const slow = g.enemySlowMultiplier || 1;
     const phase = getRubroPhase(g);
     const phaseSpeed = phase === 3 ? 1.1 : phase === 2 ? 1.04 : 1;
+    const damage = event.damage ?? (event.style === "power" ? 24 : event.style === "curve" ? 16 : event.style === "ricochet" ? 14 : 15);
 
+    if (event.style === "rallyFinal") {
+      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:300*slow, style:"rally-final", catchable:true, damage, isRallyFinal:true });
+      return;
+    }
     if (event.style === "power") {
-      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:470*slow*phaseSpeed, style:"power", catchable:false });
+      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:470*slow*phaseSpeed, style:"power", catchable:false, damage });
       return;
     }
     if (event.style === "curve") {
       const offset = event.curveDirection > 0 ? -95 : 95;
-      createEnemyBall({ x:startX, y:startY, targetX:playerX+offset, targetY:playerY, speed:295*slow*phaseSpeed, style:"curve", catchable:event.catchable, curveDirection:event.curveDirection || 1 });
+      createEnemyBall({ x:startX, y:startY, targetX:playerX+offset, targetY:playerY, speed:295*slow*phaseSpeed, style:"curve", catchable:event.catchable, curveDirection:event.curveDirection || 1, damage });
       return;
     }
     if (event.style === "ricochet") {
       const wallX = event.side === "left" ? 24 : rect.width - 24;
       const wallY = rect.height * .42;
-      createEnemyBall({ x:startX, y:startY, targetX:wallX, targetY:wallY, speed:330*slow*phaseSpeed, style:"ricochet", catchable:false, bounces:event.bounces || 1 });
+      createEnemyBall({ x:startX, y:startY, targetX:wallX, targetY:wallY, speed:330*slow*phaseSpeed, style:"ricochet", catchable:false, bounces:event.bounces || 1, damage });
       return;
     }
-    createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:325*slow*phaseSpeed, style:"straight", catchable:event.catchable });
+    createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:325*slow*phaseSpeed, style:"straight", catchable:event.catchable, damage });
   }
 
   function processRubroAttackTimeline(now, rect) {
@@ -1498,7 +1748,16 @@
     for (const event of g.enemyAttackSequence) {
       if (event.done || elapsed < event.at) continue;
       event.done = true;
-      if (event.kind === "telegraph") {
+      if (event.kind === "rallyTitle") {
+        setRubroDefenseVisual("center", "charge");
+        showDodgeTelegraph(event.text, "power", "center");
+        sportSfx("enemyPower");
+      } else if (event.kind === "rallyFinalTelegraph") {
+        setRubroDefenseVisual("center", "charge");
+        showDodgeTelegraph("ÚLTIMA BOLA · PREPARE O ESPAÇO", "power", "center");
+        sportSfx("counterReady");
+        duckDodgeballMusic(.16, 320);
+      } else if (event.kind === "telegraph") {
         setRubroDefenseVisual(event.side, event.tone === "feint" ? "feint" : "ready");
         showDodgeTelegraph(event.text, event.tone, event.side);
         if (event.tone === "feint") sportSfx("feint");
@@ -1529,15 +1788,24 @@
     g.catchCooldownUntil = performance.now() + 280;
     g.counterAttackReady = true;
     g.throwWindowBonus = Math.max(g.throwWindowBonus, 7);
-    g.damageBonus += 1;
+    g.damageBonus += 8;
 
-    const perfect = distance <= DODGE_CATCH_PERFECT_DISTANCE;
+    const perfect = ball.isRallyFinal ? true : distance <= DODGE_CATCH_PERFECT_DISTANCE;
     sportSfx(perfect ? "perfectCatch" : "catch");
     duckDodgeballMusic(perfect ? .06 : .18, perfect ? 260 : 150);
     addTimer(() => sportSfx("counterReady"), perfect ? 150 : 110);
-    g.dialogue = perfect
-      ? "AGARROU PERFEITO! Você tomou a posse da bola no instante exato. Contra-ataque carregado."
-      : "Você agarrou a bola! O turno de Rubro acabou e seu próximo arremesso recebeu Contra-ataque.";
+    if (ball.isRallyFinal) {
+      g.rallyFinalCaught = true;
+      g.perfectReturnReady = true;
+      g.counterAttackReady = false;
+      g.throwWindowBonus = 0;
+      g.damageBonus = 0;
+      g.dialogue = "PERFECT CATCH. Você está segurando o último arremesso do Rally Rubro.";
+    } else {
+      g.dialogue = perfect
+        ? "AGARROU PERFEITO! Você tomou a posse da bola no instante exato. Contra-ataque carregado."
+        : "Você agarrou a bola! O turno de Rubro acabou e seu próximo arremesso recebeu Contra-ataque.";
+    }
 
     const player = document.getElementById("dodgePlayer");
     player?.classList.remove("dodge-catch-ready");
@@ -1575,12 +1843,24 @@
 
     // Input buffer: apertar Espaço pouco antes do alcance não pune o jogador.
     // O comando fica armado por alguns milissegundos e dispara assim que a bola entra na janela.
-    if (!nearest || nearestDistance > DODGE_CATCH_DISTANCE) {
+    if (!nearest) {
+      const timer = document.getElementById("dodgeTimer");
+      if (g.rallyActive) {
+        if (timer) timer.textContent = "Ainda não — só a ÚLTIMA BOLA pode ser agarrada.";
+        return false;
+      }
+      g.catchBufferedUntil = now + DODGE_CATCH_BUFFER_MS;
+      const player = document.getElementById("dodgePlayer");
+      player?.classList.add("dodge-catch-ready");
+      if (timer) timer.textContent = "AGARRÃO PREPARADO… espere a bola chegar!";
+      return false;
+    }
+    if (nearestDistance > DODGE_CATCH_DISTANCE) {
       g.catchBufferedUntil = now + DODGE_CATCH_BUFFER_MS;
       const player = document.getElementById("dodgePlayer");
       player?.classList.add("dodge-catch-ready");
       const timer = document.getElementById("dodgeTimer");
-      if (timer) timer.textContent = "AGARRÃO PREPARADO… espere a bola chegar!";
+      if (timer) timer.textContent = g.rallyActive ? "ÚLTIMA BOLA chegando…" : "AGARRÃO PREPARADO… espere a bola chegar!";
       return false;
     }
 
@@ -1609,6 +1889,22 @@
     g.balls = [];
     g.moveBoost = 1;
     g.enemySlowMultiplier = 1;
+
+    if (g.rallyActive) {
+      g.rallyActive = false;
+      g.rallyCompleted = true;
+      if (g.perfectReturnReady) {
+        addTimer(() => { if (state.current === g) renderPerfectReturnCommand(); }, 360);
+        return;
+      }
+      g.rubroExhausted = true;
+      g.throwWindowBonus = Math.max(g.throwWindowBonus, 7);
+      chooseNextDodgePattern(g);
+      g.dialogue = "Você sobreviveu ao RALLY RUBRO. O Capitão está ofegante — essa é sua abertura.";
+      addTimer(() => { if (state.current === g) renderDodgeballCommand(); }, 360);
+      return;
+    }
+
     chooseNextDodgePattern(g);
     if (!caught) g.dialogue = "Você sobreviveu ao turno de Capitão Rubro. Sua vez novamente.";
     addTimer(() => {
@@ -1656,7 +1952,7 @@
 
       if (!ball.el) {
         ball.el = document.createElement("div");
-        ball.el.className = `dodge-ball rubro-ball rubro-ball-${ball.style}${ball.catchable ? " is-catchable" : ""}`;
+        ball.el.className = `dodge-ball rubro-ball rubro-ball-${ball.style}${ball.catchable ? " is-catchable" : ""}${ball.isRallyFinal ? " is-rally-final" : ""}`;
         arena.appendChild(ball.el);
       }
       ball.el.style.left = `${ball.x - 12}px`;
@@ -1688,11 +1984,16 @@
           if (timer) timer.textContent = "Escudo absorveu a bolada!";
           return false;
         }
-        g.playerHp -= 1;
-        g.player.invulnerableUntil = now + 700;
+        const incomingDamage = Math.max(1, Math.round(ball.damage ?? (ball.style === "power" ? 24 : ball.style === "curve" ? 16 : ball.style === "ricochet" ? 14 : 15)));
+        g.playerHp = Math.max(0, g.playerHp - incomingDamage);
+        g.player.invulnerableUntil = now + (g.rallyActive ? 430 : 700);
         playDodgePlayerHitEffect(ball.style);
-        const hearts = document.querySelector(".dodgeball-hearts");
-        if (hearts) hearts.textContent = `${"♥ ".repeat(g.playerHp)}${"♡ ".repeat(Math.max(0, g.playerMaxHp - g.playerHp))}`;
+        const hpReadout = document.querySelector(".dodgeball-defense-hp strong");
+        if (hpReadout) hpReadout.textContent = `${Math.round(g.playerHp)} HP`;
+        const playerBar = document.querySelector(".dodge-hp-block.player .dodge-hp-track i");
+        if (playerBar) playerBar.style.width = `${hpPercent(g.playerHp, g.playerMaxHp)}%`;
+        const timer = document.getElementById("dodgeTimer");
+        if (timer) timer.textContent = `-${incomingDamage} HP`;
         if (g.playerHp <= 0) {
           finishSport("dodgeball", false, "Capitão Rubro te eliminou da quadra antes do apito final.");
           return false;
@@ -1714,7 +2015,7 @@
     playerEl?.classList.toggle("dodge-catch-ready", catchableInRange || now <= g.catchBufferedUntil);
     if (timer && !timer.textContent.includes("AGARROU") && !timer.textContent.includes("PERFECT")) {
       timer.textContent = catchableInRange
-        ? "AGARRA! [ESPAÇO]"
+        ? (g.rallyActive ? "ÚLTIMA BOLA · AGARRA! [ESPAÇO]" : "AGARRA! [ESPAÇO]")
         : `${remaining.toFixed(1)}s · ${g.activePattern?.label || "Esquiva"}`;
     }
     if (remaining <= 0 && !g.enemyAttackDone) finishRubroDefenseTurn(false);
@@ -1728,9 +2029,46 @@
     el.style.top = `calc(${g.player.y}% - 15px)`;
   }
 
+  function devTriggerRally() {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return { ok:false, message:"Abra a Queimada primeiro." };
+    g.opponentHp = 9;
+    g.rallyUsed = false;
+    g.rallyActive = false;
+    g.perfectReturnReady = false;
+    startRallyRubro();
+    return { ok:true };
+  }
+
+  function devTriggerPerfectReturn() {
+    const g = state.current;
+    if (!g || g.type !== "dodgeball") return { ok:false, message:"Abra a Queimada primeiro." };
+    g.opponentHp = Math.min(g.opponentHp, 9);
+    g.rallyUsed = true;
+    g.rallyActive = false;
+    g.rallyCompleted = true;
+    g.rallyFinalCaught = true;
+    g.perfectReturnReady = true;
+    g.dialogue = "DEV: última bola agarrada. Devolução Perfeita pronta.";
+    renderPerfectReturnCommand();
+    return { ok:true };
+  }
+
   function handleDodgeballKeyDown(key, event) {
     const g = state.current;
     if (!g || g.type !== "dodgeball") return false;
+
+    if (g.phase === "perfect-return") {
+      const activate = key === " " || key === "spacebar" || key === "space" || key === "enter" || event.code === "Space";
+      if (activate) {
+        event.preventDefault();
+        if (!event.repeat) performPerfectReturn();
+        return true;
+      }
+      return false;
+    }
+
+    if (g.phase === "cinematic") return true;
 
     if (g.phase === "defense") {
       const isSpace = key === " " || key === "spacebar" || key === "space" || event.code === "Space";
@@ -1966,6 +2304,9 @@
     useDodgeStance,
     backDodgeMenu,
     throwDodgeball,
+    performPerfectReturn,
+    devTriggerRally,
+    devTriggerPerfectReturn,
     startChampionship,
     continueChampionship,
     onSceneChanged,

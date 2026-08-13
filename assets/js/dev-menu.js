@@ -96,6 +96,8 @@
         </div>
         <div class="dev-grid dev-grid-3" style="margin-top:8px;">
           <button class="dev-btn save" data-action="sports-complete-all">Concluir 5 modalidades</button>
+          <button class="dev-btn session" data-action="sports-rally">🔥 Forçar Rally Rubro</button>
+          <button class="dev-btn session" data-action="sports-perfect-return">⚡ Testar Devolução Perfeita</button>
           <button class="dev-btn danger" data-action="sports-reset">Resetar Educação Física</button>
         </div>
       </section>
@@ -239,6 +241,8 @@
         case "teleport-port": api.teleportPortuguese(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
         case "teleport-sports": api.teleportSports(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
         case "sports-complete-all": { const result = await window.VoltzSports?.devCompleteAll?.(); setLog(result?.persisted === false ? "⚠ Modalidades alteradas apenas localmente." : "✓ Cinco modalidades concluídas no SAVE."); break; }
+        case "sports-rally": { const result = window.VoltzSports?.devTriggerRally?.(); if (!result?.ok) throw new Error(result?.message || "Abra a Queimada primeiro."); setLog("🔥 Rally Rubro forçado para teste."); break; }
+        case "sports-perfect-return": { const result = window.VoltzSports?.devTriggerPerfectReturn?.(); if (!result?.ok) throw new Error(result?.message || "Abra a Queimada primeiro."); setLog("⚡ Devolução Perfeita preparada para teste."); break; }
         case "sports-reset": { await window.VoltzSports?.devReset?.(); setLog("Educação Física resetada."); break; }
         case "village": api.teleportVillage(); setLog("Teleporte executado: Vila Central."); break;
         case "nearest": {

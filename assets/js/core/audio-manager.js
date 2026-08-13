@@ -62,12 +62,18 @@
 
   async function unlock() {
     const ok = await resumeContext();
-    if (ok && pendingMusicRequest && !currentMusic) {
+    if (!ok) return false;
+
+    if (pendingMusicRequest && !currentMusic) {
       const request = pendingMusicRequest;
       pendingMusicRequest = null;
       global.setTimeout(() => playMusic(request.name, request.options), 0);
+    } else if (!currentMusic && typeof global.getActiveSceneId === "function") {
+      // Fallback de boot: caso a cena tenha sido carregada antes do pedido de música,
+      // o primeiro gesto do jogador restaura a trilha correta automaticamente.
+      global.setTimeout(() => playSceneMusic(global.getActiveSceneId()), 0);
     }
-    return ok;
+    return true;
   }
 
   function applyVolumes(immediate = false) {
