@@ -1,0 +1,61 @@
+name: Rebalance Rubro V3.1
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rebalance-rubro-v31.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rebalance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fairness pass Queimada V3.1
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('assets/js/realms/physical-education/sports-minigames.js')
+          s = p.read_text(encoding='utf-8')
+
+          def rep(old, new, count=1):
+              global s
+              if old not in s:
+                  raise SystemExit(f'Bloco não encontrado:\n{old[:240]}')
+              s = s.replace(old, new, count)
+
+          rep('''  // Balance V3: movimento deliberado. Ainda ágil, mas sem atravessar a arena em um toque.\n  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 300;''', '''  // Balance V3.1: mobilidade suficiente para toda rota válida, sem voltar aos 640 px/s absurdos.\n  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 380;''')
+
+          rep('''      g.moveBoost = Math.max(g.moveBoost, 1.18);''', '''      g.moveBoost = Math.max(g.moveBoost, 1.15);''')
+
+          old_wall = '''  function spawnWallWave(event, rect) {\n    const phase = getRubroPhase(state.current);\n    const columns = phase >= 3 ? 11 : 10;\n    const gapSize = 1;\n    const gapStart = Math.floor(Math.random() * Math.max(1, columns - gapSize));\n    // O multiplicador global de fase é aplicado em createEnemyBall.\n    const speed = 245;\n    const catchableIndex = event.catchableEdge ? (Math.random() > .5 ? gapStart - 1 : gapStart + gapSize) : -1;\n\n    for (let index = 0; index < columns; index += 1) {\n      if (index >= gapStart && index < gapStart + gapSize) continue;\n      const x = ((index + .5) / columns) * rect.width;\n      createEnemyBall({\n        x,\n        y: -20,\n        targetX: x,\n        targetY: rect.height + 30,\n        speed,\n        style: "wall",\n        catchable: index === catchableIndex,\n        damage: event.damage || 8\n      });\n    }\n  }'''
+
+          new_wall = '''  function spawnWallWave(event, rect) {\n    const g = state.current;\n    const phase = getRubroPhase(g);\n    const columns = phase >= 3 ? 11 : 10;\n    // Duas colunas formam um corredor de verdade. A dificuldade vem da troca de posição, não de uma fresta impossível.\n    const gapSize = 2;\n    const maxStart = Math.max(0, columns - gapSize);\n    let gapStart;\n\n    if (Number.isFinite(g?.lastWallGapStart)) {\n      // A próxima abertura pode mudar bastante, mas nunca teleportar para o lado oposto da arena.\n      const minStart = Math.max(0, g.lastWallGapStart - 3);\n      const maxReachable = Math.min(maxStart, g.lastWallGapStart + 3);\n      gapStart = minStart + Math.floor(Math.random() * (maxReachable - minStart + 1));\n    } else {\n      gapStart = Math.floor(Math.random() * (maxStart + 1));\n    }\n    if (g) g.lastWallGapStart = gapStart;\n\n    // O multiplicador global de fase é aplicado em createEnemyBall.\n    const speed = 245;\n    const leftEdge = gapStart - 1;\n    const rightEdge = gapStart + gapSize;\n    const catchableIndex = event.catchableEdge\n      ? (Math.random() > .5 ? leftEdge : rightEdge)\n      : -1;\n\n    for (let index = 0; index < columns; index += 1) {\n      if (index >= gapStart && index < gapStart + gapSize) continue;\n      const x = ((index + .5) / columns) * rect.width;\n      createEnemyBall({\n        x,\n        y: -20,\n        targetX: x,\n        targetY: rect.height + 30,\n        speed,\n        style: "wall",\n        catchable: index === catchableIndex,\n        damage: event.damage || 8\n      });\n    }\n  }'''
+          rep(old_wall, new_wall)
+
+          old_cross = '''  function spawnCrossfireWave(event, rect) {\n    const rows = 6;\n    const gap = Math.floor(Math.random() * rows);\n    for (let row = 0; row < rows; row += 1) {\n      if (row === gap) continue;\n      const y = ((row + .5) / rows) * rect.height;\n      const fromLeft = (row + Number(event.wave || 0)) % 2 === 0;\n      createEnemyBall({\n        x: fromLeft ? -20 : rect.width + 20,\n        y,\n        targetX: fromLeft ? rect.width + 30 : -30,\n        targetY: y,\n        speed: 330 + Number(event.wave || 0) * 12,\n        style: "crossfire",\n        catchable: false,\n        damage: event.damage || 8\n      });\n    }\n  }'''
+
+          new_cross = '''  function spawnCrossfireWave(event, rect) {\n    const g = state.current;\n    const rows = 6;\n    let gap;\n\n    if (Number.isFinite(g?.lastCrossfireGap)) {\n      // No Rally as ondas chegam a cada ~400 ms: a rota segura só pode mover uma faixa por vez.\n      const maxShift = g.rallyActive ? 1 : 2;\n      const minGap = Math.max(0, g.lastCrossfireGap - maxShift);\n      const maxGap = Math.min(rows - 1, g.lastCrossfireGap + maxShift);\n      gap = minGap + Math.floor(Math.random() * (maxGap - minGap + 1));\n    } else {\n      gap = Math.floor(Math.random() * rows);\n    }\n    if (g) g.lastCrossfireGap = gap;\n\n    for (let row = 0; row < rows; row += 1) {\n      if (row === gap) continue;\n      const y = ((row + .5) / rows) * rect.height;\n      const fromLeft = (row + Number(event.wave || 0)) % 2 === 0;\n      createEnemyBall({\n        x: fromLeft ? -20 : rect.width + 20,\n        y,\n        targetX: fromLeft ? rect.width + 30 : -30,\n        targetY: y,\n        speed: 330 + Number(event.wave || 0) * 12,\n        style: "crossfire",\n        catchable: false,\n        damage: event.damage || 8\n      });\n    }\n  }'''
+          rep(old_cross, new_cross)
+
+          # Reseta a memória das rotas seguras a cada novo turno de defesa e no Rally.
+          rep('''    g.warningTargets = {};\n    g.player = { x: 50, y: 62, invulnerableUntil: 0 };''', '''    g.warningTargets = {};\n    g.lastWallGapStart = null;\n    g.lastCrossfireGap = null;\n    g.player = { x: 50, y: 62, invulnerableUntil: 0 };''', 2)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Validate JavaScript
+        run: node --check assets/js/realms/physical-education/sports-minigames.js
+      - name: Commit fairness pass
+        run: |
+          git config user.name "jhonata5790"
+          git config user.email "jhonatamyrandas5790@gmail.com"
+          git add assets/js/realms/physical-education/sports-minigames.js
+          git commit -m "Balance V3.1: esquiva difícil mas sempre possível" || exit 0
+          git push
