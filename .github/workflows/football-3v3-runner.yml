@@ -1,0 +1,41 @@
+name: Football 3v3 Runner
+
+on:
+  push:
+    paths:
+      - '.github/workflows/football-3v3-runner.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply football patch
+        shell: python
+        run: |
+          from pathlib import Path
+          import textwrap
+
+          source = Path('.github/workflows/football-3v3-v1.yml').read_text(encoding='utf-8')
+          anchor = source.index('      - name: Build 3v3 football prototype')
+          start = source.index('        run: |', anchor) + len('        run: |')
+          end = source.index('      - name: Validate JavaScript', start)
+          code = textwrap.dedent(source[start:end]).strip('\n')
+          exec(compile(code, 'football-3v3-patch.py', 'exec'))
+      - name: Validate JavaScript
+        run: node --check assets/js/realms/physical-education/sports-minigames.js
+      - name: Commit prototype
+        run: |
+          git config user.name "jhonata5790"
+          git config user.email "jhonatamyrandas5790@gmail.com"
+          git add assets/js/realms/physical-education/sports-minigames.js assets/css/sports-minigames.css
+          git commit -m "Futebol V2: partida 3v3 com Voltz Vision" || exit 0
+          git push
