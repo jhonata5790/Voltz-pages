@@ -22,13 +22,16 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import textwrap
 
           source = Path('.github/workflows/football-3v3-v1.yml').read_text(encoding='utf-8')
           anchor = source.index('      - name: Build 3v3 football prototype')
           start = source.index('        run: |', anchor) + len('        run: |')
           end = source.index('      - name: Validate JavaScript', start)
-          code = textwrap.dedent(source[start:end]).strip('\n')
+          raw = source[start:end].strip('\n')
+          lines = []
+          for line in raw.splitlines():
+              lines.append(line[10:] if line.startswith('          ') else line)
+          code = '\n'.join(lines)
           exec(compile(code, 'football-3v3-patch.py', 'exec'))
       - name: Validate JavaScript
         run: node --check assets/js/realms/physical-education/sports-minigames.js
