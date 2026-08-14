@@ -377,23 +377,39 @@
   }
 
   // -------------------------------------------------------
-  // Futebol
+  // Futebol · Campo das Decisões 3v3
   // -------------------------------------------------------
   function startFootball() {
     const compact = state.mode === "championship";
-    const attemptsMax = compact ? 2 : 5;
-    const goalsNeeded = compact ? 1 : 3;
+    const targetGoals = compact ? 1 : 3;
     state.current = {
       type: "football",
-      attempts: 0,
-      goals: 0,
-      attemptsMax,
-      goalsNeeded,
-      selected: "center",
-      cursor: 20,
-      dir: 1,
-      locked: false,
-      lastKeeper: ""
+      phase: "play",
+      score: 0,
+      rivalScore: 0,
+      targetGoals,
+      controlledId: "v1",
+      players: [
+        { id:"v1", team:"voltz", number:"7",  x:24, y:50, homeX:24, homeY:50, speed:22 },
+        { id:"v2", team:"voltz", number:"10", x:34, y:28, homeX:34, homeY:28, speed:17 },
+        { id:"v3", team:"voltz", number:"11", x:34, y:72, homeX:34, homeY:72, speed:17 },
+        { id:"vgk", team:"voltz", number:"GK", x:6, y:50, homeX:6, homeY:50, speed:18, keeper:true },
+        { id:"r1", team:"rival", number:"8",  x:76, y:50, homeX:76, homeY:50, speed:16 },
+        { id:"r2", team:"rival", number:"6",  x:66, y:28, homeX:66, homeY:28, speed:15 },
+        { id:"r3", team:"rival", number:"9",  x:66, y:72, homeX:66, homeY:72, speed:15 },
+        { id:"rgk", team:"rival", number:"GK", x:94, y:50, homeX:94, homeY:50, speed:18, keeper:true }
+      ],
+      ball: {
+        x:26, y:50, vx:0, vy:0, ownerId:"v1", lastTouchTeam:"voltz",
+        passTargetId:null, isShot:false, ignorePickupUntil:0, keeperReleaseAt:0
+      },
+      visionUntil: 0,
+      visionCooldownUntil: 0,
+      aiActionAt: 0,
+      autoSelectAt: 0,
+      lastStealAt: 0,
+      feedback: compact ? "Gol de ouro no Pentatlo: marque antes do rival." : `Primeiro a ${targetGoals} gols. Leia o campo antes de acelerar a jogada.`,
+      banner: "SAÍDA VOLTZ"
     };
 
     renderFootball();
@@ -401,87 +417,571 @@
     let last = performance.now();
     const tick = (now) => {
       if (!state.open || state.current?.type !== "football") return;
-      const dt = Math.min(32, now - last);
+      const dt = Math.min(.034, Math.max(0, (now - last) / 1000));
       last = now;
-      const game = state.current;
-      game.cursor += game.dir * dt * 0.085;
-      if (game.cursor >= 100) { game.cursor = 100; game.dir = -1; }
-      if (game.cursor <= 0) { game.cursor = 0; game.dir = 1; }
-      const el = document.getElementById("footballCursor");
-      if (el) el.style.left = `${game.cursor}%`;
+      updateFootballMatch(now, dt);
       state.rafId = requestAnimationFrame(tick);
     };
     state.rafId = requestAnimationFrame(tick);
   }
 
-  function renderFootball(feedback = "") {
-    const g = state.current;
-    if (!g) return;
-    openPanelShell(
-      "⚽ Futebol · Cobrança de Pênaltis",
-      "Campo das Decisões",
-      `Converta ${g.goalsNeeded} cobrança${g.goalsNeeded === 1 ? "" : "s"} em até ${g.attemptsMax} tentativa${g.attemptsMax === 1 ? "" : "s"}.`,
-      `<div class="sports-game-card">
-        <div class="sports-status-row">
-          <span class="sports-stat-pill">Gols ${g.goals}/${g.goalsNeeded}</span>
-          <span class="sports-stat-pill">Tentativas ${g.attempts}/${g.attemptsMax}</span>
-        </div>
-        <div class="football-goal-ui">
-          ${["left","center","right"].map((zone) => `
-            <button class="football-zone ${g.selected === zone ? "selected" : ""} ${g.lastKeeper === zone ? "goalkeeper" : ""}" type="button" onclick="VoltzSports.chooseFootballZone('${zone}')">
-              ${zone === "left" ? "ESQUERDA" : zone === "center" ? "CENTRO" : "DIREITA"}
-            </button>`).join("")}
-        </div>
-        <div class="sports-meter"><div class="sports-meter-perfect"></div><div id="footballCursor" class="sports-meter-cursor" style="left:${g.cursor}%"></div></div>
-        <div style="text-align:center;"><button class="sports-primary-btn" type="button" onclick="VoltzSports.shootFootball()" ${g.locked ? "disabled" : ""}>Chutar [Espaço]</button></div>
-        <div class="sports-feedback">${escapeHtml(feedback)}</div>
-        <div class="sports-help">Escolha um canto. A zona central da barra representa uma força controlada.</div>
-      </div>`
-    );
+  function getFootballPlayer(g, id) {
+    return g?.players?.find((player) => player.id === id) || null;
   }
 
-  function chooseFootballZone(zone) {
-    if (state.current?.type !== "football" || state.current.locked) return;
-    if (!["left","center","right"].includes(zone)) return;
-    state.current.selected = zone;
-    renderFootball();
+  function getFootballOwner(g) {
+    return getFootballPlayer(g, g?.ball?.ownerId);
+  }
+
+  function getFootballTeam(g, team, includeKeeper = true) {
+    return (g?.players || []).filter((player) => player.team === team && (includeKeeper || !player.keeper));
+  }
+
+  function footballDistance(a, b) {
+    if (!a || !b) return Infinity;
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function footballMoveToward(player, targetX, targetY, speed, dt) {
+    const dx = targetX - player.x;
+    const dy = targetY - player.y;
+    const length = Math.hypot(dx, dy) || 1;
+    const step = Math.min(length, speed * dt);
+    player.x += dx / length * step;
+    player.y += dy / length * step;
+    player.x = clamp(player.x, player.keeper ? 3.5 : 7, player.keeper ? 96.5 : 93);
+    player.y = clamp(player.y, 8, 92);
+  }
+
+  function renderFootball() {
+    const g = state.current;
+    if (!g || g.type !== "football") return;
+
+    const playerMarkup = g.players.map((player) => `
+      <div id="footballPlayer-${player.id}" class="football-live-player team-${player.team} ${player.keeper ? "is-keeper" : ""}" data-id="${player.id}">
+        <span>${player.number}</span>
+      </div>`).join("");
+
+    openPanelShell(
+      "⚽ Futebol · 3v3",
+      "Campo das Decisões",
+      "Controle quem está na jogada, crie linhas de passe e encontre o momento de finalizar.",
+      `<div class="sports-game-card football-match-card">
+        <div class="football-live-scoreboard">
+<div><small>TIME VOLTZ</small><strong id="footballScoreVoltz">${g.score}</strong></div>
+<div class="football-score-center"><span>PRIMEIRO A ${g.targetGoals}</span><b id="footballMatchBanner">${escapeHtml(g.banner)}</b></div>
+<div><small>VISITANTE</small><strong id="footballScoreRival">${g.rivalScore}</strong></div>
+        </div>
+
+        <div id="footballField" class="football-field-live">
+<div class="football-half-line"></div>
+<div class="football-center-circle"></div>
+<div class="football-box football-box-left"></div>
+<div class="football-box football-box-right"></div>
+<div class="football-goal football-goal-left"></div>
+<div class="football-goal football-goal-right"></div>
+<svg id="footballVisionSvg" class="football-vision-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+${playerMarkup}
+<div id="footballBall" class="football-live-ball" aria-label="Bola"></div>
+<div id="footballPassTarget" class="football-pass-target" aria-hidden="true"></div>
+        </div>
+
+        <div class="football-live-hud">
+<div id="footballFeedback" class="football-live-feedback">${escapeHtml(g.feedback)}</div>
+<div id="footballVisionStatus" class="football-vision-status">L · VOLTZ VISION PRONTA</div>
+        </div>
+
+        <div class="football-control-strip">
+<span><b>WASD</b> MOVER</span>
+<button type="button" onclick="VoltzSports.shootFootball()"><b>J</b> CHUTAR</button>
+<button type="button" onclick="VoltzSports.footballPass()"><b>K</b> PASSE</button>
+<button type="button" onclick="VoltzSports.activateFootballVision()"><b>L</b> VOLTZ VISION</button>
+        </div>
+      </div>`
+    );
+
+    updateFootballDom(performance.now());
+  }
+
+  function footballSetPossession(g, player, now, feedback = "") {
+    if (!g || !player) return;
+    g.ball.ownerId = player.id;
+    g.ball.lastTouchTeam = player.team;
+    g.ball.passTargetId = null;
+    g.ball.isShot = false;
+    g.ball.vx = 0;
+    g.ball.vy = 0;
+    g.ball.x = player.x;
+    g.ball.y = player.y;
+    g.ball.ignorePickupUntil = now + 180;
+    if (player.keeper) g.ball.keeperReleaseAt = now + 720;
+    if (player.team === "voltz" && !player.keeper) g.controlledId = player.id;
+    if (feedback) g.feedback = feedback;
+  }
+
+  function footballResetKickoff(g, team = "voltz") {
+    if (!g) return;
+    g.players.forEach((player) => {
+      player.x = player.homeX;
+      player.y = player.homeY;
+    });
+    const starter = getFootballPlayer(g, team === "voltz" ? "v1" : "r1");
+    footballSetPossession(g, starter, performance.now(), team === "voltz" ? "Sua saída. Construa o ataque." : "Saída do visitante. Recupere a bola.");
+    g.controlledId = "v1";
+    g.phase = "play";
+    g.banner = team === "voltz" ? "SAÍDA VOLTZ" : "SAÍDA VISITANTE";
+  }
+
+  function footballGoal(g, team) {
+    if (!g || g.phase !== "play") return;
+    g.phase = "goal";
+    g.ball.ownerId = null;
+    g.ball.vx = 0;
+    g.ball.vy = 0;
+
+    if (team === "voltz") {
+      g.score += 1;
+      g.banner = "GOOOOL VOLTZ!";
+      g.feedback = "A jogada encontrou o espaço certo.";
+      sportSfx("victory");
+    } else {
+      g.rivalScore += 1;
+      g.banner = "GOL DO VISITANTE";
+      g.feedback = "Eles encontraram uma brecha. Reorganize a marcação.";
+      sportSfx("failure");
+    }
+    updateFootballDom(performance.now());
+
+    if (g.score >= g.targetGoals || g.rivalScore >= g.targetGoals) {
+      const won = g.score >= g.targetGoals;
+      addTimer(() => {
+        if (state.current !== g) return;
+        finishSport("football", won, won
+? `Vitória ${g.score} a ${g.rivalScore}. Você criou espaço, circulou a bola e decidiu a partida.`
+: `Derrota ${g.score} a ${g.rivalScore}. O rival puniu as decisões apressadas.`);
+      }, 900);
+      return;
+    }
+
+    addTimer(() => {
+      if (state.current !== g) return;
+      footballResetKickoff(g, team === "voltz" ? "rival" : "voltz");
+      updateFootballDom(performance.now());
+    }, 1050);
+  }
+
+  function footballLaunchBall(g, from, targetX, targetY, speed, now, options = {}) {
+    const dx = targetX - from.x;
+    const dy = targetY - from.y;
+    const length = Math.hypot(dx, dy) || 1;
+    g.ball.ownerId = null;
+    g.ball.x = from.x;
+    g.ball.y = from.y;
+    g.ball.vx = dx / length * speed;
+    g.ball.vy = dy / length * speed;
+    g.ball.lastTouchTeam = from.team;
+    g.ball.passTargetId = options.passTargetId || null;
+    g.ball.isShot = Boolean(options.isShot);
+    g.ball.ignorePickupUntil = now + (options.isShot ? 180 : 120);
+  }
+
+  function distanceToFootballSegment(point, a, b) {
+    const vx = b.x - a.x;
+    const vy = b.y - a.y;
+    const wx = point.x - a.x;
+    const wy = point.y - a.y;
+    const c2 = vx * vx + vy * vy || 1;
+    const t = clamp((wx * vx + wy * vy) / c2, 0, 1);
+    const px = a.x + vx * t;
+    const py = a.y + vy * t;
+    return Math.hypot(point.x - px, point.y - py);
+  }
+
+  function isFootballPassLaneOpen(g, passer, receiver) {
+    const rivals = getFootballTeam(g, passer.team === "voltz" ? "rival" : "voltz", false);
+    return rivals.every((rival) => distanceToFootballSegment(rival, passer, receiver) > 6.2);
+  }
+
+  function getFootballPassTarget(g, passer) {
+    const teammates = getFootballTeam(g, passer.team, false).filter((player) => player.id !== passer.id);
+    if (!teammates.length) return null;
+
+    let inputX = 0;
+    let inputY = 0;
+    if (state.pressed.has("a") || state.pressed.has("arrowleft")) inputX -= 1;
+    if (state.pressed.has("d") || state.pressed.has("arrowright")) inputX += 1;
+    if (state.pressed.has("w") || state.pressed.has("arrowup")) inputY -= 1;
+    if (state.pressed.has("s") || state.pressed.has("arrowdown")) inputY += 1;
+    const inputLength = Math.hypot(inputX, inputY);
+    if (inputLength) { inputX /= inputLength; inputY /= inputLength; }
+
+    const direction = passer.team === "voltz" ? 1 : -1;
+    return teammates
+      .map((target) => {
+        const dx = target.x - passer.x;
+        const dy = target.y - passer.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const alignment = inputLength ? (dx / len * inputX + dy / len * inputY) * 22 : 0;
+        const forward = direction * dx * .7;
+        const open = isFootballPassLaneOpen(g, passer, target) ? 18 : -8;
+        const nearestMarker = Math.min(...getFootballTeam(g, passer.team === "voltz" ? "rival" : "voltz", false).map((rival) => footballDistance(rival, target)));
+        return { target, score: alignment + forward + open + nearestMarker * .8 - len * .08 };
+      })
+      .sort((a, b) => b.score - a.score)[0]?.target || teammates[0];
+  }
+
+  function footballPass() {
+    const g = state.current;
+    if (!g || g.type !== "football" || g.phase !== "play") return;
+    const owner = getFootballOwner(g);
+    if (!owner || owner.team !== "voltz" || owner.keeper || owner.id !== g.controlledId) {
+      g.feedback = "Você precisa estar com a bola para passar.";
+      return;
+    }
+
+    const target = getFootballPassTarget(g, owner);
+    if (!target) return;
+    const now = performance.now();
+    const open = isFootballPassLaneOpen(g, owner, target);
+    const leadX = target.x + (target.x - owner.x) * .06;
+    const leadY = target.y + (target.y - owner.y) * .04;
+    footballLaunchBall(g, owner, leadX, leadY, 48, now, { passTargetId: target.id });
+    g.feedback = open ? `Passe para #${target.number}. Linha limpa.` : `Passe arriscado para #${target.number}. Tem marcação na linha.`;
+    g.banner = "PASSE";
+    sportSfx("menuConfirm");
   }
 
   function shootFootball() {
     const g = state.current;
-    if (!g || g.type !== "football" || g.locked) return;
-    g.locked = true;
-    g.attempts += 1;
-    const keeper = ["left","center","right"][Math.floor(Math.random() * 3)];
-    g.lastKeeper = keeper;
-    const controlledPower = g.cursor >= 28 && g.cursor <= 82;
-    const perfect = g.cursor >= 43 && g.cursor <= 57;
-    const goal = controlledPower && (keeper !== g.selected || perfect);
+    if (!g || g.type !== "football" || g.phase !== "play") return;
+    const owner = getFootballOwner(g);
+    if (!owner || owner.team !== "voltz" || owner.keeper || owner.id !== g.controlledId) {
+      g.feedback = "Recupere a posse antes de finalizar.";
+      return;
+    }
 
-    if (goal) g.goals += 1;
-    const feedback = !controlledPower
-      ? "A força saiu do controle e a bola passou longe."
-      : goal
-        ? keeper === g.selected
-          ? "GOLAÇO! O goleiro leu o canto, mas a execução perfeita venceu."
-          : "Gol! Você deslocou o goleiro."
-        : "Defesa do goleiro! Ele leu exatamente o seu canto.";
+    let targetY = 50;
+    if (state.pressed.has("w") || state.pressed.has("arrowup")) targetY = 39;
+    else if (state.pressed.has("s") || state.pressed.has("arrowdown")) targetY = 61;
+    else targetY = owner.y < 50 ? 42 : owner.y > 50 ? 58 : (Math.random() > .5 ? 42 : 58);
 
-    renderFootball(feedback);
-
-    addTimer(() => {
-      if (!state.current || state.current.type !== "football") return;
-      if (g.goals >= g.goalsNeeded) {
-        finishSport("football", true, `Você converteu ${g.goals} cobrança${g.goals === 1 ? "" : "s"} com precisão.`);
-      } else if (g.attempts >= g.attemptsMax) {
-        finishSport("football", false, `Placar final: ${g.goals}/${g.goalsNeeded} gols necessários.`);
-      } else {
-        g.locked = false;
-        g.lastKeeper = "";
-        renderFootball("Prepare a próxima cobrança.");
-      }
-    }, 900);
+    const distance = 100 - owner.x;
+    const speed = clamp(80 - distance * .18, 64, 78);
+    const spread = distance > 55 ? (Math.random() - .5) * 8 : (Math.random() - .5) * 3;
+    footballLaunchBall(g, owner, 104, clamp(targetY + spread, 34, 66), speed, performance.now(), { isShot:true });
+    g.feedback = distance > 55 ? "Chute de longe! O goleiro tem tempo para reagir." : "Finalização! Ache o canto antes que o goleiro feche.";
+    g.banner = "FINALIZAÇÃO";
+    sportSfx("throwPower");
   }
+
+  function activateFootballVision() {
+    const g = state.current;
+    if (!g || g.type !== "football" || g.phase !== "play") return;
+    const now = performance.now();
+    if (now < g.visionCooldownUntil) {
+      g.feedback = `Voltz Vision recarregando: ${((g.visionCooldownUntil - now) / 1000).toFixed(1)}s.`;
+      sportSfx("menuBack");
+      return;
+    }
+    g.visionUntil = now + 1800;
+    g.visionCooldownUntil = now + 6500;
+    g.feedback = "VOLTZ VISION: leia pressão, linhas de passe e espaços antes de decidir.";
+    g.banner = "VOLTZ VISION";
+    sportSfx("counterReady");
+  }
+
+  function footballEnemyPass(g, owner, now) {
+    const candidates = getFootballTeam(g, "rival", false).filter((player) => player.id !== owner.id);
+    const target = candidates
+      .filter((player) => player.x < owner.x + 8)
+      .sort((a, b) => a.x - b.x)[0] || candidates[0];
+    if (!target) return false;
+    footballLaunchBall(g, owner, target.x, target.y, 45, now, { passTargetId: target.id });
+    g.aiActionAt = now + 1200;
+    return true;
+  }
+
+  function footballEnemyShoot(g, owner, now) {
+    const targetY = Math.random() > .5 ? 40 : 60;
+    footballLaunchBall(g, owner, -4, targetY + (Math.random() - .5) * 4, 72, now, { isShot:true });
+    g.aiActionAt = now + 1400;
+    g.banner = "CHUTE ADVERSÁRIO";
+    return true;
+  }
+
+  function updateFootballControlledPlayer(g, dt) {
+    const owner = getFootballOwner(g);
+    if (owner?.team === "voltz" && !owner.keeper) g.controlledId = owner.id;
+    const controlled = getFootballPlayer(g, g.controlledId);
+    if (!controlled || controlled.keeper) return;
+
+    let dx = 0;
+    let dy = 0;
+    if (state.pressed.has("a") || state.pressed.has("arrowleft")) dx -= 1;
+    if (state.pressed.has("d") || state.pressed.has("arrowright")) dx += 1;
+    if (state.pressed.has("w") || state.pressed.has("arrowup")) dy -= 1;
+    if (state.pressed.has("s") || state.pressed.has("arrowdown")) dy += 1;
+    const len = Math.hypot(dx, dy) || 1;
+    if (dx || dy) {
+      controlled.x += dx / len * controlled.speed * dt;
+      controlled.y += dy / len * controlled.speed * dt;
+      controlled.x = clamp(controlled.x, 7, 93);
+      controlled.y = clamp(controlled.y, 8, 92);
+    }
+  }
+
+  function updateFootballKeepers(g, dt) {
+    const ballY = g.ball.y;
+    const vgk = getFootballPlayer(g, "vgk");
+    const rgk = getFootballPlayer(g, "rgk");
+    footballMoveToward(vgk, 5.5, clamp(ballY, 37, 63), vgk.speed, dt);
+    footballMoveToward(rgk, 94.5, clamp(ballY, 37, 63), rgk.speed, dt);
+  }
+
+  function updateFootballAI(g, now, dt) {
+    const owner = getFootballOwner(g);
+    const possession = owner?.team || null;
+    const ball = g.ball;
+    const controlled = getFootballPlayer(g, g.controlledId);
+
+    const voltzOutfield = getFootballTeam(g, "voltz", false);
+    const rivalOutfield = getFootballTeam(g, "rival", false);
+
+    if (possession !== "voltz" && now >= g.autoSelectAt) {
+      const nearest = voltzOutfield.slice().sort((a, b) => footballDistance(a, ball) - footballDistance(b, ball))[0];
+      if (nearest) g.controlledId = nearest.id;
+      g.autoSelectAt = now + 260;
+    }
+
+    voltzOutfield.forEach((player, index) => {
+      if (player.id === g.controlledId) return;
+      if (possession === "voltz") {
+        const laneY = index === 0 ? 50 : index === 1 ? 27 : 73;
+        const targetX = clamp(ball.x + (player.x < ball.x ? 10 : 17), 18, 88);
+        footballMoveToward(player, targetX, laneY, 12.5, dt);
+      } else if (possession === "rival") {
+        const rivalOwner = owner;
+        const targetX = clamp(rivalOwner.x - 12, 20, 58);
+        const targetY = index === 0 ? rivalOwner.y : index === 1 ? 31 : 69;
+        footballMoveToward(player, targetX, targetY, 11.5, dt);
+      } else {
+        footballMoveToward(player, player.homeX, player.homeY, 10.5, dt);
+      }
+    });
+
+    rivalOutfield.forEach((player, index) => {
+      if (owner?.id === player.id) return;
+      if (possession === "voltz") {
+        const pressOrder = rivalOutfield.slice().sort((a, b) => footballDistance(a, ball) - footballDistance(b, ball));
+        const pressing = pressOrder[0]?.id === player.id;
+        const targetX = pressing ? ball.x + 1.5 : clamp(ball.x + 14 + index * 3, 54, 84);
+        const targetY = pressing ? ball.y : index === 0 ? 50 : index === 1 ? 30 : 70;
+        footballMoveToward(player, targetX, targetY, pressing ? 15.5 : 11.5, dt);
+      } else if (possession === "rival") {
+        const laneY = index === 0 ? 50 : index === 1 ? 28 : 72;
+        footballMoveToward(player, clamp(ball.x - 14, 14, 80), laneY, 11.8, dt);
+      } else {
+        footballMoveToward(player, ball.x, ball.y, 11, dt);
+      }
+    });
+
+    if (owner?.team === "rival" && !owner.keeper) {
+      const nearestVoltz = voltzOutfield.slice().sort((a, b) => footballDistance(a, owner) - footballDistance(b, owner))[0];
+      const pressure = footballDistance(nearestVoltz, owner);
+      if (owner.x <= 27 && now >= g.aiActionAt) {
+        footballEnemyShoot(g, owner, now);
+      } else if (pressure < 8 && now >= g.aiActionAt && Math.random() < .55) {
+        footballEnemyPass(g, owner, now);
+      } else {
+        const targetY = clamp(50 + (owner.y - 50) * .35, 32, 68);
+        footballMoveToward(owner, 12, targetY, 13.5, dt);
+      }
+    }
+
+    // Mantém o jogador controlado sempre acima da IA aliada: a IA nunca briga com o WASD.
+    if (controlled) {
+      controlled.x = clamp(controlled.x, 7, 93);
+      controlled.y = clamp(controlled.y, 8, 92);
+    }
+  }
+
+  function updateFootballBall(g, now, dt) {
+    const ball = g.ball;
+    const owner = getFootballOwner(g);
+
+    if (owner) {
+      const direction = owner.team === "voltz" ? 1 : -1;
+      ball.x = owner.x + direction * (owner.keeper ? 1.2 : 1.8);
+      ball.y = owner.y + 1.2;
+
+      if (owner.keeper && now >= ball.keeperReleaseAt) {
+        const teammates = getFootballTeam(g, owner.team, false);
+        const target = teammates.slice().sort((a, b) => footballDistance(a, owner) - footballDistance(b, owner))[0];
+        if (target) {
+footballLaunchBall(g, owner, target.x, target.y, 42, now, { passTargetId: target.id });
+if (owner.team === "voltz") g.controlledId = target.id;
+        }
+        return;
+      }
+
+      if (!owner.keeper && now - g.lastStealAt > 650) {
+        const opponents = getFootballTeam(g, owner.team === "voltz" ? "rival" : "voltz", false);
+        const tackler = opponents.slice().sort((a, b) => footballDistance(a, owner) - footballDistance(b, owner))[0];
+        if (tackler && footballDistance(tackler, owner) < 2.75) {
+g.lastStealAt = now;
+footballSetPossession(g, tackler, now, tackler.team === "voltz" ? "DESARME! Você recuperou a posse." : "O visitante roubou a bola. Feche o contra-ataque!");
+g.banner = tackler.team === "voltz" ? "BOLA RECUPERADA" : "PERDEU A POSSE";
+        }
+      }
+      return;
+    }
+
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    const damping = Math.pow(.994, dt * 60);
+    ball.vx *= damping;
+    ball.vy *= damping;
+
+    if (ball.y <= 3 && ball.vy < 0) { ball.y = 3; ball.vy *= -.72; }
+    if (ball.y >= 97 && ball.vy > 0) { ball.y = 97; ball.vy *= -.72; }
+
+    const inGoalMouth = ball.y >= 36 && ball.y <= 64;
+    if (ball.x >= 100) {
+      if (inGoalMouth) footballGoal(g, "voltz");
+      else footballSetPossession(g, getFootballPlayer(g, "rgk"), now, "Tiro de meta do visitante.");
+      return;
+    }
+    if (ball.x <= 0) {
+      if (inGoalMouth) footballGoal(g, "rival");
+      else footballSetPossession(g, getFootballPlayer(g, "vgk"), now, "Tiro de meta Voltz.");
+      return;
+    }
+
+    if (now < ball.ignorePickupUntil) return;
+
+    const candidates = g.players
+      .filter((player) => !player.keeper || (player.team === "voltz" ? ball.x < 15 : ball.x > 85))
+      .map((player) => ({ player, distance:footballDistance(player, ball) }))
+      .filter((entry) => entry.distance < (entry.player.keeper ? 4.2 : 2.65))
+      .sort((a, b) => a.distance - b.distance);
+
+    if (candidates.length) {
+      const receiver = candidates[0].player;
+      const intended = ball.passTargetId && receiver.id === ball.passTargetId;
+      const blocked = ball.passTargetId && receiver.id !== ball.passTargetId;
+      footballSetPossession(g, receiver, now,
+        intended
+? `${receiver.team === "voltz" ? "Passe recebido" : "Passe adversário"} por #${receiver.number}.`
+: blocked
+  ? `${receiver.team === "voltz" ? "INTERCEPTOU!" : "Passe interceptado."}`
+  : receiver.keeper
+    ? `${receiver.team === "voltz" ? "Seu goleiro segurou!" : "Defesa do goleiro."}`
+    : "Bola dominada.");
+      if (blocked) g.banner = receiver.team === "voltz" ? "INTERCEPÇÃO" : "PASSE CORTADO";
+    }
+  }
+
+  function buildFootballVision(g) {
+    const controlled = getFootballPlayer(g, g.controlledId);
+    if (!controlled) return "";
+    const owner = getFootballOwner(g);
+    const parts = [];
+
+    getFootballTeam(g, "rival", false).forEach((rival) => {
+      parts.push(`<circle class="vision-pressure" cx="${rival.x}" cy="${rival.y}" r="7"></circle>`);
+    });
+
+    if (owner?.team === "voltz" && owner.id === controlled.id) {
+      getFootballTeam(g, "voltz", false)
+        .filter((mate) => mate.id !== owner.id)
+        .forEach((mate) => {
+const open = isFootballPassLaneOpen(g, owner, mate);
+parts.push(`<line class="vision-pass ${open ? "is-open" : "is-risky"}" x1="${owner.x}" y1="${owner.y}" x2="${mate.x}" y2="${mate.y}"></line>`);
+parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${mate.x}" cy="${mate.y}" r="4.5"></circle>`);
+        });
+
+      if (owner.x >= 48) {
+        parts.push(`<line class="vision-shot" x1="${owner.x}" y1="${owner.y}" x2="99" y2="41"></line>`);
+        parts.push(`<line class="vision-shot" x1="${owner.x}" y1="${owner.y}" x2="99" y2="59"></line>`);
+      }
+    } else {
+      parts.push(`<circle class="vision-control" cx="${controlled.x}" cy="${controlled.y}" r="5.5"></circle>`);
+      parts.push(`<line class="vision-chase" x1="${controlled.x}" y1="${controlled.y}" x2="${g.ball.x}" y2="${g.ball.y}"></line>`);
+    }
+    return parts.join("");
+  }
+
+  function updateFootballDom(now = performance.now()) {
+    const g = state.current;
+    if (!g || g.type !== "football") return;
+    const field = document.getElementById("footballField");
+    if (!field) return;
+
+    g.players.forEach((player) => {
+      const el = document.getElementById(`footballPlayer-${player.id}`);
+      if (!el) return;
+      el.style.left = `${player.x}%`;
+      el.style.top = `${player.y}%`;
+      el.classList.toggle("is-controlled", player.id === g.controlledId && !player.keeper);
+      el.classList.toggle("has-ball", g.ball.ownerId === player.id);
+    });
+
+    const ballEl = document.getElementById("footballBall");
+    if (ballEl) {
+      ballEl.style.left = `${g.ball.x}%`;
+      ballEl.style.top = `${g.ball.y}%`;
+    }
+
+    const targetEl = document.getElementById("footballPassTarget");
+    const target = getFootballPlayer(g, g.ball.passTargetId);
+    if (targetEl) {
+      targetEl.classList.toggle("visible", Boolean(target && !g.ball.ownerId));
+      if (target) { targetEl.style.left = `${target.x}%`; targetEl.style.top = `${target.y}%`; }
+    }
+
+    const scoreVoltz = document.getElementById("footballScoreVoltz");
+    const scoreRival = document.getElementById("footballScoreRival");
+    const banner = document.getElementById("footballMatchBanner");
+    const feedback = document.getElementById("footballFeedback");
+    if (scoreVoltz) scoreVoltz.textContent = g.score;
+    if (scoreRival) scoreRival.textContent = g.rivalScore;
+    if (banner) banner.textContent = g.banner;
+    if (feedback) feedback.textContent = g.feedback;
+
+    const visionActive = now < g.visionUntil;
+    field.classList.toggle("vision-active", visionActive);
+    const visionSvg = document.getElementById("footballVisionSvg");
+    if (visionSvg) visionSvg.innerHTML = visionActive ? buildFootballVision(g) : "";
+
+    const visionStatus = document.getElementById("footballVisionStatus");
+    if (visionStatus) {
+      if (visionActive) visionStatus.textContent = "L · VOLTZ VISION ATIVA";
+      else if (now < g.visionCooldownUntil) visionStatus.textContent = `L · RECARGA ${((g.visionCooldownUntil - now) / 1000).toFixed(1)}s`;
+      else visionStatus.textContent = "L · VOLTZ VISION PRONTA";
+    }
+  }
+
+  function updateFootballMatch(now, dt) {
+    const g = state.current;
+    if (!g || g.type !== "football") return;
+    if (g.phase !== "play") {
+      updateFootballDom(now);
+      return;
+    }
+
+    // A Vision desacelera o mundo inteiro, inclusive o jogador: ela compra tempo de leitura,
+    // não velocidade grátis para atravessar o campo.
+    const timeScale = now < g.visionUntil ? .46 : 1;
+    const simDt = dt * timeScale;
+    updateFootballControlledPlayer(g, simDt);
+    updateFootballKeepers(g, simDt);
+    updateFootballAI(g, now, simDt);
+    updateFootballBall(g, now, simDt);
+    updateFootballDom(now);
+  }
+
+  // Compatibilidade com qualquer botão antigo que ainda esteja em cache.
+  function chooseFootballZone() {}
 
   // -------------------------------------------------------
   // Basquete
@@ -3247,10 +3747,21 @@
       if (game.phase === "defense") return;
     }
 
+    if (game.type === "football") {
+      if (["j","k","l"].includes(key)) {
+        event.preventDefault();
+        if (!event.repeat) {
+          if (key === "j") shootFootball();
+          else if (key === "k") footballPass();
+          else activateFootballVision();
+        }
+      }
+      return;
+    }
+
     if (key === "space") {
       event.preventDefault();
-      if (game.type === "football") shootFootball();
-      else if (game.type === "basketball") shootBasketball();
+      if (game.type === "basketball") shootBasketball();
       else if (game.type === "athletics") athleticsSpace();
       return;
     }
@@ -3279,6 +3790,8 @@
     start,
     chooseFootballZone,
     shootFootball,
+    footballPass,
+    activateFootballVision,
     shootBasketball,
     beginAthletics,
     selectDodgeRoot,
