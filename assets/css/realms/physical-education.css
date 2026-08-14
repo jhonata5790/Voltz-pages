@@ -1,225 +1,350 @@
+/* =========================================================
+   VOLTZ EDUCATION — REINO DE EDUCAÇÃO FÍSICA / MAPA V2
+   Filosofia: geometria e caminhos em CSS + detalhes em SVG.
+   Objetos de gameplay continuam sendo posicionados pelos dados do reino.
+   ========================================================= */
 
 .world.scene-physical-education {
   width: 5000px;
   height: 3200px;
   background:
-    radial-gradient(circle at 50% 10%, rgba(255,209,102,.12), transparent 23%),
-    radial-gradient(circle at 20% 66%, rgba(99,245,181,.10), transparent 28%),
-    radial-gradient(circle at 80% 66%, rgba(69,163,255,.10), transparent 28%),
-    linear-gradient(180deg, #07151a 0%, #06131c 42%, #08131b 100%);
+    radial-gradient(circle at 50% 15%, rgba(69,163,255,.11), transparent 24%),
+    radial-gradient(circle at 16% 18%, rgba(140,247,255,.055), transparent 18%),
+    radial-gradient(circle at 84% 18%, rgba(146,87,255,.065), transparent 18%),
+    radial-gradient(circle at 50% 48%, rgba(99,245,181,.09), transparent 27%),
+    linear-gradient(180deg, #06141b 0%, #061219 44%, #07161b 100%);
 }
 
 .world.scene-physical-education .map-layer {
   background:
-    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
-  background-size: 80px 80px;
+    linear-gradient(rgba(140,247,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(140,247,255,.022) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(99,245,181,.025), transparent 52%);
+  background-size: 80px 80px, 80px 80px, auto;
 }
 
 .world.scene-physical-education .map-glow {
   background:
-    radial-gradient(circle at 50% 88%, rgba(99,245,181,.16), transparent 26%),
-    radial-gradient(circle at 50% 17%, rgba(255,209,102,.12), transparent 24%);
+    radial-gradient(circle at 50% 43%, rgba(99,245,181,.13), transparent 24%),
+    radial-gradient(circle at 50% 4%, rgba(69,163,255,.11), transparent 22%),
+    radial-gradient(circle at 14% 29%, rgba(140,247,255,.07), transparent 18%),
+    radial-gradient(circle at 86% 29%, rgba(146,87,255,.075), transparent 18%);
 }
 
 .world.scene-physical-education .center-plaza {
-  left: 2230px;
-  top: 2850px;
-  width: 540px;
-  height: 250px;
-  border-color: rgba(99,245,181,.34);
-  color: #baffdf;
-  background: radial-gradient(circle, rgba(99,245,181,.10), rgba(6,19,28,.72));
-  box-shadow: 0 0 48px rgba(99,245,181,.08);
+  display:none;
 }
 
+/* ---------- Caminhos: largos, limpos e com leitura de campus ---------- */
 .world.scene-physical-education .ground-path {
-  background: linear-gradient(90deg, rgba(99,245,181,.10), rgba(69,163,255,.12), rgba(255,209,102,.09));
-  border-color: rgba(140,247,255,.13);
+  border:1px solid rgba(92,231,255,.18);
+  border-radius:42px;
+  background:
+    linear-gradient(90deg, transparent 0 4%, rgba(99,245,181,.045) 18%, rgba(69,163,255,.06) 50%, rgba(99,245,181,.045) 82%, transparent 96%),
+    linear-gradient(180deg, rgba(13,42,51,.94), rgba(8,27,36,.96));
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.015),
+    inset 0 0 28px rgba(69,163,255,.035),
+    0 0 22px rgba(69,163,255,.035);
+  opacity:.94;
 }
-
-.world.scene-physical-education .ground-path.main-vertical { left: 2420px; top: 450px; width: 160px; height: 2500px; opacity:.78; }
-.world.scene-physical-education .ground-path.main-horizontal { left: 640px; top: 2310px; width: 3720px; height: 150px; opacity:.70; }
-.world.scene-physical-education .ground-path.branch-west-bottom { left: 900px; top: 1900px; width: 1750px; height: 110px; transform:rotate(-18deg); opacity:.66; }
-.world.scene-physical-education .ground-path.branch-east-bottom { left: 2350px; top: 1900px; width: 1750px; height: 110px; transform:rotate(18deg); opacity:.66; }
-.world.scene-physical-education .ground-path.branch-west-top { left: 1050px; top: 1250px; width: 1650px; height: 105px; transform:rotate(15deg); opacity:.58; }
-.world.scene-physical-education .ground-path.branch-east-top { left: 2300px; top: 1250px; width: 1650px; height: 105px; transform:rotate(-15deg); opacity:.58; }
-.world.scene-physical-education .ground-path.branch-north { left: 2190px; top: 600px; width: 620px; height: 110px; opacity:.68; }
-
-.world.scene-physical-education .building-roof {
-  background: linear-gradient(180deg, rgba(69,163,255,.48), rgba(10,35,55,.94));
-  border-color: rgba(140,247,255,.22);
+.world.scene-physical-education .ground-path::after {
+  content:"";
+  position:absolute;
+  inset:8px;
+  border:1px solid rgba(99,245,181,.085);
+  border-radius:34px;
+  pointer-events:none;
 }
+.world.scene-physical-education .ground-path.main-vertical { left:2405px; top:450px; width:190px; height:2620px; }
+.world.scene-physical-education .ground-path.main-horizontal { left:1660px; top:1425px; width:1680px; height:190px; }
+.world.scene-physical-education .ground-path.branch-north { left:2190px; top:550px; width:620px; height:140px; }
+.world.scene-physical-education .ground-path.branch-south { left:2180px; top:2190px; width:640px; height:140px; }
+.world.scene-physical-education .ground-path.branch-west-top { left:1230px; top:900px; width:1280px; height:150px; transform:rotate(-16deg); }
+.world.scene-physical-education .ground-path.branch-east-top { left:2490px; top:900px; width:1280px; height:150px; transform:rotate(16deg); }
+.world.scene-physical-education .ground-path.branch-west-bottom { left:1020px; top:2030px; width:1500px; height:145px; transform:rotate(10deg); }
+.world.scene-physical-education .ground-path.branch-east-bottom { left:2480px; top:2030px; width:1500px; height:145px; transform:rotate(-10deg); }
 
+/* ---------- Prédios: mesma linguagem modular, mais futurista ---------- */
 .world.scene-physical-education .building-base {
-  background: linear-gradient(180deg, rgba(20,54,65,.95), rgba(5,19,28,.98));
-  border-color: rgba(99,245,181,.18);
+  border-radius:28px 28px 16px 16px;
+  background:
+    linear-gradient(90deg, transparent 0 8%, rgba(69,163,255,.08) 8% 9%, transparent 9% 91%, rgba(99,245,181,.07) 91% 92%, transparent 92%),
+    linear-gradient(180deg, rgba(19,57,69,.98), rgba(5,20,29,.99));
+  border:2px solid rgba(99,245,181,.22);
+  box-shadow:
+    0 18px 34px rgba(0,0,0,.28),
+    0 0 30px rgba(69,163,255,.055),
+    inset 0 0 30px rgba(69,163,255,.025);
+}
+.world.scene-physical-education .building-roof {
+  border-radius:34px 34px 22px 22px;
+  background:
+    linear-gradient(90deg, rgba(99,245,181,.10), transparent 16% 84%, rgba(69,163,255,.10)),
+    linear-gradient(180deg, rgba(38,91,114,.96), rgba(9,36,53,.99));
+  border:2px solid rgba(140,247,255,.30);
+  box-shadow:
+    0 14px 30px rgba(0,0,0,.26),
+    0 0 28px rgba(69,163,255,.10),
+    inset 0 -10px 26px rgba(1,8,18,.34);
+}
+.world.scene-physical-education .building-roof::before {
+  inset:14px;
+  border-radius:24px;
+  border-color:rgba(99,245,181,.17);
+  box-shadow:inset 0 0 18px rgba(99,245,181,.025);
+}
+.world.scene-physical-education .building-roof::after {
+  width:30%;
+  height:30%;
+  border-radius:999px;
+  background:linear-gradient(90deg, rgba(69,163,255,.11), rgba(99,245,181,.08));
+  border-color:rgba(140,247,255,.13);
+}
+.world.scene-physical-education .building-door {
+  width:76px;
+  height:52px;
+  border:2px solid rgba(99,245,181,.40);
+  background:linear-gradient(180deg, rgba(69,163,255,.23), rgba(3,16,25,.92));
+  box-shadow:0 0 20px rgba(99,245,181,.13), inset 0 0 15px rgba(69,163,255,.08);
+}
+.world.scene-physical-education .building-label {
+  bottom:14px;
+  padding:8px 15px;
+  background:rgba(2,12,18,.88);
+  border-color:rgba(140,247,255,.22);
+  color:#eafcff;
+  box-shadow:0 6px 18px rgba(0,0,0,.25);
 }
 
+/* Zonas gigantes são chão. O pai recebe z-index baixo para nunca cobrir o player. */
+.world.scene-physical-education .depth-decor:has(> .decor-sports-plaza),
+.world.scene-physical-education .depth-decor:has(> .decor-sports-football-field),
+.world.scene-physical-education .depth-decor:has(> .decor-sports-basketball-court),
+.world.scene-physical-education .depth-decor:has(> .decor-sports-athletics-track),
+.world.scene-physical-education .depth-decor:has(> .decor-sports-volleyball-court),
+.world.scene-physical-education .depth-decor:has(> .decor-sports-dodgeball-zone),
+.world.scene-physical-education .depth-decor:has(> .decor-sports-stadium-zone) {
+  z-index:1 !important;
+}
+
+/* ---------- Base das zonas esportivas ---------- */
 .decor-sports-plaza,
-.decor-sports-field,
-.decor-sports-court,
-.decor-sports-track,
+.decor-sports-football-field,
+.decor-sports-basketball-court,
+.decor-sports-athletics-track,
+.decor-sports-volleyball-court,
 .decor-sports-dodgeball-zone,
 .decor-sports-stadium-zone {
-  border-radius: 30px;
-  border: 3px solid rgba(255,255,255,.14);
-  box-shadow: inset 0 0 50px rgba(0,0,0,.25), 0 0 28px rgba(0,0,0,.18);
+  overflow:hidden;
+  border:3px solid rgba(255,255,255,.13);
+  box-shadow:
+    inset 0 0 55px rgba(0,0,0,.26),
+    0 12px 30px rgba(0,0,0,.18),
+    0 0 26px rgba(69,163,255,.025);
 }
 
 .decor-sports-plaza {
+  border-radius:50%;
   background:
-    radial-gradient(circle at 50% 50%, rgba(99,245,181,.13), transparent 55%),
-    repeating-radial-gradient(circle at 50% 50%, transparent 0 52px, rgba(140,247,255,.055) 54px 56px);
-  border-color: rgba(99,245,181,.26);
+    url("../../images/realms/physical-education/map/plaza-emblem.svg") center/52% 88% no-repeat,
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 70px, rgba(140,247,255,.045) 72px 74px),
+    radial-gradient(circle at 50% 50%, rgba(99,245,181,.105), rgba(7,30,36,.88) 64%, rgba(4,17,25,.96));
+  border-color:rgba(99,245,181,.31);
+  box-shadow:inset 0 0 70px rgba(69,163,255,.055), 0 0 42px rgba(99,245,181,.075);
 }
 
-.decor-sports-field {
+.decor-sports-football-field {
+  border-radius:28px;
   background:
-    repeating-linear-gradient(90deg, rgba(40,165,96,.18) 0 130px, rgba(24,125,75,.12) 130px 260px),
-    rgba(20,97,58,.16);
-  border-color: rgba(99,245,181,.30);
-}
-.decor-sports-field::after {
-  content:"";
-  position:absolute;
-  inset:45px;
-  border:3px solid rgba(220,255,235,.22);
-  border-radius:8px;
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,.03);
+    url("../../images/realms/physical-education/map/football-lines.svg") center/96% 90% no-repeat,
+    repeating-linear-gradient(90deg, rgba(47,187,107,.20) 0 115px, rgba(29,139,84,.12) 115px 230px),
+    linear-gradient(180deg, rgba(24,115,70,.36), rgba(10,62,42,.32));
+  border-color:rgba(99,245,181,.34);
 }
 
-.decor-sports-court.sport-basketball {
+.decor-sports-basketball-court {
+  border-radius:28px;
   background:
-    linear-gradient(90deg, transparent 49.6%, rgba(255,255,255,.16) 49.6% 50.4%, transparent 50.4%),
-    radial-gradient(circle at 50% 50%, transparent 0 115px, rgba(255,255,255,.12) 117px 121px, transparent 123px),
-    rgba(186,94,34,.15);
-  border-color: rgba(255,179,71,.30);
-}
-.decor-sports-court.sport-volleyball {
-  background:
-    repeating-linear-gradient(90deg, rgba(255,209,102,.055) 0 160px, rgba(146,87,255,.055) 160px 320px),
-    rgba(79,59,145,.12);
-  border-color: rgba(255,209,102,.28);
+    url("../../images/realms/physical-education/map/basketball-lines.svg") center/96% 90% no-repeat,
+    linear-gradient(90deg, rgba(255,179,71,.12), transparent 32% 68%, rgba(69,163,255,.10)),
+    linear-gradient(180deg, rgba(44,106,147,.38), rgba(26,64,103,.35));
+  border-color:rgba(92,198,255,.36);
 }
 
-.decor-sports-track {
+.decor-sports-athletics-track {
+  border-radius:32px;
   background:
-    repeating-linear-gradient(0deg, rgba(255,255,255,.13) 0 3px, transparent 3px 70px),
-    linear-gradient(90deg, rgba(41,113,200,.16), rgba(140,247,255,.08));
-  border-color: rgba(140,247,255,.28);
+    url("../../images/realms/physical-education/map/athletics-lines.svg") center/96% 90% no-repeat,
+    repeating-linear-gradient(0deg, rgba(69,163,255,.10) 0 70px, rgba(20,74,130,.04) 70px 140px),
+    linear-gradient(90deg, rgba(20,85,145,.62), rgba(13,59,112,.60));
+  border-color:rgba(140,247,255,.34);
+  box-shadow:inset 0 0 70px rgba(69,163,255,.10), 0 0 28px rgba(69,163,255,.06);
+}
+
+.decor-sports-volleyball-court {
+  border-radius:28px;
+  background:
+    url("../../images/realms/physical-education/map/volleyball-lines.svg") center/96% 90% no-repeat,
+    linear-gradient(90deg, rgba(255,209,102,.075), transparent 48% 52%, rgba(146,87,255,.075)),
+    linear-gradient(180deg, rgba(36,117,121,.52), rgba(23,81,95,.48));
+  border-color:rgba(140,247,255,.31);
 }
 
 .decor-sports-dodgeball-zone {
+  border-radius:34px;
   background:
-    linear-gradient(90deg, rgba(255,107,122,.10), rgba(255,107,122,.025) 49%, rgba(69,163,255,.025) 51%, rgba(69,163,255,.10));
-  border-color: rgba(255,107,122,.30);
+    url("../../images/realms/physical-education/map/dodgeball-lines.svg") center/96% 90% no-repeat,
+    radial-gradient(circle at 50% 50%, rgba(146,87,255,.14), transparent 52%),
+    linear-gradient(90deg, rgba(103,49,139,.40), rgba(37,43,101,.42));
+  border-color:rgba(192,104,255,.40);
+  box-shadow:inset 0 0 74px rgba(146,87,255,.11), 0 0 32px rgba(146,87,255,.08);
 }
 
 .decor-sports-stadium-zone {
+  border-radius:44px;
   background:
-    radial-gradient(ellipse at 50% 55%, rgba(255,209,102,.12), transparent 50%),
-    rgba(146,87,255,.055);
-  border-color: rgba(255,209,102,.34);
-  box-shadow: inset 0 0 90px rgba(255,209,102,.05), 0 0 55px rgba(255,209,102,.06);
+    radial-gradient(ellipse at 50% 48%, rgba(99,245,181,.11), transparent 45%),
+    repeating-linear-gradient(90deg, transparent 0 110px, rgba(69,163,255,.022) 112px 114px),
+    rgba(11,36,48,.48);
+  border-color:rgba(99,245,181,.25);
+  box-shadow:inset 0 0 90px rgba(69,163,255,.055), 0 0 44px rgba(69,163,255,.055);
 }
 
-.world.scene-physical-education .decor-sports-zone-title .decor-label {
-  background: rgba(4,13,20,.82);
-  border: 1px solid rgba(255,255,255,.14);
-  color: #f6fbff;
-  font-weight: 1000;
-  letter-spacing: 1.5px;
-  box-shadow: 0 7px 22px rgba(0,0,0,.22);
+/* ---------- Títulos: compactos e com código de cor por modalidade ---------- */
+.decor-object[class*="decor-sports-zone-title-"] .decor-label {
+  left:50%;
+  top:50%;
+  bottom:auto;
+  transform:translate(-50%,-50%);
+  padding:9px 16px;
+  min-width:70%;
+  text-align:center;
+  border-radius:999px;
+  background:rgba(2,12,19,.90);
+  border:1px solid rgba(255,255,255,.16);
+  color:#f3fbff;
+  font-weight:1000;
+  font-size:.78rem;
+  letter-spacing:1.15px;
+  text-shadow:0 0 12px currentColor;
+  box-shadow:0 7px 20px rgba(0,0,0,.28), inset 0 0 14px rgba(255,255,255,.02);
 }
-.world.scene-physical-education .decor-sports-zone-title.sport-football .decor-label { color:#baffdf; border-color:rgba(99,245,181,.30); }
-.world.scene-physical-education .decor-sports-zone-title.sport-basketball .decor-label { color:#ffd19a; border-color:rgba(255,179,71,.30); }
-.world.scene-physical-education .decor-sports-zone-title.sport-athletics .decor-label { color:#bcecff; border-color:rgba(140,247,255,.28); }
-.world.scene-physical-education .decor-sports-zone-title.sport-volleyball .decor-label { color:#ffe5a1; border-color:rgba(255,209,102,.30); }
-.world.scene-physical-education .decor-sports-zone-title.sport-dodgeball .decor-label { color:#ffb4bc; border-color:rgba(255,107,122,.30); }
-.world.scene-physical-education .decor-sports-zone-title.sport-championship .decor-label { color:#ffe29a; border-color:rgba(255,209,102,.36); }
+.decor-sports-zone-title-hub .decor-label { color:#9fffd2 !important; border-color:rgba(99,245,181,.34) !important; }
+.decor-sports-zone-title-football .decor-label { color:#a9ffd0 !important; border-color:rgba(99,245,181,.35) !important; }
+.decor-sports-zone-title-basketball .decor-label { color:#9ce7ff !important; border-color:rgba(69,163,255,.38) !important; }
+.decor-sports-zone-title-athletics .decor-label { color:#b9f5ff !important; border-color:rgba(140,247,255,.38) !important; }
+.decor-sports-zone-title-volleyball .decor-label { color:#fff0b0 !important; border-color:rgba(255,209,102,.35) !important; }
+.decor-sports-zone-title-dodgeball .decor-label { color:#e3baff !important; border-color:rgba(192,104,255,.40) !important; }
+.decor-sports-zone-title-championship .decor-label { color:#d9ffb7 !important; border-color:rgba(99,245,181,.40) !important; }
 
+/* ---------- Equipamentos esportivos ---------- */
 .decor-sports-goal {
-  border: 7px solid rgba(245,251,255,.78);
-  border-bottom-width: 12px;
+  border:6px solid rgba(235,255,246,.82);
+  border-left-width:10px;
+  border-right-width:10px;
+  border-radius:7px;
   background:
-    repeating-linear-gradient(45deg, transparent 0 24px, rgba(255,255,255,.10) 25px 27px),
-    repeating-linear-gradient(-45deg, transparent 0 24px, rgba(255,255,255,.10) 25px 27px);
-  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+    repeating-linear-gradient(45deg, transparent 0 14px, rgba(255,255,255,.11) 15px 17px),
+    repeating-linear-gradient(-45deg, transparent 0 14px, rgba(255,255,255,.11) 15px 17px),
+    rgba(1,15,20,.12);
+  box-shadow:0 9px 22px rgba(0,0,0,.26), 0 0 16px rgba(99,245,181,.08);
 }
 
 .decor-sports-hoop {
-  border-radius: 20px;
-  border: 3px solid rgba(255,179,71,.22);
-  background: linear-gradient(180deg, rgba(255,179,71,.08), transparent);
+  border-radius:18px;
+  background:linear-gradient(180deg, rgba(69,163,255,.07), transparent);
 }
 .decor-sports-hoop::before {
   content:"";
   position:absolute;
-  left:50%; top:20px;
-  width:180px; height:100px;
+  left:50%; top:28px;
+  width:72%; height:58px;
   transform:translateX(-50%);
-  border:8px solid rgba(245,251,255,.74);
-  border-radius:8px;
+  border:6px solid rgba(225,249,255,.80);
+  border-radius:7px;
+  box-shadow:0 0 15px rgba(69,163,255,.09);
 }
 .decor-sports-hoop::after {
   content:"";
   position:absolute;
-  left:50%; top:110px;
-  width:120px; height:35px;
+  left:50%; top:91px;
+  width:54%; height:22px;
   transform:translateX(-50%);
-  border:8px solid #ff9c45;
+  border:7px solid #ffad53;
   border-radius:50%;
+  box-shadow:0 0 12px rgba(255,173,83,.13);
 }
 
 .decor-sports-net {
   background:
-    repeating-linear-gradient(0deg, transparent 0 29px, rgba(245,251,255,.15) 30px 33px),
-    repeating-linear-gradient(90deg, transparent 0 29px, rgba(245,251,255,.15) 30px 33px);
-  border-left:8px solid rgba(245,251,255,.64);
-  border-right:8px solid rgba(245,251,255,.64);
-}
-
-.decor-sports-center-line {
-  background: rgba(245,251,255,.28);
-  border-radius:999px;
-}
-
-.decor-sports-start-line,
-.decor-sports-finish-line {
-  border-radius:8px;
-  background: repeating-linear-gradient(0deg, rgba(245,251,255,.78) 0 18px, rgba(2,4,13,.72) 18px 36px);
-  opacity:.72;
-}
-.decor-sports-start-line .decor-label,
-.decor-sports-finish-line .decor-label {
-  writing-mode: vertical-rl;
-  font-size:.7rem;
-  font-weight:1000;
-  color:#fff;
+    repeating-linear-gradient(0deg, transparent 0 24px, rgba(245,251,255,.20) 25px 28px),
+    repeating-linear-gradient(90deg, transparent 0 22px, rgba(245,251,255,.18) 23px 26px);
+  border-left:7px solid rgba(225,249,255,.80);
+  border-right:7px solid rgba(225,249,255,.80);
+  box-shadow:0 0 14px rgba(69,163,255,.07);
 }
 
 .decor-sports-podium {
-  border-radius:18px 18px 6px 6px;
-  background:
-    linear-gradient(90deg, #8995a7 0 30%, #d5a739 30% 70%, #9e6335 70%);
-  border:3px solid rgba(255,255,255,.20);
-  box-shadow:0 18px 34px rgba(0,0,0,.30), 0 0 38px rgba(255,209,102,.10);
+  border-radius:18px 18px 7px 7px;
+  background:linear-gradient(90deg, #8797a9 0 30%, #d8b34f 30% 70%, #a36d43 70%);
+  border:3px solid rgba(255,255,255,.22);
+  box-shadow:0 16px 30px rgba(0,0,0,.30),0 0 28px rgba(255,209,102,.09);
 }
 
 .decor-sports-banner .decor-label {
-  color:#dffcff;
+  left:50%; top:50%; bottom:auto;
+  transform:translate(-50%,-50%);
+  color:#cffff0;
+  background:rgba(2,14,20,.64);
+  border:1px solid rgba(99,245,181,.12);
+  padding:7px 15px;
   font-weight:1000;
-  letter-spacing:3px;
-  text-shadow:0 0 20px rgba(99,245,181,.22);
+  letter-spacing:2.5px;
+  font-size:.68rem;
+  text-shadow:0 0 18px rgba(99,245,181,.30);
 }
 
-.decor-sports-mark .decor-label {
-  color:#fff;
-  font-size:2rem;
-  text-shadow:0 0 12px rgba(255,255,255,.45);
+/* ---------- Biblioteca de props SVG ---------- */
+.decor-sports-prop-bench,
+.decor-sports-prop-lamp,
+.decor-sports-prop-planter,
+.decor-sports-prop-scoreboard,
+.decor-sports-prop-rack,
+.decor-sports-prop-bleacher {
+  background-position:center;
+  background-repeat:no-repeat;
+  background-size:contain;
+  filter:drop-shadow(0 10px 10px rgba(0,0,0,.22));
+}
+.decor-sports-prop-bench { background-image:url("../../images/realms/physical-education/map/bench.svg"); }
+.decor-sports-prop-lamp {
+  background-image:url("../../images/realms/physical-education/map/lamp.svg");
+  filter:drop-shadow(0 0 11px rgba(69,163,255,.22));
+}
+.decor-sports-prop-planter { background-image:url("../../images/realms/physical-education/map/planter.svg"); }
+.decor-sports-prop-scoreboard { background-image:url("../../images/realms/physical-education/map/scoreboard.svg"); }
+.decor-sports-prop-rack { background-image:url("../../images/realms/physical-education/map/equipment-rack.svg"); }
+.decor-sports-prop-bleacher { background-image:url("../../images/realms/physical-education/map/bleacher.svg"); }
+
+/* ---------- Árvores: vegetação de borda, menos agressiva visualmente ---------- */
+.world.scene-physical-education .tree-canopy {
+  background:
+    radial-gradient(circle at 34% 28%, rgba(200,255,225,.20), transparent 14%),
+    radial-gradient(circle at 32% 48%, rgba(64,184,111,.88), transparent 37%),
+    radial-gradient(circle at 68% 45%, rgba(35,145,96,.88), transparent 40%),
+    radial-gradient(circle at 50% 68%, rgba(16,93,72,.96), rgba(4,35,39,.98));
+  border-color:rgba(99,245,181,.20);
+  box-shadow:0 0 24px rgba(99,245,181,.08), inset 0 0 24px rgba(255,255,255,.025);
+}
+.world.scene-physical-education .tree-canopy::before { background:rgba(99,245,181,.08); }
+.world.scene-physical-education .tree-canopy::after { background:rgba(69,163,255,.055); }
+.world.scene-physical-education .tree-trunk {
+  background:linear-gradient(90deg,#153f36,#246a50 48%,#12352f);
+  border-color:rgba(99,245,181,.12);
 }
 
+/* ---------- HUD de progresso do reino ---------- */
 .sports-progress-hud {
   position:absolute;
   left:20px;
