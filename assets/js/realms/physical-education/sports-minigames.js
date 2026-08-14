@@ -5,9 +5,9 @@
   const DODGE_CATCH_DISTANCE = 82;
   const DODGE_CATCH_PERFECT_DISTANCE = 34;
   const DODGE_CATCH_BUFFER_MS = 110;
-  // Balance V3.1: mobilidade suficiente para toda rota válida, sem voltar aos 640 px/s absurdos.
-  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 380;
-  const RUBRO_PROJECTILE_SPEED_MULTIPLIER = Object.freeze({ 1: 1.15, 2: 1.32, 3: 1.48 });
+  // V4: mobilidade responsiva; a dificuldade vem dos padrões, não de travar o jogador.
+  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 400;
+  const RUBRO_PROJECTILE_SPEED_MULTIPLIER = Object.freeze({ 1: 1.15, 2: 1.30, 3: 1.42 });
   const RUBRO_DAMAGE_MULTIPLIER = Object.freeze({ 1: 1.00, 2: 1.12, 3: 1.22 });
 
   const DODGEBALL_VISUALS = Object.freeze({
@@ -949,6 +949,28 @@
         catchable: false,
         telegraph: "Rubro cruza a quadra com rajadas horizontais. Procure o corredor vazio."
       },
+      spiralPressure: {
+        id: "spiral-pressure",
+        label: "Espiral Rubra",
+        duration: 7600,
+        catchable: false,
+        telegraph: "O cerco fecha primeiro. Depois, curvas alternadas obrigam você a acompanhar o espaço livre."
+      },
+      bombCrossfire: {
+        id: "bomb-crossfire",
+        label: "Bombardeio Cruzado",
+        duration: 7800,
+        catchable: false,
+        telegraph: "Uma Bola-Bomba força o deslocamento enquanto linhas laterais cortam as rotas óbvias."
+      },
+      falseCorridor: {
+        id: "false-corridor",
+        label: "Corredor Falso",
+        duration: 7600,
+        catchable: true,
+        telegraph: "As paredes deixam uma passagem, mas Rubro cruza a abertura logo depois. Leia duas ameaças ao mesmo tempo."
+      },
+
       mixRainHunter: {
         id: "mix-rain-hunter",
         label: "Caçada sob Chuva",
@@ -987,11 +1009,15 @@
       pool = [
         catalog.bounceTrio, catalog.cornerBarrage, catalog.fallingRain, catalog.wallPassage,
         catalog.siege, catalog.hunter, catalog.bomb, catalog.crossfire,
+        catalog.spiralPressure, catalog.falseCorridor,
         catalog.mixRainHunter, catalog.mixBombCorner
       ];
     } else {
       // Abaixo de 30% ele para de apresentar ataques isolados e começa a misturá-los.
-      pool = [catalog.mixRainHunter, catalog.mixBounceWalls, catalog.mixBombCorner, catalog.mixSiegeRain];
+      pool = [
+        catalog.mixRainHunter, catalog.mixBounceWalls, catalog.mixBombCorner, catalog.mixSiegeRain,
+        catalog.spiralPressure, catalog.bombCrossfire, catalog.falseCorridor
+      ];
     }
 
     const filtered = pool.filter((attack) => attack.id !== g.lastPatternId);
@@ -1022,6 +1048,7 @@
       balls: [],
       player: { x: 50, y: 50, invulnerableUntil: 0 },
       defenseEnd: 0,
+      patternClearSince: 0,
       lastSpawn: 0,
       lastPatternId: "",
       nextPattern: null,
@@ -1608,8 +1635,10 @@
     g.enemyAttackStart = performance.now();
     g.enemyAttackStep = 0;
     g.enemyAttackDone = false;
+    g.patternClearSince = 0;
     g.enemyAttackSequence = buildRubroAttackSequence(g, attack);
-    g.defenseEnd = g.enemyAttackStart + attack.duration;
+    // V4: sem encerramento por cronômetro. O turno termina quando o padrão resolver.
+    g.defenseEnd = 0;
     g.lastSpawn = 0;
     g.rubroArenaSide = "center";
     g.catchWindowUntil = 0;
@@ -1680,6 +1709,33 @@
         wave: index,
         damage: 8
       }));
+
+    } else if (attack.id === "spiral-pressure") {
+      add(0, "telegraph", { text: "ESPIRAL RUBRA", side: "center", tone: "ricochet" });
+      add(450, "siege", { damage: 8, catchableReturn: false });
+      [1500, 2300, 3100, 3900, 4700, 5500].forEach((at, index) => add(at, "throw", {
+        style: "curve",
+        side: index % 2 ? "right" : "left",
+        curveDirection: index % 2 ? -1 : 1,
+        catchable: false,
+        damage: 8
+      }));
+
+    } else if (attack.id === "bomb-crossfire") {
+      add(0, "telegraph", { text: "BOMBARDEIO CRUZADO", side: "center", tone: "power" });
+      add(450, "bomb", { damage: 7, fragments: 8 });
+      [1250, 1950, 2650, 3350, 4050, 4750, 5450, 6150].forEach((at, index) => add(at, "crossfire", {
+        wave: index,
+        damage: 7
+      }));
+      add(3900, "bomb", { damage: 7, fragments: 8 });
+
+    } else if (attack.id === "false-corridor") {
+      add(0, "telegraph", { text: "CORREDOR FALSO", side: "center", tone: "combo" });
+      [500, 1550, 2600, 3650, 4700, 5750].forEach((at, index) => {
+        add(at, "wallWave", { wave: index, damage: 8, catchableEdge: index === 5 });
+        if (index < 5) add(at + 430, "crossfire", { wave: index, damage: 6 });
+      });
 
     } else if (attack.id === "mix-rain-hunter") {
       add(0, "telegraph", { text: "CAÇADA SOB CHUVA", side: "center", tone: "power" });
@@ -1807,8 +1863,10 @@
     };
     g.enemyAttackStart = performance.now();
     g.enemyAttackDone = false;
+    g.patternClearSince = 0;
     g.enemyAttackSequence = buildRallyRubroSequence(g);
-    g.defenseEnd = g.enemyAttackStart + 30000;
+    // O Rally também espera a última ameaça desaparecer/agarrar.
+    g.defenseEnd = 0;
     g.catchBufferedUntil = 0;
     setDodgeballMusicIntensity(1);
     duckDodgeballMusic(.10, 180);
@@ -1931,7 +1989,7 @@
       `<div class="dodgeball-defense-stage-v3">
         <div class="dodgeball-defense-meta-v3">
           <strong>CAPITÃO RUBRO · ${escapeHtml(attack?.label || "ATAQUE")}</strong>
-          <span id="dodgeTimer">Leia o movimento...</span>
+          <span id="dodgeTimer">Padrão em andamento...</span>
         </div>
 
         <div id="dodgeArena" class="dodgeball-arena dodgeball-dynamic-arena dodgeball-arena-v3">
@@ -2191,7 +2249,7 @@
         accelerationPerSecond: .24,
         maxSpeed: 650,
         catchableAt: index === catchIndex ? now + event.catchAfter : null,
-        lifeUntil: g.defenseEnd - 180
+        lifeUntil: now + Number(event.lifeMs || 5600)
       });
     });
   }
@@ -2285,7 +2343,7 @@
       maxSpeed: 440,
       homingStrength: 3.4,
       catchableAt: event.catchAfter == null ? null : now + event.catchAfter,
-      lifeUntil: g.defenseEnd - 200
+      lifeUntil: now + Number(event.lifeMs || 5900)
     });
   }
 
@@ -2730,6 +2788,22 @@
   }
 
 
+  function isRubroPatternResolved(g, now) {
+    if (!g || g.enemyAttackDone) return false;
+    const timelineDone = Array.isArray(g.enemyAttackSequence) && g.enemyAttackSequence.every((event) => event.done);
+    const ballsActive = Array.isArray(g.balls) && g.balls.length > 0;
+    const fallingActive = Array.isArray(g.fallingBalls) && g.fallingBalls.length > 0;
+    const warningsActive = Object.keys(g.warningTargets || {}).length > 0;
+
+    if (!timelineDone || ballsActive || fallingActive || warningsActive) {
+      g.patternClearSince = 0;
+      return false;
+    }
+
+    if (!g.patternClearSince) g.patternClearSince = now;
+    return now - g.patternClearSince >= 260;
+  }
+
   function updateDodgeDefense(now, dt) {
     const g = state.current;
     const arena = document.getElementById("dodgeArena");
@@ -2914,7 +2988,6 @@
     const playerEl = document.getElementById("dodgePlayer");
     if (playerEl) playerEl.classList.toggle("invulnerable", now < g.player.invulnerableUntil);
 
-    const remaining = Math.max(0, (g.defenseEnd - now) / 1000);
     const timer = document.getElementById("dodgeTimer");
     const catchableInRange = g.balls.some((ball) => {
       if (!ball.catchable) return false;
@@ -2926,10 +2999,10 @@
     if (timer && !timer.textContent.includes("AGARROU") && !timer.textContent.includes("PERFECT")) {
       timer.textContent = catchableInRange
         ? (g.rallyActive ? "ÚLTIMA BOLA · AGARRA! [ESPAÇO]" : "AGARRA! [ESPAÇO]")
-        : `${remaining.toFixed(1)}s · ${g.activePattern?.label || "Esquiva"}`;
+        : `${g.activePattern?.label || "Esquiva"} · padrão em andamento`;
     }
 
-    if (remaining <= 0 && !g.enemyAttackDone) finishRubroDefenseTurn(false);
+    if (isRubroPatternResolved(g, now)) finishRubroDefenseTurn(false);
   }
 
   function updateDodgePlayerDom() {
