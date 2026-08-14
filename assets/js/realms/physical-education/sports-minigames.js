@@ -2,13 +2,13 @@
   const REALM_ID = "reino-educacao-fisica";
   const SPORT_IDS = ["football", "basketball", "athletics", "volleyball", "dodgeball"];
   const CAPITAO_RUBRO_IMAGE = "assets/images/rivals/capitao-rubro.png";
-  const DODGE_CATCH_DISTANCE = 92;
-  const DODGE_CATCH_PERFECT_DISTANCE = 40;
-  const DODGE_CATCH_BUFFER_MS = 140;
-  // Balance V2: 640 px/s atravessava a arena quase instantaneamente.
-  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 420;
-  const RUBRO_PROJECTILE_SPEED_MULTIPLIER = Object.freeze({ 1: 1.08, 2: 1.18, 3: 1.28 });
-  const RUBRO_DAMAGE_MULTIPLIER = Object.freeze({ 1: 1.00, 2: 1.10, 3: 1.18 });
+  const DODGE_CATCH_DISTANCE = 82;
+  const DODGE_CATCH_PERFECT_DISTANCE = 34;
+  const DODGE_CATCH_BUFFER_MS = 110;
+  // Balance V3: movimento deliberado. Ainda ágil, mas sem atravessar a arena em um toque.
+  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 300;
+  const RUBRO_PROJECTILE_SPEED_MULTIPLIER = Object.freeze({ 1: 1.15, 2: 1.32, 3: 1.48 });
+  const RUBRO_DAMAGE_MULTIPLIER = Object.freeze({ 1: 1.00, 2: 1.12, 3: 1.22 });
 
   const DODGEBALL_VISUALS = Object.freeze({
     background: "assets/images/realms/physical-education/dodgeball/arena-bg.webp",
@@ -981,11 +981,13 @@
 
     let pool;
     if (phase === 1) {
-      pool = [catalog.bounceTrio, catalog.cornerBarrage, catalog.fallingRain, catalog.wallPassage];
+      // Rubro já começa com variedade real: nada de quatro padrões excessivamente seguros.
+      pool = [catalog.bounceTrio, catalog.cornerBarrage, catalog.fallingRain, catalog.wallPassage, catalog.siege, catalog.crossfire];
     } else if (phase === 2) {
       pool = [
         catalog.bounceTrio, catalog.cornerBarrage, catalog.fallingRain, catalog.wallPassage,
-        catalog.siege, catalog.hunter, catalog.bomb, catalog.crossfire
+        catalog.siege, catalog.hunter, catalog.bomb, catalog.crossfire,
+        catalog.mixRainHunter, catalog.mixBombCorner
       ];
     } else {
       // Abaixo de 30% ele para de apresentar ataques isolados e começa a misturá-los.
@@ -1622,7 +1624,7 @@
 
     if (attack.id === "bounce-trio") {
       add(0, "telegraph", { text: "TRÊS REBOTES", side: "center", tone: "ricochet" });
-      add(520, "bounceTrio", { catchAfter: phase >= 2 ? 4300 : 4700, damage: phase >= 2 ? 11 : 9 });
+      add(360, "bounceTrio", { catchAfter: phase >= 2 ? 3400 : 3900, damage: phase >= 2 ? 11 : 9 });
 
     } else if (attack.id === "corner-barrage") {
       const side = Math.random() > .5 ? "left" : "right";
@@ -1639,15 +1641,15 @@
 
     } else if (attack.id === "falling-rain") {
       add(0, "telegraph", { text: "OLHE AS SOMBRAS", side: "center", tone: "combo" });
-      const count = phase >= 2 ? 2 : 1;
-      [650, 1350, 2050, 2750, 3450, 4150, 4850, 5550].forEach((at) => add(at, "fallingVolley", { count, damage: 8 }));
+      const count = phase === 3 ? 3 : 2;
+      [450, 1050, 1650, 2250, 2850, 3450, 4050, 4650, 5250].forEach((at) => add(at, "fallingVolley", { count, damage: 8 }));
 
     } else if (attack.id === "wall-passage") {
       add(0, "telegraph", { text: "ENCONTRE A ABERTURA", side: "center", tone: "combo" });
-      [650, 1650, 2650, 3650, 4650].forEach((at, index) => add(at, "wallWave", {
+      [500, 1300, 2100, 2900, 3700, 4500].forEach((at, index) => add(at, "wallWave", {
         wave: index,
         damage: phase >= 2 ? 9 : 8,
-        catchableEdge: index === 4
+        catchableEdge: index === 5
       }));
 
     } else if (attack.id === "siege") {
@@ -1657,7 +1659,7 @@
     } else if (attack.id === "hunter") {
       add(0, "telegraph", { text: "NÃO PARE", side: "center", tone: "power" });
       add(600, "hunter", { damage: 11, catchAfter: 4900 });
-      [1800, 2900, 4000, 5100].forEach((at, index) => add(at, "throw", {
+      [1300, 2200, 3100, 4000, 4900, 5800].forEach((at, index) => add(at, "throw", {
         style: index % 2 ? "curve" : "straight",
         side: index % 2 ? "right" : "left",
         curveDirection: index % 2 ? -1 : 1,
@@ -1672,7 +1674,7 @@
 
     } else if (attack.id === "crossfire") {
       add(0, "telegraph", { text: "LINHA DE FOGO", side: "center", tone: "combo" });
-      [650, 1450, 2250, 3050, 3850, 4650, 5450].forEach((at, index) => add(at, "crossfire", {
+      [450, 1050, 1650, 2250, 2850, 3450, 4050, 4650, 5250, 5850].forEach((at, index) => add(at, "crossfire", {
         wave: index,
         damage: 8
       }));
@@ -1680,12 +1682,12 @@
     } else if (attack.id === "mix-rain-hunter") {
       add(0, "telegraph", { text: "CAÇADA SOB CHUVA", side: "center", tone: "power" });
       add(500, "hunter", { damage: 10, catchAfter: 6200 });
-      [900, 1800, 2700, 3600, 4500, 5400, 6300].forEach((at) => add(at, "fallingVolley", { count: 2, damage: 7 }));
+      [700, 1450, 2200, 2950, 3700, 4450, 5200, 5950, 6700].forEach((at) => add(at, "fallingVolley", { count: 3, damage: 7 }));
 
     } else if (attack.id === "mix-bounce-walls") {
       add(0, "telegraph", { text: "REBOQUE CONFINADO", side: "center", tone: "ricochet" });
       add(450, "bounceTrio", { catchAfter: 6200, damage: 8 });
-      [1300, 2600, 3900, 5200, 6500].forEach((at, index) => add(at, "wallWave", {
+      [950, 1950, 2950, 3950, 4950, 5950, 6950].forEach((at, index) => add(at, "wallWave", {
         wave: index,
         damage: 7,
         catchableEdge: false
@@ -1707,7 +1709,7 @@
     } else if (attack.id === "mix-siege-rain") {
       add(0, "telegraph", { text: "CERCO VERTICAL", side: "center", tone: "combo" });
       add(500, "siege", { damage: 8, catchableReturn: true });
-      [1200, 2200, 3200, 4200, 5200, 6200].forEach((at) => add(at, "fallingVolley", { count: 2, damage: 7 }));
+      [900, 1700, 2500, 3300, 4100, 4900, 5700, 6500].forEach((at) => add(at, "fallingVolley", { count: 3, damage: 7 }));
     }
 
     return seq;
@@ -1739,7 +1741,7 @@
 
     // 7.5–10.8s · chuva dupla.
     add(7500, "telegraph", { text: "CHUVA RUBRA", side: "center", tone: "combo" });
-    [7800, 8500, 9200, 9900].forEach((at) => add(at, "fallingVolley", { count: 2, damage: 6 }));
+    [7700, 8200, 8700, 9200, 9700, 10200].forEach((at) => add(at, "fallingVolley", { count: 3, damage: 6 }));
     add(10800, "clearHazards");
 
     // 11–14s · cerco.
@@ -1756,7 +1758,7 @@
 
     // 17.7–21s · passagem estreita.
     add(17700, "telegraph", { text: "PASSAGEM", side: "center", tone: "combo" });
-    [18000, 18700, 19400, 20100].forEach((at, index) => add(at, "wallWave", {
+    [17900, 18450, 19000, 19550, 20100, 20650].forEach((at, index) => add(at, "wallWave", {
       wave: index, damage: 5, catchableEdge: false
     }));
     add(21000, "clearHazards");
@@ -1768,7 +1770,7 @@
 
     // 24.2–26.7s · linha de fogo.
     add(24200, "telegraph", { text: "LINHA DE FOGO", side: "center", tone: "combo" });
-    [24500, 25100, 25700, 26300].forEach((at, index) => add(at, "crossfire", { wave: index, damage: 5 }));
+    [24400, 24800, 25200, 25600, 26000, 26400].forEach((at, index) => add(at, "crossfire", { wave: index, damage: 5 }));
     add(26800, "clearHazards");
 
     // Clímax: única bola agarrável.
@@ -2177,13 +2179,13 @@
         y: 18,
         targetX,
         targetY,
-        speed: 205 + index * 16,
+        speed: 225 + index * 18,
         style: "chaos-bounce",
         catchable: false,
         damage: event.damage || 9,
         bounceAll: true,
-        accelerationPerSecond: .20,
-        maxSpeed: 600,
+        accelerationPerSecond: .24,
+        maxSpeed: 650,
         catchableAt: index === catchIndex ? now + event.catchAfter : null,
         lifeUntil: g.defenseEnd - 180
       });
@@ -2206,7 +2208,7 @@
       const x = clamp(playerX + (Math.random() - .5) * spread, 30, rect.width - 30);
       const y = clamp(playerY + (Math.random() - .5) * spread * .65, 38, rect.height - 38);
       const phase = getRubroPhase(g);
-      const baseDuration = phase === 3 ? 610 : phase === 2 ? 670 : 740;
+      const baseDuration = phase === 3 ? 500 : phase === 2 ? 560 : 640;
       const duration = (baseDuration + Math.random() * 100) / (g.enemySlowMultiplier || 1);
 
       const shadowEl = document.createElement("div");
@@ -2252,7 +2254,7 @@
         x, y,
         targetX: centerX,
         targetY: centerY,
-        speed: 215,
+        speed: 245,
         style: "siege",
         catchable: false,
         damage: event.damage || 10,
@@ -2271,13 +2273,13 @@
       y: 18,
       targetX: rect.width * g.player.x / 100,
       targetY: rect.height * g.player.y / 100,
-      speed: 145,
+      speed: 170,
       style: "hunter",
       catchable: false,
       damage: event.damage || 11,
-      accelerationPerSecond: .14,
-      maxSpeed: 380,
-      homingStrength: 3.0,
+      accelerationPerSecond: .18,
+      maxSpeed: 440,
+      homingStrength: 3.4,
       catchableAt: event.catchAfter == null ? null : now + event.catchAfter,
       lifeUntil: g.defenseEnd - 200
     });
@@ -2286,10 +2288,10 @@
   function spawnWallWave(event, rect) {
     const phase = getRubroPhase(state.current);
     const columns = phase >= 3 ? 11 : 10;
-    const gapSize = 2;
+    const gapSize = 1;
     const gapStart = Math.floor(Math.random() * Math.max(1, columns - gapSize));
     // O multiplicador global de fase é aplicado em createEnemyBall.
-    const speed = 225;
+    const speed = 245;
     const catchableIndex = event.catchableEdge ? (Math.random() > .5 ? gapStart - 1 : gapStart + gapSize) : -1;
 
     for (let index = 0; index < columns; index += 1) {
@@ -2322,7 +2324,7 @@
       style: "bomb",
       catchable: false,
       damage: event.damage || 7,
-      explodeAt: now + 1400,
+      explodeAt: now + 1180,
       bombFragments: event.fragments || 6
     });
   }
@@ -2351,7 +2353,7 @@
         y: ball.y,
         targetX: ball.x + Math.cos(angle) * distance,
         targetY: ball.y + Math.sin(angle) * distance,
-        speed: 260,
+        speed: 285,
         style: "bomb-fragment",
         catchable: false,
         damage: ball.damage || 7
@@ -2360,7 +2362,7 @@
   }
 
   function spawnCrossfireWave(event, rect) {
-    const rows = 5;
+    const rows = 6;
     const gap = Math.floor(Math.random() * rows);
     for (let row = 0; row < rows; row += 1) {
       if (row === gap) continue;
@@ -2371,7 +2373,7 @@
         y,
         targetX: fromLeft ? rect.width + 30 : -30,
         targetY: y,
-        speed: 305 + Number(event.wave || 0) * 9,
+        speed: 330 + Number(event.wave || 0) * 12,
         style: "crossfire",
         catchable: false,
         damage: event.damage || 8
@@ -2425,25 +2427,25 @@
     const damage = event.damage ?? (event.style === "power" ? 24 : event.style === "curve" ? 16 : event.style === "ricochet" ? 14 : 15);
 
     if (event.style === "rallyFinal") {
-      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:300, style:"rally-final", catchable:true, damage, isRallyFinal:true });
+      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:390, style:"rally-final", catchable:true, damage, isRallyFinal:true });
       return;
     }
     if (event.style === "power") {
-      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:470, style:"power", catchable:false, damage });
+      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:520, style:"power", catchable:false, damage });
       return;
     }
     if (event.style === "curve") {
       const offset = event.curveDirection > 0 ? -95 : 95;
-      createEnemyBall({ x:startX, y:startY, targetX:playerX+offset, targetY:playerY, speed:295, style:"curve", catchable:event.catchable, curveDirection:event.curveDirection || 1, damage });
+      createEnemyBall({ x:startX, y:startY, targetX:playerX+offset, targetY:playerY, speed:330, style:"curve", catchable:event.catchable, curveDirection:event.curveDirection || 1, damage });
       return;
     }
     if (event.style === "ricochet") {
       const wallX = event.side === "left" ? 24 : rect.width - 24;
       const wallY = rect.height * .42;
-      createEnemyBall({ x:startX, y:startY, targetX:wallX, targetY:wallY, speed:330, style:"ricochet", catchable:false, bounces:event.bounces || 1, damage });
+      createEnemyBall({ x:startX, y:startY, targetX:wallX, targetY:wallY, speed:370, style:"ricochet", catchable:false, bounces:event.bounces || 1, damage });
       return;
     }
-    createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:325, style:"straight", catchable:event.catchable, damage });
+    createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:360, style:"straight", catchable:event.catchable, damage });
   }
 
 
@@ -2505,7 +2507,7 @@
         const sidePct = event.side === "left" ? 10 : event.side === "right" ? 90 : 50;
         const startX = rect.width * sidePct / 100;
         const startY = 12;
-        const speed = event.style === "power" ? 480 : event.style === "curve" ? 310 : 340;
+        const speed = event.style === "power" ? 540 : event.style === "curve" ? 350 : 380;
         setRubroDefenseVisual(event.side || "center", "throw");
         sportSfx(event.style === "power" ? "enemyPower" : "enemyThrow");
         createEnemyBall({
