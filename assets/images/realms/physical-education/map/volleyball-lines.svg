@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" preserveAspectRatio="none">
+  <g fill="none" stroke="#fff3c3" stroke-width="5" opacity=".9" vector-effect="non-scaling-stroke">
+    <rect x="55" y="50" width="890" height="400" rx="8"/>
+    <path d="M500 50V450" stroke-width="8"/>
+    <path d="M350 50V450 M650 50V450" opacity=".72"/>
+  </g>
+</svg>
