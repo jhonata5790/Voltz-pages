@@ -5,8 +5,8 @@
   const DODGE_CATCH_DISTANCE = 82;
   const DODGE_CATCH_PERFECT_DISTANCE = 34;
   const DODGE_CATCH_BUFFER_MS = 110;
-  // Balance V3: movimento deliberado. Ainda ágil, mas sem atravessar a arena em um toque.
-  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 300;
+  // Balance V3.1: mobilidade suficiente para toda rota válida, sem voltar aos 640 px/s absurdos.
+  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 380;
   const RUBRO_PROJECTILE_SPEED_MULTIPLIER = Object.freeze({ 1: 1.15, 2: 1.32, 3: 1.48 });
   const RUBRO_DAMAGE_MULTIPLIER = Object.freeze({ 1: 1.00, 2: 1.12, 3: 1.22 });
 
@@ -1356,7 +1356,7 @@
     if (!g || g.type !== "dodgeball") return;
     sportSfx("menuConfirm");
     if (id === "defense") {
-      g.moveBoost = Math.max(g.moveBoost, 1.18);
+      g.moveBoost = Math.max(g.moveBoost, 1.15);
       performDodgeNonAttack("Você baixou o centro de gravidade. No próximo turno, sua esquiva ficará mais rápida.");
       return;
     }
@@ -1599,6 +1599,8 @@
     clearRubroHazards(g);
     g.fallingBalls = [];
     g.warningTargets = {};
+    g.lastWallGapStart = null;
+    g.lastCrossfireGap = null;
     g.player = { x: 50, y: 62, invulnerableUntil: 0 };
     const attack = g.nextPattern || chooseNextDodgePattern(g);
     g.activePattern = attack;
@@ -1793,6 +1795,8 @@
     clearRubroHazards(g);
     g.fallingBalls = [];
     g.warningTargets = {};
+    g.lastWallGapStart = null;
+    g.lastCrossfireGap = null;
     g.player = { x: 50, y: 62, invulnerableUntil: 0 };
     g.activePattern = {
       id: "rally",
@@ -2286,13 +2290,31 @@
   }
 
   function spawnWallWave(event, rect) {
-    const phase = getRubroPhase(state.current);
+    const g = state.current;
+    const phase = getRubroPhase(g);
     const columns = phase >= 3 ? 11 : 10;
-    const gapSize = 1;
-    const gapStart = Math.floor(Math.random() * Math.max(1, columns - gapSize));
+    // Duas colunas formam um corredor de verdade. A dificuldade vem da troca de posição, não de uma fresta impossível.
+    const gapSize = 2;
+    const maxStart = Math.max(0, columns - gapSize);
+    let gapStart;
+
+    if (Number.isFinite(g?.lastWallGapStart)) {
+      // A próxima abertura pode mudar bastante, mas nunca teleportar para o lado oposto da arena.
+      const minStart = Math.max(0, g.lastWallGapStart - 3);
+      const maxReachable = Math.min(maxStart, g.lastWallGapStart + 3);
+      gapStart = minStart + Math.floor(Math.random() * (maxReachable - minStart + 1));
+    } else {
+      gapStart = Math.floor(Math.random() * (maxStart + 1));
+    }
+    if (g) g.lastWallGapStart = gapStart;
+
     // O multiplicador global de fase é aplicado em createEnemyBall.
     const speed = 245;
-    const catchableIndex = event.catchableEdge ? (Math.random() > .5 ? gapStart - 1 : gapStart + gapSize) : -1;
+    const leftEdge = gapStart - 1;
+    const rightEdge = gapStart + gapSize;
+    const catchableIndex = event.catchableEdge
+      ? (Math.random() > .5 ? leftEdge : rightEdge)
+      : -1;
 
     for (let index = 0; index < columns; index += 1) {
       if (index >= gapStart && index < gapStart + gapSize) continue;
@@ -2362,8 +2384,21 @@
   }
 
   function spawnCrossfireWave(event, rect) {
+    const g = state.current;
     const rows = 6;
-    const gap = Math.floor(Math.random() * rows);
+    let gap;
+
+    if (Number.isFinite(g?.lastCrossfireGap)) {
+      // No Rally as ondas chegam a cada ~400 ms: a rota segura só pode mover uma faixa por vez.
+      const maxShift = g.rallyActive ? 1 : 2;
+      const minGap = Math.max(0, g.lastCrossfireGap - maxShift);
+      const maxGap = Math.min(rows - 1, g.lastCrossfireGap + maxShift);
+      gap = minGap + Math.floor(Math.random() * (maxGap - minGap + 1));
+    } else {
+      gap = Math.floor(Math.random() * rows);
+    }
+    if (g) g.lastCrossfireGap = gap;
+
     for (let row = 0; row < rows; row += 1) {
       if (row === gap) continue;
       const y = ((row + .5) / rows) * rect.height;
