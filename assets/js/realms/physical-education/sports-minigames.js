@@ -218,7 +218,7 @@
     const completed = isSportCompleted(id);
     const meta = SPORT_META[id];
     const descriptions = {
-      football: "Partida 3v3 com goleiros. WASD move, J chuta, K toca, L cruza e I ativa a Voltz Vision para ler espaços e linhas de passe.",
+      football: "Partida 3v3 com goleiros. WASD move; J chuta com a bola e dá o bote sem ela; K toca, L cruza e I ativa a Voltz Vision.",
       basketball: "O marcador se move pela barra. Pressione Espaço dentro da zona central para acertar o tempo do arremesso.",
       athletics: "Não queime a largada. Quando aparecer JÁ!, pressione Espaço e depois alterne A e D para construir velocidade.",
       volleyball: "Uma sequência de comandos representa recepção, levantamento e ataque. Pressione cada tecla antes do tempo acabar.",
@@ -390,14 +390,14 @@
       targetGoals,
       controlledId: "v1",
       players: [
-        { id:"v1", team:"voltz", number:"7",  x:24, y:50, homeX:24, homeY:50, speed:22 },
-        { id:"v2", team:"voltz", number:"10", x:34, y:28, homeX:34, homeY:28, speed:17 },
-        { id:"v3", team:"voltz", number:"11", x:34, y:72, homeX:34, homeY:72, speed:17 },
-        { id:"vgk", team:"voltz", number:"GK", x:6, y:50, homeX:6, homeY:50, speed:18, keeper:true },
-        { id:"r1", team:"rival", number:"8",  x:76, y:50, homeX:76, homeY:50, speed:16 },
-        { id:"r2", team:"rival", number:"6",  x:66, y:28, homeX:66, homeY:28, speed:15 },
-        { id:"r3", team:"rival", number:"9",  x:66, y:72, homeX:66, homeY:72, speed:15 },
-        { id:"rgk", team:"rival", number:"GK", x:94, y:50, homeX:94, homeY:50, speed:18, keeper:true }
+        { id:"v1", team:"voltz", number:"7",  x:24, y:50, homeX:24, homeY:50, speed:22, facingX:1, facingY:0, movingUntil:0, tackleUntil:0, recoverUntil:0, tackleCooldownUntil:0 },
+        { id:"v2", team:"voltz", number:"10", x:34, y:28, homeX:34, homeY:28, speed:17, facingX:1, facingY:0, movingUntil:0, tackleUntil:0, recoverUntil:0, tackleCooldownUntil:0 },
+        { id:"v3", team:"voltz", number:"11", x:34, y:72, homeX:34, homeY:72, speed:17, facingX:1, facingY:0, movingUntil:0, tackleUntil:0, recoverUntil:0, tackleCooldownUntil:0 },
+        { id:"vgk", team:"voltz", number:"GK", x:6, y:50, homeX:6, homeY:50, speed:18, keeper:true, facingX:1, facingY:0, movingUntil:0, tackleUntil:0, recoverUntil:0, tackleCooldownUntil:0 },
+        { id:"r1", team:"rival", number:"8",  x:76, y:50, homeX:76, homeY:50, speed:16, facingX:-1, facingY:0, movingUntil:0, tackleUntil:0, recoverUntil:0, tackleCooldownUntil:0 },
+        { id:"r2", team:"rival", number:"6",  x:66, y:28, homeX:66, homeY:28, speed:15, facingX:-1, facingY:0, movingUntil:0, tackleUntil:0, recoverUntil:0, tackleCooldownUntil:0 },
+        { id:"r3", team:"rival", number:"9",  x:66, y:72, homeX:66, homeY:72, speed:15, facingX:-1, facingY:0, movingUntil:0, tackleUntil:0, recoverUntil:0, tackleCooldownUntil:0 },
+        { id:"rgk", team:"rival", number:"GK", x:94, y:50, homeX:94, homeY:50, speed:18, keeper:true, facingX:-1, facingY:0, movingUntil:0, tackleUntil:0, recoverUntil:0, tackleCooldownUntil:0 }
       ],
       ball: {
         x:26, y:50, z:0, vx:0, vy:0, vz:0, ownerId:"v1", lastTouchTeam:"voltz",
@@ -408,7 +408,7 @@
       visionCooldownUntil: 0,
       aiActionAt: 0,
       autoSelectAt: 0,
-      lastStealAt: 0,
+      lastTackleAt: 0,
       feedback: compact ? "Gol de ouro no Pentatlo: marque antes do rival." : `Primeiro a ${targetGoals} gols. Leia o campo antes de acelerar a jogada.`,
       banner: "SAÍDA VOLTZ"
     };
@@ -444,12 +444,20 @@
   }
 
   function footballMoveToward(player, targetX, targetY, speed, dt) {
+    const now = performance.now();
+    if (now < Number(player.tackleUntil || 0)) return;
+    const recoveryScale = now < Number(player.recoverUntil || 0) ? .24 : 1;
     const dx = targetX - player.x;
     const dy = targetY - player.y;
     const length = Math.hypot(dx, dy) || 1;
-    const step = Math.min(length, speed * dt);
+    if (length > .05) {
+      player.facingX = dx / length;
+      player.facingY = dy / length;
+    }
+    const step = Math.min(length, speed * recoveryScale * dt);
     player.x += dx / length * step;
     player.y += dy / length * step;
+    if (step > .01) player.movingUntil = now + 120;
     player.x = clamp(player.x, player.keeper ? 3.5 : 7, player.keeper ? 96.5 : 93);
     player.y = clamp(player.y, 8, 92);
   }
@@ -460,7 +468,14 @@
 
     const playerMarkup = g.players.map((player) => `
       <div id="footballPlayer-${player.id}" class="football-live-player team-${player.team} ${player.keeper ? "is-keeper" : ""}" data-id="${player.id}">
-        <span>${player.number}</span>
+        <i class="football-player-shadow" aria-hidden="true"></i>
+        <div class="football-player-body" aria-hidden="true">
+          <i class="football-player-head"></i>
+          <i class="football-player-torso"></i>
+          <i class="football-player-leg leg-left"></i>
+          <i class="football-player-leg leg-right"></i>
+          <span>${player.number}</span>
+        </div>
       </div>`).join("");
 
     openPanelShell(
@@ -495,7 +510,7 @@ ${playerMarkup}
 
         <div class="football-control-strip">
 <span><b>WASD</b> MOVER</span>
-<button type="button" onclick="VoltzSports.shootFootball()"><b>J</b> CHUTAR</button>
+<button type="button" onclick="VoltzSports.footballPrimaryAction()"><b>J</b> CHUTE / BOTE</button>
 <button type="button" onclick="VoltzSports.footballPass()"><b>K</b> TOCAR</button>
 <button type="button" onclick="VoltzSports.footballCross()"><b>L</b> CRUZAR</button>
 <button type="button" onclick="VoltzSports.activateFootballVision()"><b>I</b> VOLTZ VISION</button>
@@ -704,6 +719,92 @@ ${playerMarkup}
     sportSfx("throwCurve");
   }
 
+  function getFootballFacing(player, fallbackTarget = null) {
+    let fx = Number(player?.facingX || 0);
+    let fy = Number(player?.facingY || 0);
+    if ((!fx && !fy) && fallbackTarget && player) {
+      fx = fallbackTarget.x - player.x;
+      fy = fallbackTarget.y - player.y;
+    }
+    const length = Math.hypot(fx, fy) || 1;
+    return { x: fx / length, y: fy / length };
+  }
+
+  function executeFootballTackle(g, tackler, now, options = {}) {
+    if (!g || !tackler || tackler.keeper || now < Number(tackler.tackleCooldownUntil || 0)) return false;
+    const owner = getFootballOwner(g);
+    const target = owner && owner.team !== tackler.team && !owner.keeper ? owner : null;
+    const fallback = target || g.ball;
+    const facing = options.autoAim && fallback
+      ? (() => {
+          const dx = fallback.x - tackler.x;
+          const dy = fallback.y - tackler.y;
+          const len = Math.hypot(dx, dy) || 1;
+          return { x:dx / len, y:dy / len };
+        })()
+      : getFootballFacing(tackler, fallback);
+
+    tackler.facingX = facing.x;
+    tackler.facingY = facing.y;
+    tackler.tackleUntil = now + 250;
+    tackler.tackleCooldownUntil = now + (options.ai ? 980 : 820);
+    tackler.x = clamp(tackler.x + facing.x * 4.2, 7, 93);
+    tackler.y = clamp(tackler.y + facing.y * 4.2, 8, 92);
+
+    if (!target) {
+      const looseDistance = footballDistance(tackler, g.ball);
+      if (!g.ball.ownerId && Number(g.ball.z || 0) <= 1.3 && looseDistance <= 3.6) {
+        footballSetPossession(g, tackler, now, tackler.team === "voltz" ? "BOTE NA BOLA! Você recuperou a posse." : "O rival chegou primeiro na bola solta.");
+        g.banner = tackler.team === "voltz" ? "BOLA RECUPERADA" : "RECUPERAÇÃO RIVAL";
+        sportSfx("impact");
+        return true;
+      }
+      tackler.recoverUntil = now + 430;
+      return false;
+    }
+
+    const toOwnerX = target.x - tackler.x;
+    const toOwnerY = target.y - tackler.y;
+    const distance = Math.hypot(toOwnerX, toOwnerY);
+    const toOwnerLength = distance || 1;
+    const alignment = facing.x * (toOwnerX / toOwnerLength) + facing.y * (toOwnerY / toOwnerLength);
+    const success = distance <= (options.ai ? 3.75 : 4.15) && alignment > -.18;
+
+    if (success) {
+      target.recoverUntil = now + 360;
+      footballSetPossession(g, tackler, now, tackler.team === "voltz" ? "BOTE CERTO! Você tomou a bola no tempo certo." : "O rival acertou o bote e tomou a posse.");
+      g.banner = tackler.team === "voltz" ? "DESARME!" : "BOTE ADVERSÁRIO";
+      g.lastTackleAt = now;
+      sportSfx("impact");
+      return true;
+    }
+
+    tackler.recoverUntil = now + (options.ai ? 520 : 620);
+    if (!options.ai && tackler.team === "voltz") {
+      g.feedback = "Bote no vazio! Você ficou vendido por um instante.";
+      g.banner = "BOTE ERRADO";
+      sportSfx("menuBack");
+    }
+    return false;
+  }
+
+  function footballTackle() {
+    const g = state.current;
+    if (!g || g.type !== "football" || g.phase !== "play") return;
+    const controlled = getFootballPlayer(g, g.controlledId);
+    const owner = getFootballOwner(g);
+    if (!controlled || controlled.keeper || owner?.team === "voltz") return;
+    executeFootballTackle(g, controlled, performance.now());
+  }
+
+  function footballPrimaryAction() {
+    const g = state.current;
+    if (!g || g.type !== "football" || g.phase !== "play") return;
+    const owner = getFootballOwner(g);
+    if (owner?.team === "voltz" && owner.id === g.controlledId && !owner.keeper) shootFootball();
+    else footballTackle();
+  }
+
   function shootFootball() {
     const g = state.current;
     if (!g || g.type !== "football" || g.phase !== "play") return;
@@ -767,6 +868,8 @@ ${playerMarkup}
     if (owner?.team === "voltz" && !owner.keeper) g.controlledId = owner.id;
     const controlled = getFootballPlayer(g, g.controlledId);
     if (!controlled || controlled.keeper) return;
+    const now = performance.now();
+    if (now < Number(controlled.tackleUntil || 0)) return;
 
     let dx = 0;
     let dy = 0;
@@ -776,8 +879,12 @@ ${playerMarkup}
     if (state.pressed.has("s") || state.pressed.has("arrowdown")) dy += 1;
     const len = Math.hypot(dx, dy) || 1;
     if (dx || dy) {
-      controlled.x += dx / len * controlled.speed * dt;
-      controlled.y += dy / len * controlled.speed * dt;
+      controlled.facingX = dx / len;
+      controlled.facingY = dy / len;
+      const recoveryScale = now < Number(controlled.recoverUntil || 0) ? .28 : 1;
+      controlled.x += dx / len * controlled.speed * recoveryScale * dt;
+      controlled.y += dy / len * controlled.speed * recoveryScale * dt;
+      controlled.movingUntil = now + 130;
       controlled.x = clamp(controlled.x, 7, 93);
       controlled.y = clamp(controlled.y, 8, 92);
     }
@@ -830,6 +937,10 @@ ${playerMarkup}
         const targetX = pressing ? ball.x + 1.5 : clamp(ball.x + 14 + index * 3, 54, 84);
         const targetY = pressing ? ball.y : index === 0 ? 50 : index === 1 ? 30 : 70;
         footballMoveToward(player, targetX, targetY, pressing ? 15.5 : 11.5, dt);
+        const liveOwner = getFootballOwner(g);
+        if (pressing && liveOwner?.team === "voltz" && !liveOwner.keeper && footballDistance(player, liveOwner) < 4.25 && now >= Number(player.tackleCooldownUntil || 0)) {
+          executeFootballTackle(g, player, now, { ai:true, autoAim:true });
+        }
       } else if (possession === "rival") {
         const laneY = index === 0 ? 50 : index === 1 ? 28 : 72;
         footballMoveToward(player, clamp(ball.x - 14, 14, 80), laneY, 11.8, dt);
@@ -858,51 +969,82 @@ ${playerMarkup}
     }
   }
 
+  function resolveFootballPlayerSeparation(g) {
+    const players = g?.players || [];
+    for (let i = 0; i < players.length; i += 1) {
+      for (let j = i + 1; j < players.length; j += 1) {
+        const a = players[i];
+        const b = players[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const distance = Math.hypot(dx, dy) || .001;
+        const minDistance = a.keeper || b.keeper ? 3.25 : 3.05;
+        if (distance >= minDistance) continue;
+        const overlap = (minDistance - distance) * .5;
+        const nx = dx / distance;
+        const ny = dy / distance;
+        a.x = clamp(a.x - nx * overlap, a.keeper ? 3.5 : 7, a.keeper ? 96.5 : 93);
+        a.y = clamp(a.y - ny * overlap, 8, 92);
+        b.x = clamp(b.x + nx * overlap, b.keeper ? 3.5 : 7, b.keeper ? 96.5 : 93);
+        b.y = clamp(b.y + ny * overlap, 8, 92);
+      }
+    }
+  }
+
   function updateFootballBall(g, now, dt) {
     const ball = g.ball;
     const owner = getFootballOwner(g);
 
     if (owner) {
       const direction = owner.team === "voltz" ? 1 : -1;
-      ball.x = owner.x + direction * (owner.keeper ? 1.2 : 1.8);
-      ball.y = owner.y + 1.2;
+      const facing = getFootballFacing(owner, { x:owner.x + direction, y:owner.y });
+      const dribbleOffset = owner.keeper ? 1.1 : 1.75;
+      ball.x = owner.x + facing.x * dribbleOffset;
+      ball.y = owner.y + facing.y * dribbleOffset;
 
       if (owner.keeper && now >= ball.keeperReleaseAt) {
         const teammates = getFootballTeam(g, owner.team, false);
         const opponents = getFootballTeam(g, owner.team === "voltz" ? "rival" : "voltz", false);
-        const target = teammates
+        const ranked = teammates
           .map((mate) => {
-            const laneOpen = isFootballPassLaneOpen(g, owner, mate) ? 18 : 0;
+            const laneOpen = isFootballPassLaneOpen(g, owner, mate);
             const nearestOpponent = Math.min(...opponents.map((rival) => footballDistance(rival, mate)));
-            const distancePenalty = footballDistance(owner, mate) * .25;
-            return { mate, score: laneOpen + nearestOpponent * 2 - distancePenalty };
+            const nearestLaneOpponent = Math.min(...opponents.map((rival) => distanceToFootballSegment(rival, owner, mate)));
+            const score = (laneOpen ? 24 : -12) + nearestOpponent * 2.4 + nearestLaneOpponent * 1.6 - footballDistance(owner, mate) * .18;
+            return { mate, laneOpen, nearestOpponent, score };
           })
-          .sort((a, b) => b.score - a.score)[0]?.mate || teammates[0];
-        if (target) {
-          const highRelease = !isFootballPassLaneOpen(g, owner, target);
-          footballLaunchBall(g, owner, target.x, target.y, highRelease ? 36 : 44, now, {
-            passTargetId: target.id,
-            airborne: highRelease,
-            vz: highRelease ? 14 : 0,
-            landingX: target.x,
-            landingY: target.y
-          });
-          if (owner.team === "voltz") g.controlledId = target.id;
-          g.feedback = highRelease ? "Seu goleiro evitou a pressão e lançou por cima." : "Seu goleiro encontrou uma saída segura.";
+          .sort((a, b) => b.score - a.score);
+        const best = ranked[0];
+        const safeShort = best && best.laneOpen && best.nearestOpponent >= 7.2;
+
+        if (safeShort) {
+          footballLaunchBall(g, owner, best.mate.x, best.mate.y, 44, now, { passTargetId: best.mate.id });
+          if (owner.team === "voltz") g.controlledId = best.mate.id;
+          g.feedback = "Seu goleiro encontrou uma saída curta segura.";
           g.banner = "REPOSIÇÃO SEGURA";
+          return;
         }
+
+        const direction = owner.team === "voltz" ? 1 : -1;
+        const zoneX = owner.team === "voltz" ? 38 : 62;
+        const zones = [22, 50, 78].map((zoneY) => {
+          const point = { x:zoneX, y:zoneY };
+          const opponentClearance = Math.min(...opponents.map((rival) => footballDistance(rival, point)));
+          const teammateSupport = Math.min(...teammates.map((mate) => footballDistance(mate, point)));
+          return { x:point.x, y:point.y, score:opponentClearance * 2 - teammateSupport * .35 };
+        }).sort((a, b) => b.score - a.score);
+        const clearZone = zones[0] || { x:owner.x + direction * 30, y:50 };
+        footballLaunchBall(g, owner, clearZone.x, clearZone.y, 40, now, {
+          airborne:true,
+          vz:18,
+          landingX:clearZone.x,
+          landingY:clearZone.y
+        });
+        g.feedback = "Sem passe curto seguro: o goleiro rifou para uma zona livre.";
+        g.banner = "BOLA LONGA";
         return;
       }
 
-      if (!owner.keeper && now - g.lastStealAt > 650) {
-        const opponents = getFootballTeam(g, owner.team === "voltz" ? "rival" : "voltz", false);
-        const tackler = opponents.slice().sort((a, b) => footballDistance(a, owner) - footballDistance(b, owner))[0];
-        if (tackler && footballDistance(tackler, owner) < 2.75) {
-g.lastStealAt = now;
-footballSetPossession(g, tackler, now, tackler.team === "voltz" ? "DESARME! Você recuperou a posse." : "O visitante roubou a bola. Feche o contra-ataque!");
-g.banner = tackler.team === "voltz" ? "BOLA RECUPERADA" : "PERDEU A POSSE";
-        }
-      }
       return;
     }
 
@@ -1007,8 +1149,14 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
       if (!el) return;
       el.style.left = `${player.x}%`;
       el.style.top = `${player.y}%`;
+      const facing = getFootballFacing(player, { x:player.x + (player.team === "voltz" ? 1 : -1), y:player.y });
+      const angle = Math.atan2(facing.y, facing.x) * 180 / Math.PI + 90;
+      el.style.setProperty("--football-facing-angle", `${angle}deg`);
       el.classList.toggle("is-controlled", player.id === g.controlledId && !player.keeper);
       el.classList.toggle("has-ball", g.ball.ownerId === player.id);
+      el.classList.toggle("is-running", now < Number(player.movingUntil || 0));
+      el.classList.toggle("is-tackling", now < Number(player.tackleUntil || 0));
+      el.classList.toggle("is-recovering", now < Number(player.recoverUntil || 0));
     });
 
     const ballEl = document.getElementById("footballBall");
@@ -1073,6 +1221,7 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
     updateFootballControlledPlayer(g, simDt);
     updateFootballKeepers(g, simDt);
     updateFootballAI(g, now, simDt);
+    resolveFootballPlayerSeparation(g);
     updateFootballBall(g, now, simDt);
     updateFootballDom(now);
   }
@@ -3848,7 +3997,7 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
       if (["j","k","l","i"].includes(key)) {
         event.preventDefault();
         if (!event.repeat) {
-          if (key === "j") shootFootball();
+          if (key === "j") footballPrimaryAction();
           else if (key === "k") footballPass();
           else if (key === "l") footballCross();
           else activateFootballVision();
@@ -3888,6 +4037,8 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
     start,
     chooseFootballZone,
     shootFootball,
+    footballPrimaryAction,
+    footballTackle,
     footballPass,
     footballCross,
     activateFootballVision,
