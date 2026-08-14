@@ -2,10 +2,13 @@
   const REALM_ID = "reino-educacao-fisica";
   const SPORT_IDS = ["football", "basketball", "athletics", "volleyball", "dodgeball"];
   const CAPITAO_RUBRO_IMAGE = "assets/images/rivals/capitao-rubro.png";
-  const DODGE_CATCH_DISTANCE = 104;
-  const DODGE_CATCH_PERFECT_DISTANCE = 46;
-  const DODGE_CATCH_BUFFER_MS = 160;
-  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 640;
+  const DODGE_CATCH_DISTANCE = 92;
+  const DODGE_CATCH_PERFECT_DISTANCE = 40;
+  const DODGE_CATCH_BUFFER_MS = 140;
+  // Balance V2: 640 px/s atravessava a arena quase instantaneamente.
+  const DODGE_PLAYER_BASE_SPEED_PX_PER_SECOND = 420;
+  const RUBRO_PROJECTILE_SPEED_MULTIPLIER = Object.freeze({ 1: 1.08, 2: 1.18, 3: 1.28 });
+  const RUBRO_DAMAGE_MULTIPLIER = Object.freeze({ 1: 1.00, 2: 1.10, 3: 1.18 });
 
   const DODGEBALL_VISUALS = Object.freeze({
     background: "assets/images/realms/physical-education/dodgeball/arena-bg.webp",
@@ -1636,7 +1639,7 @@
 
     } else if (attack.id === "falling-rain") {
       add(0, "telegraph", { text: "OLHE AS SOMBRAS", side: "center", tone: "combo" });
-      const count = g.opponentHp <= 60 ? 2 : 1;
+      const count = phase >= 2 ? 2 : 1;
       [650, 1350, 2050, 2750, 3450, 4150, 4850, 5550].forEach((at) => add(at, "fallingVolley", { count, damage: 8 }));
 
     } else if (attack.id === "wall-passage") {
@@ -2016,13 +2019,19 @@
       bombFragments = 0
     } = options;
 
+    // Toda bola inimiga passa pelo mesmo balanceamento. Isso também faz o
+    // Apito funcionar de forma consistente em todos os padrões.
+    const phase = getRubroPhase(g);
+    const phaseSpeedMultiplier = isRallyFinal ? 1 : (RUBRO_PROJECTILE_SPEED_MULTIPLIER[phase] || 1);
+    const slowMultiplier = g.enemySlowMultiplier || 1;
+    const effectiveSpeed = speed * phaseSpeedMultiplier * slowMultiplier;
     const dx = targetX - x;
     const dy = targetY - y;
     const len = Math.hypot(dx, dy) || 1;
     const ball = {
       x, y,
-      vx: dx / len * speed,
-      vy: dy / len * speed,
+      vx: dx / len * effectiveSpeed,
+      vy: dy / len * effectiveSpeed,
       el: null,
       style,
       catchable,
@@ -2133,9 +2142,12 @@
       return false;
     }
 
-    const incomingDamage = Math.max(1, Math.round(rawDamage || 1));
+    const phase = getRubroPhase(g);
+    const damageMultiplier = RUBRO_DAMAGE_MULTIPLIER[phase] || 1;
+    const incomingDamage = Math.max(1, Math.round((rawDamage || 1) * damageMultiplier));
     g.playerHp = Math.max(0, g.playerHp - incomingDamage);
-    g.player.invulnerableUntil = now + (g.rallyActive ? 390 : 620);
+    // Menos i-frames impede atravessar uma sequência inteira depois de um único erro.
+    g.player.invulnerableUntil = now + (g.rallyActive ? 330 : 500);
     playDodgePlayerHitEffect(style);
 
     const hpReadout = document.querySelector(".dodgeball-defense-hp strong");
@@ -2170,8 +2182,8 @@
         catchable: false,
         damage: event.damage || 9,
         bounceAll: true,
-        accelerationPerSecond: .16,
-        maxSpeed: 560,
+        accelerationPerSecond: .20,
+        maxSpeed: 600,
         catchableAt: index === catchIndex ? now + event.catchAfter : null,
         lifeUntil: g.defenseEnd - 180
       });
@@ -2193,7 +2205,9 @@
       const spread = count > 1 ? 90 : 115;
       const x = clamp(playerX + (Math.random() - .5) * spread, 30, rect.width - 30);
       const y = clamp(playerY + (Math.random() - .5) * spread * .65, 38, rect.height - 38);
-      const duration = 780 + Math.random() * 140;
+      const phase = getRubroPhase(g);
+      const baseDuration = phase === 3 ? 610 : phase === 2 ? 670 : 740;
+      const duration = (baseDuration + Math.random() * 100) / (g.enemySlowMultiplier || 1);
 
       const shadowEl = document.createElement("div");
       shadowEl.className = "dodge-falling-shadow";
@@ -2238,7 +2252,7 @@
         x, y,
         targetX: centerX,
         targetY: centerY,
-        speed: 190,
+        speed: 215,
         style: "siege",
         catchable: false,
         damage: event.damage || 10,
@@ -2257,13 +2271,13 @@
       y: 18,
       targetX: rect.width * g.player.x / 100,
       targetY: rect.height * g.player.y / 100,
-      speed: 120,
+      speed: 145,
       style: "hunter",
       catchable: false,
       damage: event.damage || 11,
-      accelerationPerSecond: .12,
-      maxSpeed: 330,
-      homingStrength: 2.7,
+      accelerationPerSecond: .14,
+      maxSpeed: 380,
+      homingStrength: 3.0,
       catchableAt: event.catchAfter == null ? null : now + event.catchAfter,
       lifeUntil: g.defenseEnd - 200
     });
@@ -2274,7 +2288,8 @@
     const columns = phase >= 3 ? 11 : 10;
     const gapSize = 2;
     const gapStart = Math.floor(Math.random() * Math.max(1, columns - gapSize));
-    const speed = phase >= 3 ? 265 : phase === 2 ? 245 : 225;
+    // O multiplicador global de fase é aplicado em createEnemyBall.
+    const speed = 225;
     const catchableIndex = event.catchableEdge ? (Math.random() > .5 ? gapStart - 1 : gapStart + gapSize) : -1;
 
     for (let index = 0; index < columns; index += 1) {
@@ -2307,7 +2322,7 @@
       style: "bomb",
       catchable: false,
       damage: event.damage || 7,
-      explodeAt: now + 1550,
+      explodeAt: now + 1400,
       bombFragments: event.fragments || 6
     });
   }
@@ -2336,7 +2351,7 @@
         y: ball.y,
         targetX: ball.x + Math.cos(angle) * distance,
         targetY: ball.y + Math.sin(angle) * distance,
-        speed: 245,
+        speed: 260,
         style: "bomb-fragment",
         catchable: false,
         damage: ball.damage || 7
@@ -2356,7 +2371,7 @@
         y,
         targetX: fromLeft ? rect.width + 30 : -30,
         targetY: y,
-        speed: 290 + Number(event.wave || 0) * 8,
+        speed: 305 + Number(event.wave || 0) * 9,
         style: "crossfire",
         catchable: false,
         damage: event.damage || 8
@@ -2407,31 +2422,28 @@
     const startY = 10;
     const playerX = rect.width * g.player.x / 100;
     const playerY = rect.height * g.player.y / 100;
-    const slow = g.enemySlowMultiplier || 1;
-    const phase = getRubroPhase(g);
-    const phaseSpeed = phase === 3 ? 1.1 : phase === 2 ? 1.04 : 1;
     const damage = event.damage ?? (event.style === "power" ? 24 : event.style === "curve" ? 16 : event.style === "ricochet" ? 14 : 15);
 
     if (event.style === "rallyFinal") {
-      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:300*slow, style:"rally-final", catchable:true, damage, isRallyFinal:true });
+      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:300, style:"rally-final", catchable:true, damage, isRallyFinal:true });
       return;
     }
     if (event.style === "power") {
-      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:470*slow*phaseSpeed, style:"power", catchable:false, damage });
+      createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:470, style:"power", catchable:false, damage });
       return;
     }
     if (event.style === "curve") {
       const offset = event.curveDirection > 0 ? -95 : 95;
-      createEnemyBall({ x:startX, y:startY, targetX:playerX+offset, targetY:playerY, speed:295*slow*phaseSpeed, style:"curve", catchable:event.catchable, curveDirection:event.curveDirection || 1, damage });
+      createEnemyBall({ x:startX, y:startY, targetX:playerX+offset, targetY:playerY, speed:295, style:"curve", catchable:event.catchable, curveDirection:event.curveDirection || 1, damage });
       return;
     }
     if (event.style === "ricochet") {
       const wallX = event.side === "left" ? 24 : rect.width - 24;
       const wallY = rect.height * .42;
-      createEnemyBall({ x:startX, y:startY, targetX:wallX, targetY:wallY, speed:330*slow*phaseSpeed, style:"ricochet", catchable:false, bounces:event.bounces || 1, damage });
+      createEnemyBall({ x:startX, y:startY, targetX:wallX, targetY:wallY, speed:330, style:"ricochet", catchable:false, bounces:event.bounces || 1, damage });
       return;
     }
-    createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:325*slow*phaseSpeed, style:"straight", catchable:event.catchable, damage });
+    createEnemyBall({ x:startX, y:startY, targetX:playerX, targetY:playerY, speed:325, style:"straight", catchable:event.catchable, damage });
   }
 
 
@@ -2493,7 +2505,6 @@
         const sidePct = event.side === "left" ? 10 : event.side === "right" ? 90 : 50;
         const startX = rect.width * sidePct / 100;
         const startY = 12;
-        const slow = g.enemySlowMultiplier || 1;
         const speed = event.style === "power" ? 480 : event.style === "curve" ? 310 : 340;
         setRubroDefenseVisual(event.side || "center", "throw");
         sportSfx(event.style === "power" ? "enemyPower" : "enemyThrow");
@@ -2502,7 +2513,7 @@
           y: startY,
           targetX: target.x,
           targetY: target.y,
-          speed: speed * slow,
+          speed,
           style: event.style || "straight",
           catchable: Boolean(event.catchable),
           curveDirection: event.curveDirection || 0,
