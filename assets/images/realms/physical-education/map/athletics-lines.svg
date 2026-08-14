@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" preserveAspectRatio="none">
+  <g fill="none" stroke="#d8f7ff" stroke-width="4" opacity=".82" vector-effect="non-scaling-stroke">
+    <rect x="28" y="32" width="944" height="436" rx="26"/>
+    <path d="M28 102H972 M28 172H972 M28 242H972 M28 312H972 M28 382H972"/>
+    <path d="M120 32V468 M880 32V468" stroke="#ffffff" stroke-width="8" opacity=".9"/>
+  </g>
+  <g fill="#d8f7ff" opacity=".78" font-family="Arial, sans-serif" font-size="34" font-weight="700">
+    <text x="56" y="86">1</text><text x="56" y="156">2</text><text x="56" y="226">3</text><text x="56" y="296">4</text><text x="56" y="366">5</text><text x="56" y="436">6</text>
+  </g>
+</svg>
