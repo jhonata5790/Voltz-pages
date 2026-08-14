@@ -218,7 +218,7 @@
     const completed = isSportCompleted(id);
     const meta = SPORT_META[id];
     const descriptions = {
-      football: "Escolha um canto e use a barra de força. O goleiro também escolhe uma direção; força ruim ou leitura errada pode matar a cobrança.",
+      football: "Partida 3v3 com goleiros. WASD move, J chuta, K toca, L cruza e I ativa a Voltz Vision para ler espaços e linhas de passe.",
       basketball: "O marcador se move pela barra. Pressione Espaço dentro da zona central para acertar o tempo do arremesso.",
       athletics: "Não queime a largada. Quando aparecer JÁ!, pressione Espaço e depois alterne A e D para construir velocidade.",
       volleyball: "Uma sequência de comandos representa recepção, levantamento e ataque. Pressione cada tecla antes do tempo acabar.",
@@ -400,8 +400,9 @@
         { id:"rgk", team:"rival", number:"GK", x:94, y:50, homeX:94, homeY:50, speed:18, keeper:true }
       ],
       ball: {
-        x:26, y:50, vx:0, vy:0, ownerId:"v1", lastTouchTeam:"voltz",
-        passTargetId:null, isShot:false, ignorePickupUntil:0, keeperReleaseAt:0
+        x:26, y:50, z:0, vx:0, vy:0, vz:0, ownerId:"v1", lastTouchTeam:"voltz",
+        passTargetId:null, isShot:false, isCross:false, airborne:false, landingX:null, landingY:null,
+        ignorePickupUntil:0, keeperReleaseAt:0
       },
       visionUntil: 0,
       visionCooldownUntil: 0,
@@ -482,20 +483,22 @@
 <div class="football-goal football-goal-right"></div>
 <svg id="footballVisionSvg" class="football-vision-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
 ${playerMarkup}
+<div id="footballBallShadow" class="football-ball-shadow" aria-hidden="true"></div>
 <div id="footballBall" class="football-live-ball" aria-label="Bola"></div>
 <div id="footballPassTarget" class="football-pass-target" aria-hidden="true"></div>
         </div>
 
         <div class="football-live-hud">
 <div id="footballFeedback" class="football-live-feedback">${escapeHtml(g.feedback)}</div>
-<div id="footballVisionStatus" class="football-vision-status">L · VOLTZ VISION PRONTA</div>
+<div id="footballVisionStatus" class="football-vision-status">I · VOLTZ VISION PRONTA</div>
         </div>
 
         <div class="football-control-strip">
 <span><b>WASD</b> MOVER</span>
 <button type="button" onclick="VoltzSports.shootFootball()"><b>J</b> CHUTAR</button>
-<button type="button" onclick="VoltzSports.footballPass()"><b>K</b> PASSE</button>
-<button type="button" onclick="VoltzSports.activateFootballVision()"><b>L</b> VOLTZ VISION</button>
+<button type="button" onclick="VoltzSports.footballPass()"><b>K</b> TOCAR</button>
+<button type="button" onclick="VoltzSports.footballCross()"><b>L</b> CRUZAR</button>
+<button type="button" onclick="VoltzSports.activateFootballVision()"><b>I</b> VOLTZ VISION</button>
         </div>
       </div>`
     );
@@ -509,8 +512,14 @@ ${playerMarkup}
     g.ball.lastTouchTeam = player.team;
     g.ball.passTargetId = null;
     g.ball.isShot = false;
+    g.ball.isCross = false;
+    g.ball.airborne = false;
+    g.ball.z = 0;
     g.ball.vx = 0;
     g.ball.vy = 0;
+    g.ball.vz = 0;
+    g.ball.landingX = null;
+    g.ball.landingY = null;
     g.ball.x = player.x;
     g.ball.y = player.y;
     g.ball.ignorePickupUntil = now + 180;
@@ -582,7 +591,13 @@ ${playerMarkup}
     g.ball.lastTouchTeam = from.team;
     g.ball.passTargetId = options.passTargetId || null;
     g.ball.isShot = Boolean(options.isShot);
-    g.ball.ignorePickupUntil = now + (options.isShot ? 180 : 120);
+    g.ball.isCross = Boolean(options.isCross);
+    g.ball.airborne = Boolean(options.airborne);
+    g.ball.z = Number(options.z || 0);
+    g.ball.vz = Number(options.vz || 0);
+    g.ball.landingX = Number.isFinite(options.landingX) ? options.landingX : targetX;
+    g.ball.landingY = Number.isFinite(options.landingY) ? options.landingY : targetY;
+    g.ball.ignorePickupUntil = now + (options.isShot ? 180 : options.airborne ? 210 : 120);
   }
 
   function distanceToFootballSegment(point, a, b) {
@@ -649,6 +664,44 @@ ${playerMarkup}
     g.feedback = open ? `Passe para #${target.number}. Linha limpa.` : `Passe arriscado para #${target.number}. Tem marcação na linha.`;
     g.banner = "PASSE";
     sportSfx("menuConfirm");
+  }
+
+  function footballCross() {
+    const g = state.current;
+    if (!g || g.type !== "football" || g.phase !== "play") return;
+    const owner = getFootballOwner(g);
+    if (!owner || owner.team !== "voltz" || owner.keeper || owner.id !== g.controlledId) {
+      g.feedback = "Você precisa estar com a bola para cruzar.";
+      return;
+    }
+
+    const teammates = getFootballTeam(g, "voltz", false).filter((player) => player.id !== owner.id);
+    if (!teammates.length) return;
+    const target = teammates
+      .map((player) => {
+        const forward = player.x - owner.x;
+        const boxBonus = player.x >= 62 ? 24 : 0;
+        const separation = Math.abs(player.y - owner.y) * .45;
+        const marker = Math.min(...getFootballTeam(g, "rival", false).map((rival) => footballDistance(rival, player)));
+        return { player, score: forward * 1.2 + boxBonus + separation + marker };
+      })
+      .sort((a, b) => b.score - a.score)[0]?.player || teammates[0];
+
+    const landingX = clamp(Math.max(owner.x + 26, target.x + 7), 58, 91);
+    const landingY = clamp(target.y + (target.y < 50 ? 3 : -3), 22, 78);
+    const distance = Math.hypot(landingX - owner.x, landingY - owner.y);
+    const speed = clamp(distance / 1.45, 30, 46);
+    footballLaunchBall(g, owner, landingX, landingY, speed, performance.now(), {
+      passTargetId: target.id,
+      isCross: true,
+      airborne: true,
+      vz: 23,
+      landingX,
+      landingY
+    });
+    g.feedback = `Cruzamento para a área buscando #${target.number}. A bola vai disputar pelo alto.`;
+    g.banner = "CRUZAMENTO";
+    sportSfx("throwCurve");
   }
 
   function shootFootball() {
@@ -816,10 +869,27 @@ ${playerMarkup}
 
       if (owner.keeper && now >= ball.keeperReleaseAt) {
         const teammates = getFootballTeam(g, owner.team, false);
-        const target = teammates.slice().sort((a, b) => footballDistance(a, owner) - footballDistance(b, owner))[0];
+        const opponents = getFootballTeam(g, owner.team === "voltz" ? "rival" : "voltz", false);
+        const target = teammates
+          .map((mate) => {
+            const laneOpen = isFootballPassLaneOpen(g, owner, mate) ? 18 : 0;
+            const nearestOpponent = Math.min(...opponents.map((rival) => footballDistance(rival, mate)));
+            const distancePenalty = footballDistance(owner, mate) * .25;
+            return { mate, score: laneOpen + nearestOpponent * 2 - distancePenalty };
+          })
+          .sort((a, b) => b.score - a.score)[0]?.mate || teammates[0];
         if (target) {
-footballLaunchBall(g, owner, target.x, target.y, 42, now, { passTargetId: target.id });
-if (owner.team === "voltz") g.controlledId = target.id;
+          const highRelease = !isFootballPassLaneOpen(g, owner, target);
+          footballLaunchBall(g, owner, target.x, target.y, highRelease ? 36 : 44, now, {
+            passTargetId: target.id,
+            airborne: highRelease,
+            vz: highRelease ? 14 : 0,
+            landingX: target.x,
+            landingY: target.y
+          });
+          if (owner.team === "voltz") g.controlledId = target.id;
+          g.feedback = highRelease ? "Seu goleiro evitou a pressão e lançou por cima." : "Seu goleiro encontrou uma saída segura.";
+          g.banner = "REPOSIÇÃO SEGURA";
         }
         return;
       }
@@ -838,7 +908,17 @@ g.banner = tackler.team === "voltz" ? "BOLA RECUPERADA" : "PERDEU A POSSE";
 
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
-    const damping = Math.pow(.994, dt * 60);
+    if (ball.airborne || ball.z > 0) {
+      ball.z = Math.max(0, Number(ball.z || 0) + Number(ball.vz || 0) * dt);
+      ball.vz = Number(ball.vz || 0) - 31 * dt;
+      if (ball.z <= 0 && ball.vz <= 0) {
+        ball.z = 0;
+        ball.vz = 0;
+        ball.airborne = false;
+        ball.isCross = false;
+      }
+    }
+    const damping = Math.pow(ball.airborne ? .998 : .994, dt * 60);
     ball.vx *= damping;
     ball.vy *= damping;
 
@@ -847,12 +927,12 @@ g.banner = tackler.team === "voltz" ? "BOLA RECUPERADA" : "PERDEU A POSSE";
 
     const inGoalMouth = ball.y >= 36 && ball.y <= 64;
     if (ball.x >= 100) {
-      if (inGoalMouth) footballGoal(g, "voltz");
+      if (inGoalMouth && ball.z <= 4.5) footballGoal(g, "voltz");
       else footballSetPossession(g, getFootballPlayer(g, "rgk"), now, "Tiro de meta do visitante.");
       return;
     }
     if (ball.x <= 0) {
-      if (inGoalMouth) footballGoal(g, "rival");
+      if (inGoalMouth && ball.z <= 4.5) footballGoal(g, "rival");
       else footballSetPossession(g, getFootballPlayer(g, "vgk"), now, "Tiro de meta Voltz.");
       return;
     }
@@ -862,7 +942,12 @@ g.banner = tackler.team === "voltz" ? "BOLA RECUPERADA" : "PERDEU A POSSE";
     const candidates = g.players
       .filter((player) => !player.keeper || (player.team === "voltz" ? ball.x < 15 : ball.x > 85))
       .map((player) => ({ player, distance:footballDistance(player, ball) }))
-      .filter((entry) => entry.distance < (entry.player.keeper ? 4.2 : 2.65))
+      .filter((entry) => {
+        const maxHeight = entry.player.keeper ? 6.4 : (ball.vz < 0 ? 4.2 : 2.5);
+        if (ball.z > maxHeight) return false;
+        const radius = entry.player.keeper ? 4.4 : ball.z > 1.4 ? 2.25 : 2.65;
+        return entry.distance < radius;
+      })
       .sort((a, b) => a.distance - b.distance);
 
     if (candidates.length) {
@@ -876,7 +961,7 @@ g.banner = tackler.team === "voltz" ? "BOLA RECUPERADA" : "PERDEU A POSSE";
   ? `${receiver.team === "voltz" ? "INTERCEPTOU!" : "Passe interceptado."}`
   : receiver.keeper
     ? `${receiver.team === "voltz" ? "Seu goleiro segurou!" : "Defesa do goleiro."}`
-    : "Bola dominada.");
+    : ball.z > 1.2 ? `${receiver.team === "voltz" ? "BOLA ALTA DOMINADA!" : "O visitante ganhou a disputa aérea."}` : "Bola dominada.");
       if (blocked) g.banner = receiver.team === "voltz" ? "INTERCEPÇÃO" : "PASSE CORTADO";
     }
   }
@@ -927,9 +1012,21 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
     });
 
     const ballEl = document.getElementById("footballBall");
+    const ballShadow = document.getElementById("footballBallShadow");
     if (ballEl) {
+      const heightPx = Math.min(82, Number(g.ball.z || 0) * 4.2);
+      const scale = 1 + Math.min(.34, Number(g.ball.z || 0) * .018);
       ballEl.style.left = `${g.ball.x}%`;
       ballEl.style.top = `${g.ball.y}%`;
+      ballEl.style.transform = `translate(-50%, calc(-50% - ${heightPx}px)) scale(${scale})`;
+      ballEl.classList.toggle("is-airborne", Number(g.ball.z || 0) > .35);
+    }
+    if (ballShadow) {
+      ballShadow.style.left = `${g.ball.x}%`;
+      ballShadow.style.top = `${g.ball.y}%`;
+      const height = Number(g.ball.z || 0);
+      ballShadow.style.opacity = `${clamp(.34 - height * .012, .08, .34)}`;
+      ballShadow.style.transform = `translate(-50%,-50%) scale(${1 + Math.min(.8, height * .035)})`;
     }
 
     const targetEl = document.getElementById("footballPassTarget");
@@ -955,9 +1052,9 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
 
     const visionStatus = document.getElementById("footballVisionStatus");
     if (visionStatus) {
-      if (visionActive) visionStatus.textContent = "L · VOLTZ VISION ATIVA";
-      else if (now < g.visionCooldownUntil) visionStatus.textContent = `L · RECARGA ${((g.visionCooldownUntil - now) / 1000).toFixed(1)}s`;
-      else visionStatus.textContent = "L · VOLTZ VISION PRONTA";
+      if (visionActive) visionStatus.textContent = "I · VOLTZ VISION ATIVA";
+      else if (now < g.visionCooldownUntil) visionStatus.textContent = `I · RECARGA ${((g.visionCooldownUntil - now) / 1000).toFixed(1)}s`;
+      else visionStatus.textContent = "I · VOLTZ VISION PRONTA";
     }
   }
 
@@ -3748,11 +3845,12 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
     }
 
     if (game.type === "football") {
-      if (["j","k","l"].includes(key)) {
+      if (["j","k","l","i"].includes(key)) {
         event.preventDefault();
         if (!event.repeat) {
           if (key === "j") shootFootball();
           else if (key === "k") footballPass();
+          else if (key === "l") footballCross();
           else activateFootballVision();
         }
       }
@@ -3791,6 +3889,7 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
     chooseFootballZone,
     shootFootball,
     footballPass,
+    footballCross,
     activateFootballVision,
     shootBasketball,
     beginAthletics,

@@ -2362,3 +2362,25 @@
   .football-live-hud{align-items:stretch;flex-direction:column}
   .football-vision-status{white-space:normal;text-align:center}
 }
+
+
+/* Futebol V2 · bola aérea / cruzamento */
+.football-ball-shadow {
+  position:absolute;
+  z-index:7;
+  width:18px;
+  height:8px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:rgba(0,0,0,.62);
+  filter:blur(2px);
+  pointer-events:none;
+}
+.football-live-ball.is-airborne {
+  z-index:18;
+  box-shadow:0 9px 13px rgba(0,0,0,.26),0 0 10px rgba(255,255,255,.16);
+}
+.football-control-strip { grid-template-columns:repeat(5,minmax(0,1fr)); }
+@media(max-width:820px){
+  .football-control-strip { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
