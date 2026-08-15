@@ -468,51 +468,97 @@
     player.y = clamp(player.y, 8, 92);
   }
 
-  function buildFootballUserAvatarSvg() {
+  const FOOTBALL_AVATAR_PROFILES = {
+    v1: {
+      bodyA:"#78f7ff", bodyB:"#9257ff", bodyC:"#00eaff", accent:"#ffd166", coreA:"#ffffff", coreB:"#78f7ff", coreC:"#9257ff",
+      bodyPath:"M32 108 C24 77,28 42,60 29 C92 42,96 77,88 108 C79 126,41 126,32 108Z",
+      top:'<path d="M43 31 L52 10 L60 29 L68 10 L77 31" fill="none" stroke="__ACCENT__" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'
+    },
+    v2: {
+      bodyA:"#72ffd1", bodyB:"#20a99d", bodyC:"#2be6ff", accent:"#eafff7", coreA:"#ffffff", coreB:"#63f5b5", coreC:"#237cbf",
+      bodyPath:"M36 111 C28 82,31 48,60 31 C89 48,92 82,84 111 C76 127,44 127,36 111Z",
+      top:'<path d="M41 36 Q48 16 57 31 Q66 10 78 34" fill="none" stroke="__ACCENT__" stroke-width="5" stroke-linecap="round"/><circle cx="79" cy="31" r="4" fill="__ACCENT__"/>'
+    },
+    v3: {
+      bodyA:"#65caff", bodyB:"#6047d6", bodyC:"#9b6dff", accent:"#aefcff", coreA:"#ffffff", coreB:"#45a3ff", coreC:"#9257ff",
+      bodyPath:"M28 106 C22 78,27 47,60 32 C93 47,98 78,92 106 C82 127,38 127,28 106Z",
+      top:'<path d="M38 34 L49 18 L60 31 L72 16 L83 35" fill="none" stroke="__ACCENT__" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M49 18 L72 16" stroke="__ACCENT__" stroke-width="3" opacity=".55"/>'
+    },
+    vgk: {
+      bodyA:"#ffe28b", bodyB:"#c78a2e", bodyC:"#63f5b5", accent:"#fff8d2", coreA:"#ffffff", coreB:"#ffd166", coreC:"#35b78a",
+      bodyPath:"M27 112 C22 78,27 42,60 27 C93 42,98 78,93 112 C82 131,38 131,27 112Z",
+      top:'<path d="M34 38 Q60 13 86 38 L79 45 Q60 28 41 45Z" fill="__ACCENT__" opacity=".9"/><path d="M42 40 Q60 27 78 40" fill="none" stroke="#8a6422" stroke-width="4" stroke-linecap="round"/>'
+    },
+    r1: {
+      bodyA:"#ff7b87", bodyB:"#8b2038", bodyC:"#ff3d58", accent:"#ffd0d5", coreA:"#fff2f3", coreB:"#ff6b7a", coreC:"#731a2d",
+      bodyPath:"M31 113 L24 81 L34 45 L60 27 L86 45 L96 81 L89 113 C78 128,42 128,31 113Z",
+      top:'<path d="M37 40 L42 17 L56 34 L64 13 L78 36 L86 20 L84 44" fill="none" stroke="__ACCENT__" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>'
+    },
+    r2: {
+      bodyA:"#ff69b4", bodyB:"#7b225f", bodyC:"#c43b91", accent:"#ffd2ec", coreA:"#fff4fb", coreB:"#ff62ad", coreC:"#632253",
+      bodyPath:"M35 115 C22 91,29 50,60 28 C91 50,98 91,85 115 C75 129,45 129,35 115Z",
+      top:'<path d="M39 38 Q45 18 55 31 Q60 9 66 31 Q78 16 82 40" fill="none" stroke="__ACCENT__" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="17" r="5" fill="__ACCENT__"/>'
+    },
+    r3: {
+      bodyA:"#ff9b54", bodyB:"#9b2d35", bodyC:"#ff5d47", accent:"#ffe0bd", coreA:"#fff7ea", coreB:"#ff9251", coreC:"#8b2531",
+      bodyPath:"M28 108 C18 82,25 44,60 34 C95 44,102 82,92 108 C81 127,39 127,28 108Z",
+      top:'<path d="M33 43 L47 21 L56 36 L68 17 L87 42" fill="none" stroke="__ACCENT__" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'
+    },
+    rgk: {
+      bodyA:"#dcadff", bodyB:"#6b3b9d", bodyC:"#ff6b9e", accent:"#f5e5ff", coreA:"#ffffff", coreB:"#d599ff", coreC:"#783f9f",
+      bodyPath:"M26 112 C21 77,27 41,60 27 C93 41,99 77,94 112 C83 131,37 131,26 112Z",
+      top:'<path d="M33 39 Q60 12 87 39 L80 48 Q60 29 40 48Z" fill="__ACCENT__" opacity=".92"/><path d="M39 41 L81 41" stroke="#6e3a9e" stroke-width="5" stroke-linecap="round"/>'
+    }
+  };
+
+  function buildFootballAvatarSvg(player) {
+    const profile = FOOTBALL_AVATAR_PROFILES[player?.id] || FOOTBALL_AVATAR_PROFILES[player?.team === "rival" ? "r1" : "v2"];
+    const gradientId = `footballAvatarBody-${player.id}`;
+    const coreId = `footballAvatarCore-${player.id}`;
+    const top = String(profile.top || "").replaceAll("__ACCENT__", profile.accent);
+    const showNumber = !player.isUserAvatar;
     return `<div class="football-user-avatar-shell" aria-hidden="true">
       <svg class="football-user-avatar" viewBox="0 0 120 150" focusable="false">
         <defs>
-          <linearGradient id="footballUserBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#78f7ff"/>
-            <stop offset="55%" stop-color="#9257ff"/>
-            <stop offset="100%" stop-color="#00eaff"/>
+          <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${profile.bodyA}"/>
+            <stop offset="55%" stop-color="${profile.bodyB}"/>
+            <stop offset="100%" stop-color="${profile.bodyC}"/>
           </linearGradient>
-          <radialGradient id="footballUserCoreGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="45%" stop-color="#78f7ff"/>
-            <stop offset="100%" stop-color="#9257ff"/>
+          <radialGradient id="${coreId}" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="${profile.coreA}"/>
+            <stop offset="48%" stop-color="${profile.coreB}"/>
+            <stop offset="100%" stop-color="${profile.coreC}"/>
           </radialGradient>
         </defs>
 
-        <ellipse class="football-avatar-aura" cx="60" cy="79" rx="45" ry="53" fill="#00eaff"/>
+        <ellipse class="football-avatar-aura" cx="60" cy="82" rx="45" ry="51" fill="${profile.bodyC}"/>
         <g class="football-avatar-body">
-          <path d="M32 108 C24 77, 28 42, 60 29 C92 42, 96 77, 88 108 C79 126, 41 126, 32 108Z"
-            fill="url(#footballUserBodyGradient)" stroke="#f5fbff" stroke-width="4" stroke-linejoin="round"/>
-
-          <path d="M43 31 L52 10 L60 29 L68 10 L77 31"
-            fill="none" stroke="#ffd166" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-
-          <circle class="football-avatar-core" cx="60" cy="79" r="21" fill="url(#footballUserCoreGradient)" stroke="#ffffff" stroke-width="4"/>
+          <path d="${profile.bodyPath}" fill="url(#${gradientId})" stroke="#f5fbff" stroke-width="4" stroke-linejoin="round"/>
+          ${top}
+          <circle class="football-avatar-core" cx="60" cy="82" r="20" fill="url(#${coreId})" stroke="#ffffff" stroke-width="4"/>
+          ${showNumber ? `<text class="football-avatar-number" x="60" y="88" text-anchor="middle">${player.number}</text>` : ""}
 
           <g class="football-face football-face-front">
-            <ellipse cx="47" cy="58" rx="7" ry="9" fill="#02040d"/>
-            <ellipse cx="73" cy="58" rx="7" ry="9" fill="#02040d"/>
-            <circle cx="49" cy="55" r="2.5" fill="#78f7ff"/>
-            <circle cx="75" cy="55" r="2.5" fill="#78f7ff"/>
-            <path d="M48 101 C55 107,65 107,72 101" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
+            <ellipse cx="47" cy="59" rx="7" ry="9" fill="#02040d"/>
+            <ellipse cx="73" cy="59" rx="7" ry="9" fill="#02040d"/>
+            <circle cx="49" cy="56" r="2.5" fill="${profile.accent}"/>
+            <circle cx="75" cy="56" r="2.5" fill="${profile.accent}"/>
+            <path d="M49 108 C56 113,64 113,71 108" fill="none" stroke="#02040d" stroke-width="4.5" stroke-linecap="round"/>
           </g>
 
           <g class="football-face football-face-back">
-            <path d="M40 58 C50 50,70 50,80 58" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
-            <path d="M45 99 C54 93,66 93,75 99" fill="none" stroke="#78f7ff" stroke-width="5" stroke-linecap="round"/>
-            <circle cx="60" cy="63" r="8" fill="#050713" stroke="#78f7ff" stroke-width="3"/>
+            <path d="M40 60 C50 52,70 52,80 60" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
+            <path d="M46 106 C54 101,66 101,74 106" fill="none" stroke="${profile.accent}" stroke-width="4.5" stroke-linecap="round"/>
+            <circle cx="60" cy="65" r="7" fill="#050713" stroke="${profile.accent}" stroke-width="3"/>
           </g>
 
           <g class="football-face football-face-side">
-            <ellipse cx="72" cy="59" rx="8" ry="9" fill="#02040d"/>
-            <circle cx="75" cy="56" r="2.5" fill="#78f7ff"/>
-            <path d="M62 101 C70 106,78 105,84 99" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
-          </g>        </g>
+            <ellipse cx="72" cy="60" rx="8" ry="9" fill="#02040d"/>
+            <circle cx="75" cy="57" r="2.5" fill="${profile.accent}"/>
+            <path d="M64 106 C71 110,78 109,83 104" fill="none" stroke="#02040d" stroke-width="4.5" stroke-linecap="round"/>
+          </g>
+        </g>
       </svg>
     </div>`;
   }
@@ -522,16 +568,9 @@
     if (!g || g.type !== "football") return;
 
     const playerMarkup = g.players.map((player) => `
-      <div id="footballPlayer-${player.id}" class="football-live-player team-${player.team} ${player.keeper ? "is-keeper" : ""} ${player.isUserAvatar ? "is-user-avatar" : ""}" data-id="${player.id}" data-football-facing="right">
+      <div id="footballPlayer-${player.id}" class="football-live-player team-${player.team} is-svg-avatar ${player.keeper ? "is-keeper" : ""} ${player.isUserAvatar ? "is-user-avatar" : ""}" data-id="${player.id}" data-football-facing="right">
         <i class="football-player-shadow" aria-hidden="true"></i>
-        ${player.isUserAvatar ? buildFootballUserAvatarSvg() : `
-          <div class="football-player-body" aria-hidden="true">
-            <i class="football-player-head"></i>
-            <i class="football-player-torso"></i>
-            <i class="football-player-leg leg-left"></i>
-            <i class="football-player-leg leg-right"></i>
-            <span>${player.number}</span>
-          </div>`}
+        ${buildFootballAvatarSvg(player)}
       </div>`).join("");
 
     openPanelShell(
@@ -1560,7 +1599,7 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
         ? (facing.x >= 0 ? "right" : "left")
         : (facing.y >= 0 ? "down" : "up");
       el.dataset.footballFacing = facingName;
-      if (player.isUserAvatar) {
+      if (el.classList.contains("is-svg-avatar")) {
         const depthScale = clamp(.94 + player.y * .0012, .95, 1.06);
         el.style.setProperty("--football-avatar-depth-scale", depthScale.toFixed(3));
       }
