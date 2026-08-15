@@ -2548,3 +2548,100 @@
 .football-control-strip button:first-of-type {
   min-width:126px;
 }
+
+
+/* Football V3.6 · primeiro avatar SVG 3/4 do personagem do mundo */
+.football-live-player.is-user-avatar {
+  --football-avatar-depth-scale:1;
+  width:60px !important;
+  height:76px !important;
+  z-index:11 !important;
+  overflow:visible;
+}
+.football-live-player.is-user-avatar .football-player-shadow {
+  left:50%;
+  top:84%;
+  width:38px;
+  height:13px;
+  background:rgba(0,0,0,.42);
+  filter:blur(3px);
+  transform:translate(-50%,-50%);
+}
+.football-user-avatar-shell {
+  position:absolute;
+  left:50%;
+  bottom:5px;
+  width:58px;
+  height:73px;
+  transform:translateX(-50%) scale(var(--football-avatar-depth-scale));
+  transform-origin:center bottom;
+  pointer-events:none;
+}
+.football-user-avatar {
+  width:100%;
+  height:100%;
+  overflow:visible;
+  transform-origin:center bottom;
+  filter:drop-shadow(0 5px 5px rgba(0,0,0,.38)) drop-shadow(0 0 5px rgba(0,234,255,.22));
+}
+.football-user-avatar .football-avatar-aura {
+  opacity:.13;
+  filter:blur(6px);
+}
+.football-user-avatar .football-face,
+.football-user-avatar .football-arms { display:none; }
+.football-live-player.is-user-avatar[data-football-facing="down"] .football-face-front,
+.football-live-player.is-user-avatar[data-football-facing="down"] .football-arms-front { display:inline; }
+.football-live-player.is-user-avatar[data-football-facing="up"] .football-face-back,
+.football-live-player.is-user-avatar[data-football-facing="up"] .football-arms-back { display:inline; }
+.football-live-player.is-user-avatar[data-football-facing="right"] .football-face-side,
+.football-live-player.is-user-avatar[data-football-facing="right"] .football-arms-side,
+.football-live-player.is-user-avatar[data-football-facing="left"] .football-face-side,
+.football-live-player.is-user-avatar[data-football-facing="left"] .football-arms-side { display:inline; }
+.football-live-player.is-user-avatar[data-football-facing="left"] .football-user-avatar {
+  transform:scaleX(-1);
+}
+.football-live-player.is-user-avatar.is-controlled::before {
+  left:50%;
+  top:82%;
+  width:43px;
+  height:17px;
+  border-color:#8cf7ff;
+  background:rgba(69,163,255,.035);
+  box-shadow:0 0 13px rgba(140,247,255,.72),inset 0 0 8px rgba(140,247,255,.16);
+}
+.football-live-player.is-user-avatar.is-controlled::after {
+  display:none !important;
+}
+.football-live-player.is-user-avatar.has-ball .football-avatar-core {
+  filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 13px rgba(120,247,255,.95));
+}
+.football-live-player.is-user-avatar.is-running .football-user-avatar-shell {
+  animation:footballAvatarRunBob .28s ease-in-out infinite alternate;
+}
+.football-live-player.is-user-avatar.is-running .football-avatar-leg-left {
+  animation:footballAvatarLegLeft .28s ease-in-out infinite alternate;
+  transform-origin:45px 106px;
+}
+.football-live-player.is-user-avatar.is-running .football-avatar-leg-right {
+  animation:footballAvatarLegRight .28s ease-in-out infinite alternate;
+  transform-origin:75px 106px;
+}
+.football-live-player.is-user-avatar.is-tackling .football-user-avatar-shell {
+  animation:footballAvatarTackle .25s cubic-bezier(.15,.78,.25,1);
+}
+.football-live-player.is-user-avatar.is-recovering .football-user-avatar-shell {
+  opacity:.68;
+  filter:saturate(.58);
+}
+@keyframes footballAvatarRunBob {
+  from { transform:translateX(-50%) translateY(0) scale(var(--football-avatar-depth-scale)); }
+  to { transform:translateX(-50%) translateY(-2px) scale(var(--football-avatar-depth-scale)); }
+}
+@keyframes footballAvatarLegLeft { from{transform:rotate(7deg)} to{transform:rotate(-9deg)} }
+@keyframes footballAvatarLegRight { from{transform:rotate(-8deg)} to{transform:rotate(8deg)} }
+@keyframes footballAvatarTackle {
+  0% { transform:translateX(-50%) scale(var(--football-avatar-depth-scale)); }
+  55% { transform:translateX(-50%) translateY(-4px) scale(calc(var(--football-avatar-depth-scale) * 1.08), calc(var(--football-avatar-depth-scale) * .94)); }
+  100% { transform:translateX(-50%) scale(var(--football-avatar-depth-scale)); }
+}
