@@ -1,0 +1,27 @@
+name: Football Spacing V3.3
+
+on:
+  push:
+    paths:
+      - '.github/workflows/football-spacing-v33.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply spacing and interception patch
+        run: |
+          python .github/scripts/football_spacing_v33.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js
+          git commit -m "Futebol V3.3: espacamento tatico e recepcao precisa"
+          git push
