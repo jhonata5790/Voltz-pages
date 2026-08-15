@@ -1,0 +1,27 @@
+name: Football Keeper Nerf V3.5.1
+
+on:
+  push:
+    paths:
+      - '.github/workflows/football-keeper-nerf-v351.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply goalkeeper nerf
+        run: |
+          python .github/scripts/football_keeper_nerf_v351.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js
+          git commit -m "Futebol V3.5.1: goleiro forte mas vencivel"
+          git push
