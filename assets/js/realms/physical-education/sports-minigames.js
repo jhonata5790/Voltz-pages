@@ -379,6 +379,11 @@
   // -------------------------------------------------------
   // Futebol · Campo das Decisões 3v3
   // -------------------------------------------------------
+  // Ritmo-base do 3v3: jogadores de linha se movem a 78% do protótipo original.
+  // A bola NÃO usa este multiplicador; assim passe, cruzamento e finalização
+  // continuam rápidos enquanto o jogador ganha mais tempo para ler o campo.
+  const FOOTBALL_OUTFIELD_PACE = 0.78;
+
   function startFootball() {
     const compact = state.mode === "championship";
     const targetGoals = compact ? 1 : 3;
@@ -454,7 +459,8 @@
       player.facingX = dx / length;
       player.facingY = dy / length;
     }
-    const step = Math.min(length, speed * recoveryScale * dt);
+    const movementScale = player.keeper ? 1 : FOOTBALL_OUTFIELD_PACE;
+    const step = Math.min(length, speed * movementScale * recoveryScale * dt);
     player.x += dx / length * step;
     player.y += dy / length * step;
     if (step > .01) player.movingUntil = now + 120;
@@ -648,7 +654,7 @@ ${playerMarkup}
   function getFootballReceiverVelocity(player, now = performance.now()) {
     if (!player || now >= Number(player.movingUntil || 0) || now < Number(player.recoverUntil || 0)) return { x:0, y:0, moving:false };
     const facing = getFootballFacing(player);
-    const speed = Number(player.speed || 0);
+    const speed = Number(player.speed || 0) * (player.keeper ? 1 : FOOTBALL_OUTFIELD_PACE);
     return { x:facing.x * speed, y:facing.y * speed, moving:speed > .1 };
   }
 
@@ -915,8 +921,8 @@ ${playerMarkup}
       controlled.facingX = dx / len;
       controlled.facingY = dy / len;
       const recoveryScale = now < Number(controlled.recoverUntil || 0) ? .28 : 1;
-      controlled.x += dx / len * controlled.speed * recoveryScale * dt;
-      controlled.y += dy / len * controlled.speed * recoveryScale * dt;
+      controlled.x += dx / len * controlled.speed * FOOTBALL_OUTFIELD_PACE * recoveryScale * dt;
+      controlled.y += dy / len * controlled.speed * FOOTBALL_OUTFIELD_PACE * recoveryScale * dt;
       controlled.movingUntil = now + 130;
       controlled.x = clamp(controlled.x, 7, 93);
       controlled.y = clamp(controlled.y, 8, 92);
@@ -977,7 +983,7 @@ ${playerMarkup}
     if (!g || !player || g.ball.ownerId) return null;
     const samples = getFootballBallFutureSamples(g);
     if (!samples.length) return { x:g.ball.x, y:g.ball.y, t:0 };
-    const speed = Math.max(12.5, Number(player.speed || 15) * 1.06);
+    const speed = Math.max(12.5, Number(player.speed || 15) * 1.06) * (player.keeper ? 1 : FOOTBALL_OUTFIELD_PACE);
 
     for (const sample of samples) {
       const maxHeight = player.keeper ? 6.4 : (sample.vz < 0 ? 4.2 : 2.5);
