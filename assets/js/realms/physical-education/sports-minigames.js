@@ -1076,7 +1076,7 @@ ${playerMarkup}
     const shotId = Number(g.ball.shotId || 0);
     if (Number(keeper.lastReadShotId || 0) !== shotId) {
       keeper.lastReadShotId = shotId;
-      keeper.reactionUntil = Number(g.ball.shotAt || now) + 115 + Math.random() * 55;
+      keeper.reactionUntil = Number(g.ball.shotAt || now) + 170 + Math.random() * 70;
       const readError = (Math.random() - .5) * 2.2;
       keeper.saveReadY = clamp(prediction.y + readError, 35.5, 64.5);
     }
@@ -1524,7 +1524,7 @@ ${playerMarkup}
         const maxHeight = entry.player.keeper ? 6.4 : (ball.vz < 0 ? 4.2 : 2.5);
         if (ball.z > maxHeight) return false;
         const keeperDiving = entry.player.keeper && ball.isShot && now < Number(entry.player.diveUntil || 0);
-        const radius = entry.player.keeper ? (keeperDiving ? 6.6 : 4.4) : ball.z > 1.4 ? 2.25 : 2.65;
+        const radius = entry.player.keeper ? (keeperDiving ? 5.6 : 4.4) : ball.z > 1.4 ? 2.25 : 2.65;
         return entry.distance < radius;
       })
       .sort((a, b) => a.distance - b.distance);
