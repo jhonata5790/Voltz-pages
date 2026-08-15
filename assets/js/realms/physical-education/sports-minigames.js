@@ -512,9 +512,6 @@
             <ellipse cx="72" cy="59" rx="8" ry="9" fill="#02040d"/>
             <circle cx="75" cy="56" r="2.5" fill="#78f7ff"/>
             <path d="M62 101 C70 106,78 105,84 99" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
-          </g>          <g class="football-arms football-arms-back">
-            <path d="M30 85 C17 81,15 67,24 59" fill="none" stroke="#9257ff" stroke-width="7" stroke-linecap="round"/>
-            <path d="M90 85 C103 81,105 67,96 59" fill="none" stroke="#9257ff" stroke-width="7" stroke-linecap="round"/>
           </g>        </g>
       </svg>
     </div>`;
