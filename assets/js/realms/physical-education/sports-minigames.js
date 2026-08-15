@@ -485,14 +485,6 @@
         </defs>
 
         <ellipse class="football-avatar-aura" cx="60" cy="79" rx="45" ry="53" fill="#00eaff"/>
-
-        <g class="football-avatar-legs">
-          <path class="football-avatar-leg football-avatar-leg-left" d="M45 105 C42 117 41 130 43 141" fill="none" stroke="#176f72" stroke-width="12" stroke-linecap="round"/>
-          <path class="football-avatar-leg football-avatar-leg-right" d="M75 105 C78 117 79 130 77 141" fill="none" stroke="#176f72" stroke-width="12" stroke-linecap="round"/>
-          <ellipse cx="42" cy="143" rx="10" ry="5" fill="#071b2b" stroke="#78f7ff" stroke-width="2"/>
-          <ellipse cx="78" cy="143" rx="10" ry="5" fill="#071b2b" stroke="#78f7ff" stroke-width="2"/>
-        </g>
-
         <g class="football-avatar-body">
           <path d="M32 108 C24 77, 28 42, 60 29 C92 42, 96 77, 88 108 C79 126, 41 126, 32 108Z"
             fill="url(#footballUserBodyGradient)" stroke="#f5fbff" stroke-width="4" stroke-linejoin="round"/>
@@ -520,21 +512,10 @@
             <ellipse cx="72" cy="59" rx="8" ry="9" fill="#02040d"/>
             <circle cx="75" cy="56" r="2.5" fill="#78f7ff"/>
             <path d="M62 101 C70 106,78 105,84 99" fill="none" stroke="#02040d" stroke-width="5" stroke-linecap="round"/>
-          </g>
-
-          <g class="football-arms football-arms-front">
-            <path d="M31 81 C17 87,14 101,23 112" fill="none" stroke="#78f7ff" stroke-width="7" stroke-linecap="round"/>
-            <path d="M89 81 C103 87,106 101,97 112" fill="none" stroke="#78f7ff" stroke-width="7" stroke-linecap="round"/>
-          </g>
-          <g class="football-arms football-arms-back">
+          </g>          <g class="football-arms football-arms-back">
             <path d="M30 85 C17 81,15 67,24 59" fill="none" stroke="#9257ff" stroke-width="7" stroke-linecap="round"/>
             <path d="M90 85 C103 81,105 67,96 59" fill="none" stroke="#9257ff" stroke-width="7" stroke-linecap="round"/>
-          </g>
-          <g class="football-arms football-arms-side">
-            <path d="M34 83 C22 91,22 106,34 113" fill="none" stroke="#78f7ff" stroke-width="7" stroke-linecap="round"/>
-            <path d="M88 79 C101 81,106 94,99 105" fill="none" stroke="#ffd166" stroke-width="7" stroke-linecap="round"/>
-          </g>
-        </g>
+          </g>        </g>
       </svg>
     </div>`;
   }
