@@ -2754,3 +2754,36 @@
   55% { transform:translateX(-50%) translateY(-3px) scale(calc(var(--football-avatar-depth-scale) * 1.08), calc(var(--football-avatar-depth-scale) * .93)); }
   100% { transform:translateX(-50%) scale(var(--football-avatar-depth-scale)); }
 }
+
+
+/* Football V3.7.1 · render otimizado dos SVGs */
+.football-live-player.is-svg-avatar {
+  contain:layout style;
+  isolation:isolate;
+}
+.football-live-player.is-svg-avatar .football-user-avatar-shell {
+  will-change:transform;
+  backface-visibility:hidden;
+}
+.football-live-player.is-svg-avatar .football-user-avatar,
+.football-live-player.is-svg-avatar.team-voltz .football-user-avatar,
+.football-live-player.is-svg-avatar.team-rival .football-user-avatar {
+  filter:none !important;
+}
+.football-live-player.is-svg-avatar .football-avatar-aura {
+  opacity:.045 !important;
+  filter:none !important;
+}
+.football-live-player.is-svg-avatar .football-player-shadow,
+.football-live-player.is-svg-avatar.is-keeper .football-player-shadow {
+  filter:none !important;
+  box-shadow:0 3px 6px rgba(0,0,0,.24) !important;
+}
+.football-live-player.is-svg-avatar.is-running .football-user-avatar-shell {
+  animation:none !important;
+}
+.football-live-player.is-svg-avatar.has-ball .football-avatar-core,
+.football-live-player.is-svg-avatar.team-rival.has-ball .football-avatar-core {
+  filter:none !important;
+  stroke-width:6px;
+}

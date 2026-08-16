@@ -1581,37 +1581,93 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
     return parts.join("");
   }
 
+  function getFootballDomCache(g) {
+    if (!g) return null;
+    const cached = g._footballDomCache;
+    if (cached?.field?.isConnected) return cached;
+
+    const players = new Map();
+    (g.players || []).forEach((player) => {
+      players.set(player.id, document.getElementById(`footballPlayer-${player.id}`));
+    });
+
+    const next = {
+      field: document.getElementById("footballField"),
+      players,
+      ballEl: document.getElementById("footballBall"),
+      ballShadow: document.getElementById("footballBallShadow"),
+      targetEl: document.getElementById("footballPassTarget"),
+      scoreVoltz: document.getElementById("footballScoreVoltz"),
+      scoreRival: document.getElementById("footballScoreRival"),
+      banner: document.getElementById("footballMatchBanner"),
+      feedback: document.getElementById("footballFeedback"),
+      visionSvg: document.getElementById("footballVisionSvg"),
+      visionStatus: document.getElementById("footballVisionStatus")
+    };
+    g._footballDomCache = next;
+    return next;
+  }
+
   function updateFootballDom(now = performance.now()) {
     const g = state.current;
     if (!g || g.type !== "football") return;
-    const field = document.getElementById("footballField");
+    const dom = getFootballDomCache(g);
+    const field = dom?.field;
     if (!field) return;
 
     g.players.forEach((player) => {
-      const el = document.getElementById(`footballPlayer-${player.id}`);
+      const el = dom.players.get(player.id);
       if (!el) return;
-      el.style.left = `${player.x}%`;
-      el.style.top = `${player.y}%`;
+
+      const left = `${player.x.toFixed(2)}%`;
+      const top = `${player.y.toFixed(2)}%`;
+      const visual = el._footballVisualState || (el._footballVisualState = {});
+      if (visual.left !== left) { el.style.left = left; visual.left = left; }
+      if (visual.top !== top) { el.style.top = top; visual.top = top; }
+
       const facing = getFootballFacing(player, { x:player.x + (player.team === "voltz" ? 1 : -1), y:player.y });
-      const angle = Math.atan2(facing.y, facing.x) * 180 / Math.PI + 90;
-      el.style.setProperty("--football-facing-angle", `${angle}deg`);
+      const isSvgAvatar = el.classList.contains("is-svg-avatar");
+      if (!isSvgAvatar) {
+        const angle = Math.atan2(facing.y, facing.x) * 180 / Math.PI + 90;
+        const angleValue = `${angle.toFixed(1)}deg`;
+        if (visual.angle !== angleValue) {
+          el.style.setProperty("--football-facing-angle", angleValue);
+          visual.angle = angleValue;
+        }
+      }
+
       const facingName = Math.abs(facing.x) >= Math.abs(facing.y)
         ? (facing.x >= 0 ? "right" : "left")
         : (facing.y >= 0 ? "down" : "up");
-      el.dataset.footballFacing = facingName;
-      if (el.classList.contains("is-svg-avatar")) {
-        const depthScale = clamp(.94 + player.y * .0012, .95, 1.06);
-        el.style.setProperty("--football-avatar-depth-scale", depthScale.toFixed(3));
+      if (visual.facing !== facingName) {
+        el.dataset.footballFacing = facingName;
+        visual.facing = facingName;
       }
-      el.classList.toggle("is-controlled", player.id === g.controlledId && !player.keeper);
-      el.classList.toggle("has-ball", g.ball.ownerId === player.id);
-      el.classList.toggle("is-running", now < Number(player.movingUntil || 0));
-      el.classList.toggle("is-tackling", now < Number(player.tackleUntil || 0));
-      el.classList.toggle("is-recovering", now < Number(player.recoverUntil || 0));
+
+      if (isSvgAvatar) {
+        const depthBucket = Math.round(player.y / 4);
+        if (visual.depthBucket !== depthBucket) {
+          const depthY = depthBucket * 4;
+          const depthScale = clamp(.94 + depthY * .0012, .95, 1.06);
+          el.style.setProperty("--football-avatar-depth-scale", depthScale.toFixed(3));
+          visual.depthBucket = depthBucket;
+        }
+      }
+
+      const controlled = player.id === g.controlledId && !player.keeper;
+      const hasBall = g.ball.ownerId === player.id;
+      const running = now < Number(player.movingUntil || 0);
+      const tackling = now < Number(player.tackleUntil || 0);
+      const recovering = now < Number(player.recoverUntil || 0);
+      if (visual.controlled !== controlled) { el.classList.toggle("is-controlled", controlled); visual.controlled = controlled; }
+      if (visual.hasBall !== hasBall) { el.classList.toggle("has-ball", hasBall); visual.hasBall = hasBall; }
+      if (visual.running !== running) { el.classList.toggle("is-running", running); visual.running = running; }
+      if (visual.tackling !== tackling) { el.classList.toggle("is-tackling", tackling); visual.tackling = tackling; }
+      if (visual.recovering !== recovering) { el.classList.toggle("is-recovering", recovering); visual.recovering = recovering; }
     });
 
-    const ballEl = document.getElementById("footballBall");
-    const ballShadow = document.getElementById("footballBallShadow");
+    const ballEl = dom.ballEl;
+    const ballShadow = dom.ballShadow;
     if (ballEl) {
       const heightPx = Math.min(82, Number(g.ball.z || 0) * 4.2);
       const scale = 1 + Math.min(.34, Number(g.ball.z || 0) * .018);
@@ -1628,32 +1684,61 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
       ballShadow.style.transform = `translate(-50%,-50%) scale(${1 + Math.min(.8, height * .035)})`;
     }
 
-    const targetEl = document.getElementById("footballPassTarget");
+    const targetEl = dom.targetEl;
     const target = getFootballPlayer(g, g.ball.passTargetId);
     if (targetEl) {
-      targetEl.classList.toggle("visible", Boolean(target && !g.ball.ownerId));
-      if (target) { targetEl.style.left = `${target.x}%`; targetEl.style.top = `${target.y}%`; }
+      const visible = Boolean(target && !g.ball.ownerId);
+      if (g._footballPassTargetVisible !== visible) {
+        targetEl.classList.toggle("visible", visible);
+        g._footballPassTargetVisible = visible;
+      }
+      if (target) {
+        const targetLeft = `${target.x.toFixed(2)}%`;
+        const targetTop = `${target.y.toFixed(2)}%`;
+        if (g._footballPassTargetLeft !== targetLeft) { targetEl.style.left = targetLeft; g._footballPassTargetLeft = targetLeft; }
+        if (g._footballPassTargetTop !== targetTop) { targetEl.style.top = targetTop; g._footballPassTargetTop = targetTop; }
+      }
     }
 
-    const scoreVoltz = document.getElementById("footballScoreVoltz");
-    const scoreRival = document.getElementById("footballScoreRival");
-    const banner = document.getElementById("footballMatchBanner");
-    const feedback = document.getElementById("footballFeedback");
-    if (scoreVoltz) scoreVoltz.textContent = g.score;
-    if (scoreRival) scoreRival.textContent = g.rivalScore;
-    if (banner) banner.textContent = g.banner;
-    if (feedback) feedback.textContent = g.feedback;
+    const scoreVoltz = dom.scoreVoltz;
+    const scoreRival = dom.scoreRival;
+    const banner = dom.banner;
+    const feedback = dom.feedback;
+    const scoreVoltzText = String(g.score);
+    const scoreRivalText = String(g.rivalScore);
+    const bannerText = String(g.banner || "");
+    const feedbackText = String(g.feedback || "");
+    if (scoreVoltz && scoreVoltz.textContent !== scoreVoltzText) scoreVoltz.textContent = scoreVoltzText;
+    if (scoreRival && scoreRival.textContent !== scoreRivalText) scoreRival.textContent = scoreRivalText;
+    if (banner && banner.textContent !== bannerText) banner.textContent = bannerText;
+    if (feedback && feedback.textContent !== feedbackText) feedback.textContent = feedbackText;
 
     const visionActive = now < g.visionUntil;
-    field.classList.toggle("vision-active", visionActive);
-    const visionSvg = document.getElementById("footballVisionSvg");
-    if (visionSvg) visionSvg.innerHTML = visionActive ? buildFootballVision(g) : "";
+    if (g._footballVisionClassActive !== visionActive) {
+      field.classList.toggle("vision-active", visionActive);
+      g._footballVisionClassActive = visionActive;
+    }
+    const visionSvg = dom.visionSvg;
+    if (visionSvg) {
+      if (visionActive) {
+        if (now - Number(g._footballVisionRenderedAt || 0) >= 80) {
+          visionSvg.innerHTML = buildFootballVision(g);
+          g._footballVisionRenderedAt = now;
+        }
+      } else if (g._footballVisionWasActive) {
+        visionSvg.innerHTML = "";
+      }
+      g._footballVisionWasActive = visionActive;
+    }
 
-    const visionStatus = document.getElementById("footballVisionStatus");
+    const visionStatus = dom.visionStatus;
     if (visionStatus) {
-      if (visionActive) visionStatus.textContent = "I · VOLTZ VISION ATIVA";
-      else if (now < g.visionCooldownUntil) visionStatus.textContent = `I · RECARGA ${((g.visionCooldownUntil - now) / 1000).toFixed(1)}s`;
-      else visionStatus.textContent = "I · VOLTZ VISION PRONTA";
+      const visionText = visionActive
+        ? "I · VOLTZ VISION ATIVA"
+        : now < g.visionCooldownUntil
+          ? `I · RECARGA ${((g.visionCooldownUntil - now) / 1000).toFixed(1)}s`
+          : "I · VOLTZ VISION PRONTA";
+      if (visionStatus.textContent !== visionText) visionStatus.textContent = visionText;
     }
   }
 
