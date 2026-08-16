@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voltz Education — Campo das Decisões</title>
+  <link rel="stylesheet" href="assets/css/sports-minigames.css" />
+  <link rel="stylesheet" href="assets/css/football/football-standalone.css" />
+</head>
+<body class="standalone-football-page">
+  <div id="authGate" class="football-auth-gate" role="status" aria-live="polite">
+    <div class="football-auth-card">
+      <strong>⚡ CAMPO DAS DECISÕES</strong>
+      <span id="authGateText">Preparando partida...</span>
+    </div>
+  </div>
+
+  <div id="footballStandaloneStatus" class="football-standalone-status" aria-live="polite">
+    PARTIDA EM ANDAMENTO · finalize a partida para retornar ao reino
+  </div>
+
+  <div id="sportsProgressHud" hidden></div>
+  <div id="interactionText" hidden></div>
+
+  <main id="sportsMinigamePanel" class="sports-minigame-panel football-standalone-panel" aria-hidden="true">
+    <div id="sportsMinigameContent"></div>
+  </main>
+
+  <script type="module" src="assets/js/core/game-profile.js"></script>
+  <script src="assets/js/core/audio-manager.js" defer></script>
+  <script src="assets/js/realms/physical-education/sports-minigames.js" defer></script>
+  <script src="assets/js/football/football-standalone.js" defer></script>
+</body>
+</html>

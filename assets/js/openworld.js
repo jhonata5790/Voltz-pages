@@ -2609,7 +2609,11 @@ const viewport = document.getElementById("gameViewport");
       }
 
       if (sportsMinigameId) {
-        window.VoltzSports?.open?.(sportsMinigameId);
+        if (sportsMinigameId === "football" && window.VoltzStandaloneSportBridge?.enterFootball) {
+          window.VoltzStandaloneSportBridge.enterFootball();
+        } else {
+          window.VoltzSports?.open?.(sportsMinigameId);
+        }
       }
 
       if (shouldReturnToVillage) {
@@ -4043,3 +4047,99 @@ const viewport = document.getElementById("gameViewport");
       if (libraryArchiveOpen) renderLibraryArchive();
     });
     gameLoop();
+
+
+// Standalone sport transition bridge · football page V3.8
+const VOLTZ_STANDALONE_SPORT_RETURN_KEY = "voltz:standalone-sport:return";
+
+function saveStandaloneSportReturnPoint(sportId) {
+  if (!sportId || !currentScene?.id) return false;
+  try {
+    sessionStorage.setItem(VOLTZ_STANDALONE_SPORT_RETURN_KEY, JSON.stringify({
+      sportId,
+      sceneId: currentScene.id,
+      x: Number(playerState.x || 0),
+      y: Number(playerState.y || 0),
+      direction: playerState.direction || "baixo",
+      playerScale: Number(playerState.scale || 1),
+      cameraZoom: Number(cameraState.zoom || currentScene.cameraZoom || 1),
+      savedAt: Date.now()
+    }));
+    return true;
+  } catch (error) {
+    console.warn("[SPORT] Não foi possível salvar o ponto de retorno:", error);
+    return false;
+  }
+}
+
+function enterStandaloneFootball() {
+  saveStandaloneSportReturnPoint("football");
+  window.location.href = "football.html";
+}
+
+function restoreStandaloneSportReturnPoint() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("returnFrom") !== "football") return false;
+
+  let point = null;
+  try {
+    point = JSON.parse(sessionStorage.getItem(VOLTZ_STANDALONE_SPORT_RETURN_KEY) || "null");
+  } catch {}
+  if (!point || point.sportId !== "football") return false;
+
+  const targetScene = currentScene?.id === point.sceneId
+    ? currentScene
+    : getSceneForRealm(point.sceneId);
+  if (!targetScene) return false;
+
+  const spawn = {
+    x: Number.isFinite(Number(point.x)) ? Number(point.x) : targetScene.spawn.x,
+    y: Number.isFinite(Number(point.y)) ? Number(point.y) : targetScene.spawn.y
+  };
+
+  if (currentScene?.id !== targetScene.id) {
+    changeScene(targetScene, {
+      spawn,
+      direction: point.direction || "baixo"
+    });
+  } else {
+    playerState.x = spawn.x;
+    playerState.y = spawn.y;
+    playerState.direction = point.direction || "baixo";
+    playerState.moving = false;
+    if (Number.isFinite(Number(point.playerScale))) {
+      playerState.scale = Number(point.playerScale);
+      playerState.targetScale = Number(point.playerScale);
+    }
+    clampPlayer();
+    updatePlayerPosition();
+    updatePlayerAnimation();
+  }
+
+  if (Number.isFinite(Number(point.cameraZoom))) {
+    cameraState.zoom = Number(point.cameraZoom);
+    cameraState.targetZoom = Number(point.cameraZoom);
+  }
+  snapCameraToPlayer();
+  updateOcclusionVisibility();
+  updateNearbyNpc();
+  updateNearbyPortal();
+  updateNearbyEnemy();
+  updateNearbyWorldEquation();
+  updateHint();
+
+  try { sessionStorage.removeItem(VOLTZ_STANDALONE_SPORT_RETURN_KEY); } catch {}
+  url.searchParams.delete("returnFrom");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  interactionText.textContent = "Você voltou ao Campo das Decisões exatamente de onde entrou.";
+  return true;
+}
+
+window.VoltzStandaloneSportBridge = Object.freeze({
+  enterFootball: enterStandaloneFootball,
+  captureReturnPoint: () => saveStandaloneSportReturnPoint("football")
+});
+
+window.addEventListener("load", () => {
+  window.setTimeout(() => restoreStandaloneSportReturnPoint(), 0);
+});

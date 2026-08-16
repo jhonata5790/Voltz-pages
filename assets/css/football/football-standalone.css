@@ -1,0 +1,53 @@
+:root { color-scheme: dark; }
+* { box-sizing:border-box; }
+html, body { width:100%; height:100%; margin:0; overflow:hidden; background:#030913; }
+body.standalone-football-page {
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 50% 16%, rgba(69,163,255,.12), transparent 34%),
+    linear-gradient(180deg,#06131d,#02060d 74%);
+  color:#f5fbff;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.football-auth-gate {
+  position:fixed; inset:0; z-index:3000; display:grid; place-items:center;
+  background:#02060d; transition:opacity .25s ease,visibility .25s ease;
+}
+.football-auth-gate.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+.football-auth-gate.auth-gate-error { color:#ffadb7; }
+.football-auth-card {
+  display:grid; gap:9px; min-width:min(420px,calc(100vw - 32px)); padding:24px;
+  border:1px solid rgba(140,247,255,.22); border-radius:18px;
+  background:rgba(7,17,27,.97); text-align:center;
+  box-shadow:0 24px 80px rgba(0,0,0,.55);
+}
+.football-auth-card strong { color:#8cf7ff; letter-spacing:1.4px; }
+.football-auth-card span { color:rgba(245,251,255,.66); font-size:.82rem; }
+.football-standalone-status {
+  position:fixed; z-index:1200; left:50%; top:8px; transform:translateX(-50%);
+  padding:6px 12px; border-radius:999px; pointer-events:none;
+  border:1px solid rgba(140,247,255,.16); background:rgba(3,10,18,.82);
+  color:rgba(220,250,255,.68); font-size:.62rem; font-weight:900; letter-spacing:.7px;
+}
+.football-standalone-status.is-finished { color:#baffdf; border-color:rgba(99,245,181,.25); }
+.football-standalone-panel.sports-minigame-panel {
+  position:fixed !important; inset:0 !important; border:0 !important; border-radius:0 !important;
+  overflow:hidden !important; background:transparent !important; box-shadow:none !important;
+}
+.football-standalone-panel .sports-game-shell {
+  height:100vh; min-height:0; padding:20px 24px 18px; display:flex; flex-direction:column;
+}
+.football-standalone-panel .sports-game-topbar { flex:0 0 auto; margin-bottom:10px; }
+.football-standalone-panel .sports-game-topbar .sports-close-btn { display:none !important; }
+.football-standalone-panel .sports-game-subtitle { margin-top:3px; }
+.football-standalone-panel .football-match-card {
+  width:min(1500px,100%); max-width:none !important; flex:1 1 auto; min-height:0;
+  display:flex; flex-direction:column; padding:14px 18px 12px;
+}
+.football-standalone-panel .football-field-live { flex:1 1 auto; min-height:420px; }
+.football-standalone-panel .sports-result .sports-close-btn { display:inline-flex !important; }
+@media(max-width:760px){
+  .football-standalone-panel .sports-game-shell { padding:12px; }
+  .football-standalone-panel .football-match-card { padding:10px; }
+  .football-standalone-status { max-width:90vw; text-align:center; white-space:normal; }
+}

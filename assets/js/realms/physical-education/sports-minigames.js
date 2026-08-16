@@ -284,6 +284,14 @@
   }
 
   function close() {
+    if (state.activeId === "football" && global.VoltzStandaloneFootball?.isStandalone?.()) {
+      if (state.current?.type === "football" && state.current?.phase === "play") {
+        global.VoltzStandaloneFootball?.onExitBlocked?.();
+        return;
+      }
+      global.VoltzStandaloneFootball?.returnToWorld?.();
+      return;
+    }
     if (state.activeId === "dodgeball" || state.current?.type === "dodgeball") stopDodgeballMusic(280);
     clearRuntime();
     state.open = false;
@@ -318,6 +326,9 @@
   }
 
   async function finishSport(id, success, message) {
+    if (id === "football" && global.VoltzStandaloneFootball?.isStandalone?.()) {
+      global.VoltzStandaloneFootball?.onMatchFinished?.({ success:Boolean(success) });
+    }
     if (id === "dodgeball") {
       sportSfx(success ? "victory" : "failure");
       if (success) duckDodgeballMusic(.10, 300);
