@@ -394,6 +394,11 @@
   // A bola NÃO usa este multiplicador; assim passe, cruzamento e finalização
   // continuam rápidos enquanto o jogador ganha mais tempo para ler o campo.
   const FOOTBALL_OUTFIELD_PACE = 0.78;
+  // V3.9: a simulação continua normalizada em 0..100, mas o gramado agora representa
+  // uma área física maior. A bola preserva a velocidade aprovada; jogadores precisam
+  // percorrer mais espaço para atravessar o campo, abrindo linhas e profundidade.
+  const FOOTBALL_PITCH_SCALE_X = 1.22;
+  const FOOTBALL_PITCH_SCALE_Y = 1.12;
 
   function startFootball() {
     if (global.VoltzStandaloneFootball?.isStandalone?.()) {
@@ -469,14 +474,15 @@
     const dx = targetX - player.x;
     const dy = targetY - player.y;
     const length = Math.hypot(dx, dy) || 1;
+    const pitchLength = Math.hypot(dx * FOOTBALL_PITCH_SCALE_X, dy * FOOTBALL_PITCH_SCALE_Y) || 1;
     if (length > .05) {
       player.facingX = dx / length;
       player.facingY = dy / length;
     }
     const movementScale = player.keeper ? 1 : FOOTBALL_OUTFIELD_PACE;
-    const step = Math.min(length, speed * movementScale * recoveryScale * dt);
-    player.x += dx / length * step;
-    player.y += dy / length * step;
+    const step = Math.min(pitchLength, speed * movementScale * recoveryScale * dt);
+    player.x += dx / pitchLength * step;
+    player.y += dy / pitchLength * step;
     if (step > .01) player.movingUntil = now + 120;
     player.x = clamp(player.x, player.keeper ? 3.5 : 7, player.keeper ? 96.5 : 93);
     player.y = clamp(player.y, 8, 92);
@@ -619,6 +625,7 @@ ${playerMarkup}
 
         <div class="football-control-strip">
 <span><b>WASD</b> MOVER</span>
+<button type="button" onclick="VoltzSports.footballSwitchPlayer()"><b>Q</b> TROCAR</button>
 <button type="button" onclick="VoltzSports.footballPrimaryAction()"><b>J</b> CHUTE / BOTE</button>
 <button type="button" onclick="VoltzSports.footballPass()"><b>K</b> TOCAR</button>
 <button type="button" onclick="VoltzSports.footballCross()"><b>L</b> CRUZAR</button>
@@ -761,7 +768,8 @@ ${playerMarkup}
     if (!player || now >= Number(player.movingUntil || 0) || now < Number(player.recoverUntil || 0)) return { x:0, y:0, moving:false };
     const facing = getFootballFacing(player);
     const speed = Number(player.speed || 0) * (player.keeper ? 1 : FOOTBALL_OUTFIELD_PACE);
-    return { x:facing.x * speed, y:facing.y * speed, moving:speed > .1 };
+    const pitchLength = Math.hypot(facing.x * FOOTBALL_PITCH_SCALE_X, facing.y * FOOTBALL_PITCH_SCALE_Y) || 1;
+    return { x:facing.x / pitchLength * speed, y:facing.y / pitchLength * speed, moving:speed > .1 };
   }
 
   function predictFootballReceiverPoint(receiver, travelSeconds, now = performance.now()) {
@@ -942,6 +950,26 @@ ${playerMarkup}
     executeFootballTackle(g, controlled, performance.now());
   }
 
+  function footballSwitchPlayer() {
+    const g = state.current;
+    if (!g || g.type !== "football" || g.phase !== "play") return;
+    const owner = getFootballOwner(g);
+    if (owner?.team === "voltz") {
+      g.controlledId = owner.id;
+      g.feedback = `#${owner.number} está com a bola. O controle acompanha a posse.`;
+      return;
+    }
+
+    const outfield = getFootballTeam(g, "voltz", false);
+    if (!outfield.length) return;
+    const currentIndex = Math.max(0, outfield.findIndex((player) => player.id === g.controlledId));
+    const next = outfield[(currentIndex + 1) % outfield.length] || outfield[0];
+    g.controlledId = next.id;
+    g.feedback = `Troca manual: você agora controla #${next.number}.`;
+    g.banner = `CONTROLE #${next.number}`;
+    sportSfx("menuMove");
+  }
+
   function footballPrimaryAction() {
     const g = state.current;
     if (!g || g.type !== "football" || g.phase !== "play") return;
@@ -960,14 +988,14 @@ ${playerMarkup}
     }
 
     let targetY = 50;
-    if (state.pressed.has("w") || state.pressed.has("arrowup")) targetY = 39;
-    else if (state.pressed.has("s") || state.pressed.has("arrowdown")) targetY = 61;
-    else targetY = owner.y < 50 ? 42 : owner.y > 50 ? 58 : (Math.random() > .5 ? 42 : 58);
+    if (state.pressed.has("w") || state.pressed.has("arrowup")) targetY = 35;
+    else if (state.pressed.has("s") || state.pressed.has("arrowdown")) targetY = 65;
+    else targetY = owner.y < 50 ? 39 : owner.y > 50 ? 61 : (Math.random() > .5 ? 39 : 61);
 
     const distance = 100 - owner.x;
     const speed = clamp(80 - distance * .18, 64, 78);
     const spread = distance > 55 ? (Math.random() - .5) * 8 : (Math.random() - .5) * 3;
-    footballLaunchBall(g, owner, 104, clamp(targetY + spread, 34, 66), speed, performance.now(), { isShot:true });
+    footballLaunchBall(g, owner, 104, clamp(targetY + spread, 31.5, 68.5), speed, performance.now(), { isShot:true });
     g.feedback = distance > 55 ? "Chute de longe! O goleiro tem tempo para reagir." : "Finalização! Ache o canto antes que o goleiro feche.";
     g.banner = "FINALIZAÇÃO";
     sportSfx("throwPower");
@@ -1001,7 +1029,7 @@ ${playerMarkup}
   }
 
   function footballEnemyShoot(g, owner, now) {
-    const targetY = Math.random() > .5 ? 40 : 60;
+    const targetY = Math.random() > .5 ? 36 : 64;
     footballLaunchBall(g, owner, -4, targetY + (Math.random() - .5) * 4, 72, now, { isShot:true });
     g.aiActionAt = now + 1400;
     g.banner = "CHUTE ADVERSÁRIO";
@@ -1023,12 +1051,13 @@ ${playerMarkup}
     if (state.pressed.has("w") || state.pressed.has("arrowup")) dy -= 1;
     if (state.pressed.has("s") || state.pressed.has("arrowdown")) dy += 1;
     const len = Math.hypot(dx, dy) || 1;
+    const pitchLength = Math.hypot(dx * FOOTBALL_PITCH_SCALE_X, dy * FOOTBALL_PITCH_SCALE_Y) || 1;
     if (dx || dy) {
       controlled.facingX = dx / len;
       controlled.facingY = dy / len;
       const recoveryScale = now < Number(controlled.recoverUntil || 0) ? .28 : 1;
-      controlled.x += dx / len * controlled.speed * FOOTBALL_OUTFIELD_PACE * recoveryScale * dt;
-      controlled.y += dy / len * controlled.speed * FOOTBALL_OUTFIELD_PACE * recoveryScale * dt;
+      controlled.x += dx / pitchLength * controlled.speed * FOOTBALL_OUTFIELD_PACE * recoveryScale * dt;
+      controlled.y += dy / pitchLength * controlled.speed * FOOTBALL_OUTFIELD_PACE * recoveryScale * dt;
       controlled.movingUntil = now + 130;
       controlled.x = clamp(controlled.x, 7, 93);
       controlled.y = clamp(controlled.y, 8, 92);
@@ -1340,12 +1369,8 @@ ${playerMarkup}
     const voltzOutfield = getFootballTeam(g, "voltz", false);
     const rivalOutfield = getFootballTeam(g, "rival", false);
 
-    const ownPassInFlight = !possession && ball.lastTouchTeam === "voltz" && Boolean(ball.passTargetId);
-    if (possession !== "voltz" && !ownPassInFlight && now >= g.autoSelectAt) {
-      const nearest = voltzOutfield.slice().sort((a, b) => footballDistance(a, ball) - footballDistance(b, ball))[0];
-      if (nearest) g.controlledId = nearest.id;
-      g.autoSelectAt = now + 260;
-    }
+    // V3.9: sem a bola, a seleção é manual pelo Q. O controle só troca
+    // automaticamente quando um jogador Voltz realmente recebe a posse.
 
     const voltzPrimary = !possession
       ? voltzOutfield.slice().sort((a, b) => footballDistance(a, ball) - footballDistance(b, ball))[0]
@@ -1517,7 +1542,7 @@ ${playerMarkup}
     if (ball.y <= 3 && ball.vy < 0) { ball.y = 3; ball.vy *= -.72; }
     if (ball.y >= 97 && ball.vy > 0) { ball.y = 97; ball.vy *= -.72; }
 
-    const inGoalMouth = ball.y >= 36 && ball.y <= 64;
+    const inGoalMouth = ball.y >= 32 && ball.y <= 68;
     if (ball.x >= 100) {
       if (inGoalMouth && ball.z <= 4.5) footballGoal(g, "voltz");
       else footballSetPossession(g, getFootballPlayer(g, "rgk"), now, "Tiro de meta do visitante.");
@@ -1585,8 +1610,8 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
         });
 
       if (owner.x >= 48) {
-        parts.push(`<line class="vision-shot" x1="${owner.x}" y1="${owner.y}" x2="99" y2="41"></line>`);
-        parts.push(`<line class="vision-shot" x1="${owner.x}" y1="${owner.y}" x2="99" y2="59"></line>`);
+        parts.push(`<line class="vision-shot" x1="${owner.x}" y1="${owner.y}" x2="99" y2="35"></line>`);
+        parts.push(`<line class="vision-shot" x1="${owner.x}" y1="${owner.y}" x2="99" y2="65"></line>`);
       }
     } else {
       parts.push(`<circle class="vision-control" cx="${controlled.x}" cy="${controlled.y}" r="5.5"></circle>`);
@@ -4544,10 +4569,11 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
     }
 
     if (game.type === "football") {
-      if (["j","k","l","i"].includes(key)) {
+      if (["q","j","k","l","i"].includes(key)) {
         event.preventDefault();
         if (!event.repeat) {
-          if (key === "j") footballPrimaryAction();
+          if (key === "q") footballSwitchPlayer();
+          else if (key === "j") footballPrimaryAction();
           else if (key === "k") footballPass();
           else if (key === "l") footballCross();
           else activateFootballVision();
@@ -4589,6 +4615,7 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
     shootFootball,
     footballPrimaryAction,
     footballTackle,
+    footballSwitchPlayer,
     footballPass,
     footballCross,
     activateFootballVision,

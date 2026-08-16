@@ -51,3 +51,90 @@ body.standalone-football-page {
   .football-standalone-panel .football-match-card { padding:10px; }
   .football-standalone-status { max-width:90vw; text-align:center; white-space:normal; }
 }
+
+
+/* Football V3.9 · campo expandido e câmera 3/4 */
+.football-standalone-panel .sports-game-topbar {
+  display:none !important;
+}
+.football-standalone-panel .sports-game-shell {
+  padding:8px 10px 10px !important;
+}
+.football-standalone-panel .football-match-card {
+  width:min(1780px,calc(100vw - 20px)) !important;
+  height:calc(100vh - 18px);
+  margin:0 auto !important;
+  padding:8px 12px 8px !important;
+  gap:4px;
+}
+.football-standalone-panel .football-live-scoreboard {
+  padding:5px 12px !important;
+  margin-bottom:4px !important;
+}
+.football-standalone-panel .football-field-live {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  aspect-ratio:auto !important;
+  border-radius:14px !important;
+  transform:perspective(1600px) rotateX(5deg) scale(.985);
+  transform-origin:50% 54%;
+  clip-path:polygon(1.2% 1%,98.8% 1%,100% 99%,0 99%);
+  box-shadow:inset 0 0 52px rgba(0,0,0,.30),0 10px 28px rgba(0,0,0,.24) !important;
+}
+.football-standalone-panel .football-live-hud {
+  margin-top:3px !important;
+  min-height:28px;
+}
+.football-standalone-panel .football-live-feedback {
+  min-height:28px !important;
+  font-size:.68rem !important;
+}
+.football-standalone-panel .football-control-strip {
+  margin-top:4px !important;
+  gap:5px !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+}
+.football-standalone-panel .football-control-strip span,
+.football-standalone-panel .football-control-strip button {
+  min-height:35px !important;
+  font-size:.60rem !important;
+  border-radius:8px !important;
+}
+/* Jogadores menores em relação ao novo gramado: o campo ganha leitura e corredor. */
+.football-standalone-panel .football-live-player.is-svg-avatar {
+  width:52px !important;
+  height:63px !important;
+}
+.football-standalone-panel .football-live-player.is-svg-avatar.is-keeper {
+  width:56px !important;
+  height:67px !important;
+}
+.football-standalone-panel .football-live-player.is-svg-avatar .football-user-avatar-shell {
+  width:50px !important;
+  height:61px !important;
+}
+.football-standalone-panel .football-live-player.is-svg-avatar.is-keeper .football-user-avatar-shell {
+  width:54px !important;
+  height:65px !important;
+}
+.football-standalone-panel .football-live-player.is-svg-avatar .football-player-shadow {
+  width:33px !important;
+  height:11px !important;
+}
+.football-standalone-panel .football-live-player.is-svg-avatar.is-controlled::before {
+  width:38px !important;
+  height:15px !important;
+}
+@media(max-width:900px){
+  .football-standalone-panel .football-control-strip {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+  .football-standalone-panel .football-match-card {
+    width:calc(100vw - 12px) !important;
+    height:calc(100vh - 12px);
+    padding:6px !important;
+  }
+  .football-standalone-panel .football-field-live {
+    transform:perspective(1200px) rotateX(4deg) scale(.99);
+  }
+}
