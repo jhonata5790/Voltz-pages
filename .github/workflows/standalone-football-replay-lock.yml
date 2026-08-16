@@ -1,0 +1,29 @@
+name: Standalone Football Replay Lock
+
+on:
+  push:
+    paths:
+      - '.github/workflows/standalone-football-replay-lock.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply replay lock fix
+        run: |
+          python .github/scripts/standalone_football_replay_lock.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          node --check assets/js/football/football-standalone.js
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js assets/js/football/football-standalone.js
+          git commit -m "Futebol V3.8.1: reativar trava ao reiniciar partida"
+          git push
