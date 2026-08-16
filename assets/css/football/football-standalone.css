@@ -138,3 +138,69 @@ body.standalone-football-page {
     transform:perspective(1200px) rotateX(4deg) scale(.99);
   }
 }
+
+
+
+/* Football V4 · projecao top-down obliqua real */
+.football-standalone-panel .football-field-live.is-perspective-pitch {
+  transform:none !important;
+  transform-origin:center !important;
+  clip-path:polygon(13% 6%,87% 6%,99.5% 97%,.5% 97%) !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(130,255,200,.06), transparent 56%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.028) 0 8.333%, rgba(0,0,0,.028) 8.333% 16.666%),
+    linear-gradient(180deg,#174c3b 0%,#0d3a30 48%,#082b26 100%) !important;
+  box-shadow:inset 0 0 70px rgba(0,0,0,.34),0 13px 34px rgba(0,0,0,.28) !important;
+}
+.football-standalone-panel .football-field-live.is-perspective-pitch::before {
+  display:none !important;
+}
+.football-pitch-projection {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:2;
+  overflow:visible;
+  pointer-events:none;
+}
+.football-pitch-outline,
+.football-pitch-line,
+.football-pitch-goal,
+.football-pitch-net-line {
+  fill:none;
+  vector-effect:non-scaling-stroke;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.football-pitch-outline { stroke:rgba(231,255,244,.70);stroke-width:2.2; }
+.football-pitch-line { stroke:rgba(231,255,244,.53);stroke-width:1.7; }
+.football-pitch-goal { stroke:rgba(238,255,248,.86);stroke-width:2.3;fill:rgba(232,255,245,.025); }
+.football-pitch-net-line { stroke:rgba(231,255,244,.25);stroke-width:1;stroke-dasharray:3 3; }
+.football-pitch-spot { fill:rgba(237,255,247,.78); }
+.football-standalone-panel .football-live-player.is-svg-avatar {
+  z-index:var(--football-depth-z,60) !important;
+}
+.football-standalone-panel .football-pass-target {
+  width:42px !important;
+  height:22px !important;
+  transform:translate(-50%,-50%) scale(var(--football-target-scale,1));
+}
+.football-standalone-panel .football-pass-target.visible {
+  animation:footballPerspectiveTargetPulse .55s ease-in-out infinite alternate !important;
+}
+@keyframes footballPerspectiveTargetPulse {
+  from { transform:translate(-50%,-50%) scale(calc(var(--football-target-scale,1) * .84)); }
+  to { transform:translate(-50%,-50%) scale(calc(var(--football-target-scale,1) * 1.06)); }
+}
+.football-standalone-panel .football-ball-shadow {
+  height:7px;
+}
+@media(max-width:900px){
+  .football-standalone-panel .football-field-live.is-perspective-pitch {
+    transform:none !important;
+    clip-path:polygon(12% 6%,88% 6%,99% 97%,1% 97%) !important;
+  }
+}

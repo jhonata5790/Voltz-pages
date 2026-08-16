@@ -400,6 +400,75 @@
   const FOOTBALL_PITCH_SCALE_X = 1.22;
   const FOOTBALL_PITCH_SCALE_Y = 1.12;
 
+  function isFootballPerspectiveRender() {
+    return Boolean(global.VoltzStandaloneFootball?.isStandalone?.());
+  }
+
+  // Camera V4: a simulacao fica intacta. Apenas convertemos o ponto de mundo
+  // para um campo trapezoidal visto de uma lateral elevada. y=0 e o fundo; y=100 e a frente.
+  function projectFootballPoint(x, y) {
+    const worldX = Number.isFinite(Number(x)) ? Number(x) : 50;
+    const worldY = Number.isFinite(Number(y)) ? Number(y) : 50;
+    if (!isFootballPerspectiveRender()) {
+      return { x:worldX, y:worldY, scale:1, depth:clamp(worldY / 100, 0, 1) };
+    }
+
+    const depth = clamp(worldY / 100, 0, 1);
+    const widthScale = .74 + depth * .25;
+    const screenX = 50 + (worldX - 50) * widthScale;
+    const screenY = 6 + depth * 91;
+    const scale = .82 + depth * .24;
+    return { x:screenX, y:screenY, scale, depth };
+  }
+
+  function footballSvgPoint(point) {
+    const projected = projectFootballPoint(point[0], point[1]);
+    return `${projected.x.toFixed(2)},${projected.y.toFixed(2)}`;
+  }
+
+  function footballSvgPath(points, close = false) {
+    if (!points?.length) return '';
+    const projected = points.map(footballSvgPoint);
+    return `M ${projected.join(' L ')}${close ? ' Z' : ''}`;
+  }
+
+  function buildFootballProjectedPitch() {
+    if (!isFootballPerspectiveRender()) return '';
+    const centerCircle = [];
+    for (let index = 0; index <= 32; index += 1) {
+      const angle = Math.PI * 2 * index / 32;
+      centerCircle.push([50 + Math.cos(angle) * 9.5, 50 + Math.sin(angle) * 9.5]);
+    }
+
+    const leftBox = [[2,23],[18,23],[18,77],[2,77]];
+    const rightBox = [[98,23],[82,23],[82,77],[98,77]];
+    const leftGoal = [[2,32],[.5,32],[.5,68],[2,68]];
+    const rightGoal = [[98,32],[99.5,32],[99.5,68],[98,68]];
+    const centerSpot = projectFootballPoint(50, 50);
+    const leftSpot = projectFootballPoint(12, 50);
+    const rightSpot = projectFootballPoint(88, 50);
+
+    const netLines = [];
+    [40,50,60].forEach((worldY) => {
+      netLines.push(`<path class="football-pitch-net-line" d="${footballSvgPath([[.5,worldY],[2,worldY]])}"/>`);
+      netLines.push(`<path class="football-pitch-net-line" d="${footballSvgPath([[98,worldY],[99.5,worldY]])}"/>`);
+    });
+
+    return `
+      <path class="football-pitch-outline" d="${footballSvgPath([[2,5],[98,5],[98,95],[2,95]], true)}"/>
+      <path class="football-pitch-line" d="${footballSvgPath([[50,5],[50,95]])}"/>
+      <path class="football-pitch-line" d="${footballSvgPath(centerCircle, true)}"/>
+      <path class="football-pitch-line" d="${footballSvgPath(leftBox, true)}"/>
+      <path class="football-pitch-line" d="${footballSvgPath(rightBox, true)}"/>
+      <path class="football-pitch-goal" d="${footballSvgPath(leftGoal, true)}"/>
+      <path class="football-pitch-goal" d="${footballSvgPath(rightGoal, true)}"/>
+      ${netLines.join('')}
+      <circle class="football-pitch-spot" cx="${centerSpot.x.toFixed(2)}" cy="${centerSpot.y.toFixed(2)}" r=".42"/>
+      <circle class="football-pitch-spot" cx="${leftSpot.x.toFixed(2)}" cy="${leftSpot.y.toFixed(2)}" r=".34"/>
+      <circle class="football-pitch-spot" cx="${rightSpot.x.toFixed(2)}" cy="${rightSpot.y.toFixed(2)}" r=".34"/>
+    `;
+  }
+
   function startFootball() {
     if (global.VoltzStandaloneFootball?.isStandalone?.()) {
       global.VoltzStandaloneFootball?.onMatchStarted?.();
@@ -604,13 +673,15 @@
 <div><small>VISITANTE</small><strong id="footballScoreRival">${g.rivalScore}</strong></div>
         </div>
 
-        <div id="footballField" class="football-field-live">
-<div class="football-half-line"></div>
+        <div id="footballField" class="football-field-live ${isFootballPerspectiveRender() ? "is-perspective-pitch" : ""}">
+${isFootballPerspectiveRender()
+  ? `<svg class="football-pitch-projection" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${buildFootballProjectedPitch()}</svg>`
+  : `<div class="football-half-line"></div>
 <div class="football-center-circle"></div>
 <div class="football-box football-box-left"></div>
 <div class="football-box football-box-right"></div>
 <div class="football-goal football-goal-left"></div>
-<div class="football-goal football-goal-right"></div>
+<div class="football-goal football-goal-right"></div>`}
 <svg id="footballVisionSvg" class="football-vision-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
 ${playerMarkup}
 <div id="footballBallShadow" class="football-ball-shadow" aria-hidden="true"></div>
@@ -1596,26 +1667,36 @@ ${playerMarkup}
     const owner = getFootballOwner(g);
     const parts = [];
 
+    const line = (className, a, b) => {
+      const pa = projectFootballPoint(a.x, a.y);
+      const pb = projectFootballPoint(b.x, b.y);
+      return `<line class="${className}" x1="${pa.x.toFixed(2)}" y1="${pa.y.toFixed(2)}" x2="${pb.x.toFixed(2)}" y2="${pb.y.toFixed(2)}"></line>`;
+    };
+    const ellipse = (className, point, radius) => {
+      const p = projectFootballPoint(point.x, point.y);
+      return `<ellipse class="${className}" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" rx="${(radius * p.scale).toFixed(2)}" ry="${(radius * .62 * p.scale).toFixed(2)}"></ellipse>`;
+    };
+
     getFootballTeam(g, "rival", false).forEach((rival) => {
-      parts.push(`<circle class="vision-pressure" cx="${rival.x}" cy="${rival.y}" r="7"></circle>`);
+      parts.push(ellipse('vision-pressure', rival, 7));
     });
 
     if (owner?.team === "voltz" && owner.id === controlled.id) {
       getFootballTeam(g, "voltz", false)
         .filter((mate) => mate.id !== owner.id)
         .forEach((mate) => {
-const open = isFootballPassLaneOpen(g, owner, mate);
-parts.push(`<line class="vision-pass ${open ? "is-open" : "is-risky"}" x1="${owner.x}" y1="${owner.y}" x2="${mate.x}" y2="${mate.y}"></line>`);
-parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${mate.x}" cy="${mate.y}" r="4.5"></circle>`);
+          const open = isFootballPassLaneOpen(g, owner, mate);
+          parts.push(line(`vision-pass ${open ? "is-open" : "is-risky"}`, owner, mate));
+          parts.push(ellipse(`vision-space ${open ? "is-open" : "is-risky"}`, mate, 4.5));
         });
 
       if (owner.x >= 48) {
-        parts.push(`<line class="vision-shot" x1="${owner.x}" y1="${owner.y}" x2="99" y2="35"></line>`);
-        parts.push(`<line class="vision-shot" x1="${owner.x}" y1="${owner.y}" x2="99" y2="65"></line>`);
+        parts.push(line('vision-shot', owner, { x:99, y:35 }));
+        parts.push(line('vision-shot', owner, { x:99, y:65 }));
       }
     } else {
-      parts.push(`<circle class="vision-control" cx="${controlled.x}" cy="${controlled.y}" r="5.5"></circle>`);
-      parts.push(`<line class="vision-chase" x1="${controlled.x}" y1="${controlled.y}" x2="${g.ball.x}" y2="${g.ball.y}"></line>`);
+      parts.push(ellipse('vision-control', controlled, 5.5));
+      parts.push(line('vision-chase', controlled, g.ball));
     }
     return parts.join("");
   }
@@ -1658,11 +1739,17 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
       const el = dom.players.get(player.id);
       if (!el) return;
 
-      const left = `${player.x.toFixed(2)}%`;
-      const top = `${player.y.toFixed(2)}%`;
+      const projected = projectFootballPoint(player.x, player.y);
+      const left = `${projected.x.toFixed(2)}%`;
+      const top = `${projected.y.toFixed(2)}%`;
       const visual = el._footballVisualState || (el._footballVisualState = {});
       if (visual.left !== left) { el.style.left = left; visual.left = left; }
       if (visual.top !== top) { el.style.top = top; visual.top = top; }
+      const depthZ = String(30 + Math.round(projected.y));
+      if (visual.depthZ !== depthZ) {
+        el.style.setProperty('--football-depth-z', depthZ);
+        visual.depthZ = depthZ;
+      }
 
       const facing = getFootballFacing(player, { x:player.x + (player.team === "voltz" ? 1 : -1), y:player.y });
       const isSvgAvatar = el.classList.contains("is-svg-avatar");
@@ -1684,10 +1771,10 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
       }
 
       if (isSvgAvatar) {
-        const depthBucket = Math.round(player.y / 4);
+        const depthBucket = Math.round(projected.depth * 20);
         if (visual.depthBucket !== depthBucket) {
-          const depthY = depthBucket * 4;
-          const depthScale = clamp(.94 + depthY * .0012, .95, 1.06);
+          const depth = depthBucket / 20;
+          const depthScale = isFootballPerspectiveRender() ? (.82 + depth * .24) : clamp(.94 + player.y * .0012, .95, 1.06);
           el.style.setProperty("--football-avatar-depth-scale", depthScale.toFixed(3));
           visual.depthBucket = depthBucket;
         }
@@ -1707,20 +1794,24 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
 
     const ballEl = dom.ballEl;
     const ballShadow = dom.ballShadow;
+    const ballGround = projectFootballPoint(g.ball.x, g.ball.y);
     if (ballEl) {
-      const heightPx = Math.min(82, Number(g.ball.z || 0) * 4.2);
-      const scale = 1 + Math.min(.34, Number(g.ball.z || 0) * .018);
-      ballEl.style.left = `${g.ball.x}%`;
-      ballEl.style.top = `${g.ball.y}%`;
-      ballEl.style.transform = `translate(-50%, calc(-50% - ${heightPx}px)) scale(${scale})`;
-      ballEl.classList.toggle("is-airborne", Number(g.ball.z || 0) > .35);
+      const height = Number(g.ball.z || 0);
+      const heightPx = Math.min(82, height * 4.2 * ballGround.scale);
+      const scale = ballGround.scale * (1 + Math.min(.34, height * .018));
+      ballEl.style.left = `${ballGround.x.toFixed(2)}%`;
+      ballEl.style.top = `${ballGround.y.toFixed(2)}%`;
+      ballEl.style.zIndex = String(40 + Math.round(ballGround.y) + (height > .35 ? 28 : 0));
+      ballEl.style.transform = `translate(-50%, calc(-50% - ${heightPx}px)) scale(${scale.toFixed(3)})`;
+      ballEl.classList.toggle("is-airborne", height > .35);
     }
     if (ballShadow) {
-      ballShadow.style.left = `${g.ball.x}%`;
-      ballShadow.style.top = `${g.ball.y}%`;
+      ballShadow.style.left = `${ballGround.x.toFixed(2)}%`;
+      ballShadow.style.top = `${ballGround.y.toFixed(2)}%`;
       const height = Number(g.ball.z || 0);
+      ballShadow.style.zIndex = String(22 + Math.round(ballGround.y));
       ballShadow.style.opacity = `${clamp(.34 - height * .012, .08, .34)}`;
-      ballShadow.style.transform = `translate(-50%,-50%) scale(${1 + Math.min(.8, height * .035)})`;
+      ballShadow.style.transform = `translate(-50%,-50%) scale(${(ballGround.scale * (1 + Math.min(.8, height * .035))).toFixed(3)})`;
     }
 
     const targetEl = dom.targetEl;
@@ -1732,10 +1823,12 @@ parts.push(`<circle class="vision-space ${open ? "is-open" : "is-risky"}" cx="${
         g._footballPassTargetVisible = visible;
       }
       if (target) {
-        const targetLeft = `${target.x.toFixed(2)}%`;
-        const targetTop = `${target.y.toFixed(2)}%`;
+        const projectedTarget = projectFootballPoint(target.x, target.y);
+        const targetLeft = `${projectedTarget.x.toFixed(2)}%`;
+        const targetTop = `${projectedTarget.y.toFixed(2)}%`;
         if (g._footballPassTargetLeft !== targetLeft) { targetEl.style.left = targetLeft; g._footballPassTargetLeft = targetLeft; }
         if (g._footballPassTargetTop !== targetTop) { targetEl.style.top = targetTop; g._footballPassTargetTop = targetTop; }
+        targetEl.style.setProperty('--football-target-scale', projectedTarget.scale.toFixed(3));
       }
     }
 
