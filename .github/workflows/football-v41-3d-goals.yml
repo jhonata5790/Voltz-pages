@@ -1,0 +1,28 @@
+name: Football V4.1 3D Goals
+
+on:
+  push:
+    paths:
+      - '.github/workflows/football-v41-3d-goals.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply Football V4.1 3D goals
+        run: |
+          python .github/scripts/football_v41_3d_goals.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js assets/css/football/football-standalone.css
+          git commit -m "Futebol V4.1: gols 3D em perspectiva"
+          git push
