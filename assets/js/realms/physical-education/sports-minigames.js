@@ -513,12 +513,68 @@
     };
   }
 
+  function getFootballRivalTactics(g) {
+    const deficit = Number(g?.score || 0) - Number(g?.rivalScore || 0);
+    if (deficit >= 2) {
+      return {
+        id:"all-in", label:"PRESSÃO TOTAL", pressSpeed:16.7, coverSpeed:12.75,
+        runnerSpeed:15.75, supportSpeed:13.55, dribbleSpeed:13.9,
+        tackleDistance:4.38, tackleCooldown:835, secondaryClose:.24,
+        actionDelayScale:.82, throughBias:.20, crossBias:.17, shotRange:34,
+        readBoost:.075, blockDepth:-.052, centerCompact:.03
+      };
+    }
+    if (deficit === 1) {
+      return {
+        id:"chase", label:"PRESSÃO ALTA", pressSpeed:16.05, coverSpeed:12.45,
+        runnerSpeed:15.35, supportSpeed:13.25, dribbleSpeed:13.7,
+        tackleDistance:4.30, tackleCooldown:900, secondaryClose:.14,
+        actionDelayScale:.90, throughBias:.11, crossBias:.09, shotRange:31,
+        readBoost:.04, blockDepth:-.025, centerCompact:.04
+      };
+    }
+    if (deficit <= -1) {
+      return {
+        id:"protect", label:"BLOCO COMPACTO", pressSpeed:14.75, coverSpeed:12.55,
+        runnerSpeed:14.55, supportSpeed:12.65, dribbleSpeed:13.0,
+        tackleDistance:4.12, tackleCooldown:1040, secondaryClose:0,
+        actionDelayScale:1.06, throughBias:.03, crossBias:-.06, shotRange:25,
+        readBoost:.025, blockDepth:.055, centerCompact:.12
+      };
+    }
+    return {
+      id:"balanced", label:"EQUILÍBRIO", pressSpeed:15.5, coverSpeed:12.1,
+      runnerSpeed:14.9, supportSpeed:12.9, dribbleSpeed:13.5,
+      tackleDistance:4.25, tackleCooldown:980, secondaryClose:.06,
+      actionDelayScale:1, throughBias:0, crossBias:0, shotRange:27,
+      readBoost:0, blockDepth:0, centerCompact:.06
+    };
+  }
+
+  function updateFootballRivalTacticalMode(g) {
+    if (!g) return;
+    const tactics = getFootballRivalTactics(g);
+    if (g.rivalTacticalMode === tactics.id) return;
+    g.rivalTacticalMode = tactics.id;
+    if (g.aiRead) g.aiRead.until = 0;
+    const messages = {
+      "all-in":"O visitante mudou tudo: pressão total, linha alta e mais gente atacando o espaço.",
+      chase:"O visitante subiu a marcação e começou a apertar sua saída de bola.",
+      balanced:"O visitante voltou para uma estrutura equilibrada.",
+      protect:"O visitante baixou as linhas e passou a proteger a vantagem para sair no contra-ataque."
+    };
+    g.pendingTacticalMessage = messages[tactics.id] || "";
+  }
+
   function getFootballAdaptiveRead(g, now = performance.now()) {
     const style = getFootballPlayerStyle(g);
     const cached = g?.aiRead;
     if (cached && now < Number(cached.until || 0)) return cached;
 
-    const confidence = style.confidence;
+    const tactics = getFootballRivalTactics(g);
+    // Mesmo quando está desesperado, o rival nunca ganha leitura perfeita. Ele apenas
+    // presta mais atenção aos padrões que já observou.
+    const confidence = clamp(style.confidence + tactics.readBoost, 0, .74);
     const read = {
       until:now + 850 + Math.random() * 430,
       targetId:style.favoredTargetId && Math.random() < confidence ? style.favoredTargetId : null,
@@ -729,6 +785,11 @@
       lastTackleAt: 0,
       playerModel: loadFootballPlayerModel(),
       aiRead: { until:0, targetId:null, lane:null, shotLane:null, confidence:0 },
+      rivalTacticalMode:"balanced",
+      pendingTacticalMessage:"",
+      possessionTeam:"voltz",
+      lastTurnoverAt:0,
+      lastTurnoverWinner:null,
       feedback: compact ? "Gol de ouro no Pentatlo: marque antes do rival." : `Primeiro a ${targetGoals} gols. Leia o campo antes de acelerar a jogada.`,
       banner: "SAÍDA VOLTZ"
     };
@@ -937,6 +998,12 @@ ${playerMarkup}
 
   function footballSetPossession(g, player, now, feedback = "") {
     if (!g || !player) return;
+    const previousTeam = g.possessionTeam || null;
+    if (previousTeam && previousTeam !== player.team) {
+      g.lastTurnoverAt = now;
+      g.lastTurnoverWinner = player.team;
+    }
+    g.possessionTeam = player.team;
     g.ball.ownerId = player.id;
     g.ball.lastTouchTeam = player.team;
     g.ball.passTargetId = null;
@@ -970,10 +1037,16 @@ ${playerMarkup}
       player.y = player.homeY;
     });
     const starter = getFootballPlayer(g, team === "voltz" ? "v1" : "r1");
+    // Saída de bola não conta como troca de posse para a leitura de contra-ataque.
+    g.possessionTeam = team;
     footballSetPossession(g, starter, performance.now(), team === "voltz" ? "Sua saída. Construa o ataque." : "Saída do visitante. Recupere a bola.");
     g.controlledId = "v1";
     g.phase = "play";
     g.banner = team === "voltz" ? "SAÍDA VOLTZ" : "SAÍDA VISITANTE";
+    if (g.pendingTacticalMessage) {
+      g.feedback = g.pendingTacticalMessage;
+      g.pendingTacticalMessage = "";
+    }
   }
 
   function footballGoal(g, team) {
@@ -994,6 +1067,7 @@ ${playerMarkup}
       g.feedback = "Eles encontraram uma brecha. Reorganize a marcação.";
       sportSfx("failure");
     }
+    updateFootballRivalTacticalMode(g);
     updateFootballDom(performance.now());
 
     if (g.score >= g.targetGoals || g.rivalScore >= g.targetGoals) {
@@ -1206,7 +1280,8 @@ ${playerMarkup}
     tackler.facingX = facing.x;
     tackler.facingY = facing.y;
     tackler.tackleUntil = now + 250;
-    tackler.tackleCooldownUntil = now + (options.ai ? 980 : 820);
+    const aiCooldown = Number.isFinite(Number(options.aiCooldown)) ? Number(options.aiCooldown) : 980;
+    tackler.tackleCooldownUntil = now + (options.ai ? aiCooldown : 820);
     tackler.x = clamp(tackler.x + facing.x * 4.2, 7, 93);
     tackler.y = clamp(tackler.y + facing.y * 4.2, 8, 92);
 
@@ -1227,7 +1302,8 @@ ${playerMarkup}
     const distance = Math.hypot(toOwnerX, toOwnerY);
     const toOwnerLength = distance || 1;
     const alignment = facing.x * (toOwnerX / toOwnerLength) + facing.y * (toOwnerY / toOwnerLength);
-    const success = distance <= (options.ai ? 3.75 : 4.15) && alignment > -.18;
+    const aiReach = Number.isFinite(Number(options.aiReach)) ? Number(options.aiReach) : 3.75;
+    const success = distance <= (options.ai ? aiReach : 4.15) && alignment > -.18;
 
     if (success) {
       target.recoverUntil = now + 360;
@@ -1342,7 +1418,7 @@ ${playerMarkup}
     const predicted = predictFootballReceiverPoint(best.target, firstEstimate, now);
     const error = (Math.random() - .5) * (best.laneOpen ? 1.4 : 3.2);
     footballLaunchBall(g, owner, predicted.x, clamp(predicted.y + error, 9, 91), 46, now, { passTargetId: best.target.id });
-    g.aiActionAt = now + 900;
+    g.aiActionAt = now + 900 * getFootballRivalTactics(g).actionDelayScale;
     g.banner = "PASSE ADVERSÁRIO";
     return true;
   }
@@ -1364,7 +1440,7 @@ ${playerMarkup}
     if (!best || best.score < 18) return false;
 
     footballLaunchBall(g, owner, best.landing.x, best.landing.y, 50, now, { passTargetId:best.target.id });
-    g.aiActionAt = now + 980;
+    g.aiActionAt = now + 980 * getFootballRivalTactics(g).actionDelayScale;
     g.banner = "PASSE EM PROFUNDIDADE";
     g.feedback = "O visitante atacou o espaço nas costas da marcação.";
     return true;
@@ -1388,7 +1464,7 @@ ${playerMarkup}
     footballLaunchBall(g, owner, landingX, landingY, speed, now, {
       passTargetId:target.id, isCross:true, airborne:true, vz:verticalSpeed, landingX, landingY
     });
-    g.aiActionAt = now + 1120;
+    g.aiActionAt = now + 1120 * getFootballRivalTactics(g).actionDelayScale;
     g.banner = "CRUZAMENTO RIVAL";
     g.feedback = "O visitante levantou a bola procurando quem atacava a área.";
     return true;
@@ -1397,7 +1473,7 @@ ${playerMarkup}
   function footballEnemyShoot(g, owner, now) {
     const targetY = Math.random() > .5 ? 36 : 64;
     footballLaunchBall(g, owner, -4, targetY + (Math.random() - .5) * 4, 72, now, { isShot:true });
-    g.aiActionAt = now + 1400;
+    g.aiActionAt = now + 1400 * getFootballRivalTactics(g).actionDelayScale;
     g.banner = "CHUTE ADVERSÁRIO";
     return true;
   }
@@ -1406,17 +1482,29 @@ ${playerMarkup}
     const voltz = getFootballTeam(g, "voltz", false);
     const nearest = voltz.slice().sort((a, b) => footballDistance(a, owner) - footballDistance(b, owner))[0];
     const pressure = nearest ? footballDistance(nearest, owner) : 99;
+    const tactics = getFootballRivalTactics(g);
     const justReceived = now - Number(owner.receivedAt || 0) < 520;
+    const counterWindow = g.lastTurnoverWinner === "rival" && now - Number(g.lastTurnoverAt || 0) < 1250;
     const wide = owner.y <= 27 || owner.y >= 73;
-    const nearGoal = owner.x <= 27;
+    const nearGoal = owner.x <= tactics.shotRange;
     const decision = Math.random();
 
+    // Quem está vencendo prefere segurança, mas acelera se acabou de recuperar a bola.
+    if (tactics.id === "protect") {
+      if (nearGoal && decision < .67) return footballEnemyShoot(g, owner, now);
+      if (counterWindow && owner.x <= 80 && decision < .72 && footballEnemyThroughPass(g, owner, now)) return true;
+      if (justReceived && pressure < 6.3 && decision < .78) return footballEnemyPass(g, owner, now);
+      if (pressure < 9.2 || decision < .48) return footballEnemyPass(g, owner, now);
+      if (wide && owner.x <= 48 && decision < .56 && footballEnemyCross(g, owner, now)) return true;
+      return false;
+    }
+
     // Sob pressão logo após dominar, procura uma saída de primeira em vez de congelar.
-    if (justReceived && pressure < 5.3 && decision < .66) return footballEnemyPass(g, owner, now);
-    if (nearGoal && (pressure > 5.5 || decision < .76)) return footballEnemyShoot(g, owner, now);
-    if (wide && owner.x <= 54 && decision < .64 && footballEnemyCross(g, owner, now)) return true;
-    if (owner.x <= 78 && decision < .52 && footballEnemyThroughPass(g, owner, now)) return true;
-    if (pressure < 8.2 || decision < .24) return footballEnemyPass(g, owner, now);
+    if (justReceived && pressure < 5.3 && decision < (.66 + tactics.throughBias * .18)) return footballEnemyPass(g, owner, now);
+    if (nearGoal && (pressure > 5.5 || decision < (.76 + tactics.throughBias * .38))) return footballEnemyShoot(g, owner, now);
+    if (wide && owner.x <= 56 && decision < clamp(.64 + tactics.crossBias, .42, .84) && footballEnemyCross(g, owner, now)) return true;
+    if (owner.x <= 80 && decision < clamp(.52 + tactics.throughBias, .38, .78) && footballEnemyThroughPass(g, owner, now)) return true;
+    if (pressure < 8.2 || decision < (.24 + tactics.throughBias * .25)) return footballEnemyPass(g, owner, now);
     return false;
   }
 
@@ -1710,9 +1798,12 @@ ${playerMarkup}
       };
     }
 
-    const depthGuard = adaptiveDefense && style ? .24 + style.throughRate * style.confidence * .12 : .24;
+    const tactics = adaptiveDefense ? getFootballRivalTactics(g) : null;
+    const baseDepthGuard = adaptiveDefense && style ? .24 + style.throughRate * style.confidence * .12 : .24;
+    const depthGuard = clamp(baseDepthGuard + Number(tactics?.blockDepth || 0), .16, .34);
     const insideY = receiver.y + (50 - receiver.y) * .08;
     let targetY = insideY;
+    if (adaptiveDefense && tactics?.centerCompact) targetY += (50 - targetY) * tactics.centerCompact;
     if (adaptiveDefense && read?.lane) targetY += (footballLaneCenter(read.lane) - targetY) * .12;
     if (adaptiveDefense && style?.crossRate > .28 && (owner.y < 32 || owner.y > 68) && roleIndex > 0) {
       targetY += (50 - targetY) * .28;
@@ -1844,7 +1935,10 @@ ${playerMarkup}
       }
     });
 
-    // Rival: um pressiona, os outros protegem passe/profundidade.
+    // Rival: um pressiona, os outros protegem passe/profundidade. A altura do bloco
+    // e a proximidade da segunda cobertura mudam conforme o estado do placar.
+    const rivalTactics = getFootballRivalTactics(g);
+    const rivalRead = possession === "voltz" ? getFootballAdaptiveRead(g, now) : null;
     const rivalOffBall = rivalOutfield.filter((player) => player.id !== owner?.id);
     const rivalPressOrder = possession === "voltz"
       ? rivalOutfield.slice().sort((a, b) => footballDistance(a, owner || ball) - footballDistance(b, owner || ball))
@@ -1853,21 +1947,38 @@ ${playerMarkup}
       if (owner?.id === player.id) return;
       const roleIndex = Math.max(0, rivalOffBall.findIndex((candidate) => candidate.id === player.id));
       if (possession === "voltz") {
-        const pressing = rivalPressOrder[0]?.id === player.id;
+        const pressRank = rivalPressOrder.findIndex((candidate) => candidate.id === player.id);
+        // Vencendo, o rival só salta no portador quando a bola entra na metade mais perigosa
+        // ou quando o marcador já está perto. Atrás no placar, aperta desde a saída.
+        const protectHold = rivalTactics.id === "protect" && owner.x < 44 && footballDistance(player, owner) > 7.5;
+        const pressing = pressRank === 0 && !protectHold;
         if (pressing) {
-          footballMoveToward(player, owner.x, owner.y, 15.5, dt);
+          let pressX = owner.x + (rivalTactics.id === "all-in" ? 1.65 : 1.15);
+          let pressY = owner.y;
+          // Ele tenta chegar pelo lado do corredor que aprendeu que você prefere, fechando-o.
+          if (rivalRead?.lane === "upper") pressY -= 1.8;
+          else if (rivalRead?.lane === "lower") pressY += 1.8;
+          pressX = clamp(pressX, 7, 93);
+          pressY = clamp(pressY, 8, 92);
+          footballMoveToward(player, pressX, pressY, rivalTactics.pressSpeed, dt);
           const liveOwner = getFootballOwner(g);
-          if (liveOwner?.team === "voltz" && !liveOwner.keeper && footballDistance(player, liveOwner) < 4.25 && now >= Number(player.tackleCooldownUntil || 0)) {
-            executeFootballTackle(g, player, now, { ai:true, autoAim:true });
+          if (liveOwner?.team === "voltz" && !liveOwner.keeper && footballDistance(player, liveOwner) < rivalTactics.tackleDistance && now >= Number(player.tackleCooldownUntil || 0)) {
+            executeFootballTackle(g, player, now, { ai:true, autoAim:true, aiReach:rivalTactics.tackleDistance - .48, aiCooldown:rivalTactics.tackleCooldown });
           }
         } else {
-          const target = getFootballDefensiveBlockTarget(g, player, owner, roleIndex);
-          footballMoveToward(player, target.x, target.y, 12.1, dt);
+          let target = getFootballDefensiveBlockTarget(g, player, owner, roleIndex);
+          if (pressRank === 1 && rivalTactics.secondaryClose > 0) {
+            target = {
+              x:target.x + (owner.x - target.x) * rivalTactics.secondaryClose,
+              y:target.y + (owner.y - target.y) * rivalTactics.secondaryClose
+            };
+          }
+          footballMoveToward(player, target.x, target.y, rivalTactics.coverSpeed, dt);
         }
       } else if (possession === "rival") {
         const target = getFootballOpenSpaceTarget(g, player, owner, roleIndex);
         const role = getFootballAttackShape(g, owner).get(player.id)?.role;
-        footballMoveToward(player, target.x, target.y, role === "runner" ? 14.9 : 12.9, dt);
+        footballMoveToward(player, target.x, target.y, role === "runner" ? rivalTactics.runnerSpeed : rivalTactics.supportSpeed, dt);
       } else {
         const movement = getFootballLooseBallMovement(g, player, now, roleIndex, rivalPrimary?.id || null);
         if (movement && movement.speed > 0) footballMoveToward(player, movement.x, movement.y, movement.speed, dt);
@@ -1878,10 +1989,12 @@ ${playerMarkup}
       if (now >= Number(g.aiActionAt || 0) && chooseFootballEnemyAction(g, owner, now)) {
         // A ação já atualizou bola/timer.
       } else {
-        const targetY = clamp(50 + (owner.y - 50) * .38, 29, 71);
-        const dribbleTargetX = owner.x <= 24 ? 12 : Math.max(12, owner.x - 18);
-        footballMoveToward(owner, dribbleTargetX, targetY, 13.5, dt);
-        if (now >= Number(g.aiActionAt || 0)) g.aiActionAt = now + 260;
+        const rivalTactics = getFootballRivalTactics(g);
+        const targetY = clamp(50 + (owner.y - 50) * (rivalTactics.id === "protect" ? .28 : .38), 29, 71);
+        const advance = rivalTactics.id === "all-in" ? 21 : rivalTactics.id === "protect" ? 14 : 18;
+        const dribbleTargetX = owner.x <= 24 ? 12 : Math.max(12, owner.x - advance);
+        footballMoveToward(owner, dribbleTargetX, targetY, rivalTactics.dribbleSpeed, dt);
+        if (now >= Number(g.aiActionAt || 0)) g.aiActionAt = now + 260 * rivalTactics.actionDelayScale;
       }
     }
 
