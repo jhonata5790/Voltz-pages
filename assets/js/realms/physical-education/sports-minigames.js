@@ -396,6 +396,9 @@
   const FOOTBALL_OUTFIELD_PACE = 0.78;
 
   function startFootball() {
+    if (global.VoltzStandaloneFootball?.isStandalone?.()) {
+      global.VoltzStandaloneFootball?.onMatchStarted?.();
+    }
     const compact = state.mode === "championship";
     const targetGoals = compact ? 1 : 3;
     state.current = {

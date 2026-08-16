@@ -28,6 +28,12 @@
     }, 1700);
   }
 
+  function onMatchStarted() {
+    locked = true;
+    returning = false;
+    setStatus("PARTIDA EM ANDAMENTO · finalize a partida para retornar ao reino");
+  }
+
   function onMatchFinished() {
     locked = false;
     setStatus("PARTIDA ENCERRADA · você já pode voltar ao reino", true);
@@ -47,6 +53,7 @@
     isStandalone,
     isLocked: () => locked,
     onExitBlocked,
+    onMatchStarted,
     onMatchFinished,
     returnToWorld
   });
