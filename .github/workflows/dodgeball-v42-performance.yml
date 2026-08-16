@@ -1,0 +1,33 @@
+name: Dodgeball V4.2 Performance
+
+on:
+  push:
+    paths:
+      - '.github/workflows/dodgeball-v42-performance.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply Dodgeball V4.2 performance pass
+        run: |
+          python .github/scripts/dodgeball_v42_performance.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          node --check assets/js/dodgeball/dodgeball-standalone.js
+          git diff --check
+          grep -q "prepareDodgeDefenseDom" assets/js/realms/physical-education/sports-minigames.js
+          grep -q "syncDodgeEnemyBallDom" assets/js/realms/physical-education/sports-minigames.js
+          grep -q "preloadDodgeballSprites" assets/js/dodgeball/dodgeball-standalone.js
+          grep -q "Queimada V4.2" assets/css/dodgeball/dodgeball-standalone.css
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js assets/js/dodgeball/dodgeball-standalone.js assets/css/dodgeball/dodgeball-standalone.css
+          git commit -m "Queimada V4.2: otimizar render e sprites"
+          git push
