@@ -2611,6 +2611,8 @@ const viewport = document.getElementById("gameViewport");
       if (sportsMinigameId) {
         if (sportsMinigameId === "football" && window.VoltzStandaloneSportBridge?.enterFootball) {
           window.VoltzStandaloneSportBridge.enterFootball();
+        } else if (sportsMinigameId === "dodgeball" && window.VoltzStandaloneSportBridge?.enterDodgeball) {
+          window.VoltzStandaloneSportBridge.enterDodgeball();
         } else {
           window.VoltzSports?.open?.(sportsMinigameId);
         }
@@ -4049,7 +4051,7 @@ const viewport = document.getElementById("gameViewport");
     gameLoop();
 
 
-// Standalone sport transition bridge · football page V3.8
+// Standalone sport transition bridge · dedicated sport pages
 const VOLTZ_STANDALONE_SPORT_RETURN_KEY = "voltz:standalone-sport:return";
 
 function saveStandaloneSportReturnPoint(sportId) {
@@ -4077,15 +4079,21 @@ function enterStandaloneFootball() {
   window.location.href = "football.html";
 }
 
+function enterStandaloneDodgeball() {
+  saveStandaloneSportReturnPoint("dodgeball");
+  window.location.href = "dodgeball.html";
+}
+
 function restoreStandaloneSportReturnPoint() {
   const url = new URL(window.location.href);
-  if (url.searchParams.get("returnFrom") !== "football") return false;
+  const returnFrom = url.searchParams.get("returnFrom");
+  if (!["football", "dodgeball"].includes(returnFrom)) return false;
 
   let point = null;
   try {
     point = JSON.parse(sessionStorage.getItem(VOLTZ_STANDALONE_SPORT_RETURN_KEY) || "null");
   } catch {}
-  if (!point || point.sportId !== "football") return false;
+  if (!point || point.sportId !== returnFrom) return false;
 
   const targetScene = currentScene?.id === point.sceneId
     ? currentScene
@@ -4131,13 +4139,17 @@ function restoreStandaloneSportReturnPoint() {
   try { sessionStorage.removeItem(VOLTZ_STANDALONE_SPORT_RETURN_KEY); } catch {}
   url.searchParams.delete("returnFrom");
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-  interactionText.textContent = "Você voltou ao Campo das Decisões exatamente de onde entrou.";
+  interactionText.textContent = returnFrom === "dodgeball"
+    ? "Você voltou à Arena da Esquiva exatamente de onde entrou."
+    : "Você voltou ao Campo das Decisões exatamente de onde entrou.";
   return true;
 }
 
 window.VoltzStandaloneSportBridge = Object.freeze({
   enterFootball: enterStandaloneFootball,
-  captureReturnPoint: () => saveStandaloneSportReturnPoint("football")
+  enterDodgeball: enterStandaloneDodgeball,
+  captureReturnPoint: () => saveStandaloneSportReturnPoint("football"),
+  captureDodgeballReturnPoint: () => saveStandaloneSportReturnPoint("dodgeball")
 });
 
 window.addEventListener("load", () => {

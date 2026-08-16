@@ -292,6 +292,14 @@
       global.VoltzStandaloneFootball?.returnToWorld?.();
       return;
     }
+    if (state.activeId === "dodgeball" && global.VoltzStandaloneDodgeball?.isStandalone?.()) {
+      if (state.current?.type === "dodgeball") {
+        global.VoltzStandaloneDodgeball?.onExitBlocked?.();
+        return;
+      }
+      global.VoltzStandaloneDodgeball?.returnToWorld?.();
+      return;
+    }
     if (state.activeId === "dodgeball" || state.current?.type === "dodgeball") stopDodgeballMusic(280);
     clearRuntime();
     state.open = false;
@@ -330,6 +338,9 @@
       global.VoltzStandaloneFootball?.onMatchFinished?.({ success:Boolean(success) });
     }
     if (id === "dodgeball") {
+      if (global.VoltzStandaloneDodgeball?.isStandalone?.()) {
+        global.VoltzStandaloneDodgeball?.onMatchFinished?.({ success:Boolean(success) });
+      }
       sportSfx(success ? "victory" : "failure");
       if (success) duckDodgeballMusic(.10, 300);
       stopDodgeballMusic(success ? 900 : 600);
@@ -3119,6 +3130,9 @@ ${playerMarkup}
   }
 
   function startDodgeball() {
+    if (global.VoltzStandaloneDodgeball?.isStandalone?.()) {
+      global.VoltzStandaloneDodgeball?.onMatchStarted?.();
+    }
     playDodgeballMusic(state.mode === "championship" ? .72 : .56);
     sportSfx("whistle");
     const playerMaxHp = 100;
