@@ -1,0 +1,35 @@
+name: Dodgeball Standalone
+
+on:
+  push:
+    paths:
+      - '.github/workflows/dodgeball-standalone.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply Dodgeball standalone migration
+        run: |
+          python .github/scripts/dodgeball_standalone_patch.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          node --check assets/js/openworld.js
+          node --check assets/js/dodgeball/dodgeball-standalone.js
+          git diff --check
+          grep -q "enterStandaloneDodgeball" assets/js/openworld.js
+          grep -q "VoltzStandaloneDodgeball" assets/js/realms/physical-education/sports-minigames.js
+          grep -q "dodgeball.html" assets/js/openworld.js
+          test -f dodgeball.html
+          test -f assets/css/dodgeball/dodgeball-standalone.css
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/openworld.js assets/js/realms/physical-education/sports-minigames.js
+          git commit -m "Queimada V4.1: migrar Arena da Esquiva para pagina propria"
+          git push
