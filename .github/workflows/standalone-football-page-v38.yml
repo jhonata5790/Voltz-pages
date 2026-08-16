@@ -1,0 +1,30 @@
+name: Standalone Football Page V3.8
+
+on:
+  push:
+    paths:
+      - '.github/workflows/standalone-football-page-v38.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build standalone football page
+        run: |
+          python .github/scripts/standalone_football_page_v38.py
+          node --check assets/js/openworld.js
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          node --check assets/js/football/football-standalone.js
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add football.html assets/css/football/football-standalone.css assets/js/football/football-standalone.js assets/js/openworld.js assets/js/realms/physical-education/sports-minigames.js
+          git commit -m "Futebol V3.8: migrar Campo das Decisoes para pagina propria"
+          git push
