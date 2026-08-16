@@ -204,3 +204,55 @@ body.standalone-football-page {
     clip-path:polygon(12% 6%,88% 6%,99% 97%,1% 97%) !important;
   }
 }
+
+
+
+/* Football V4.1 · gols 3D */
+.football-goal-3d {
+  pointer-events:none;
+}
+.football-goal-3d-shadow {
+  fill:rgba(0,0,0,.18);
+  stroke:none;
+}
+.football-goal-3d-net-surface {
+  fill:rgba(218,255,244,.035);
+  stroke:rgba(231,255,247,.15);
+  stroke-width:.8;
+  vector-effect:non-scaling-stroke;
+}
+.football-goal-3d-net-surface.is-side {
+  fill:rgba(190,244,231,.028);
+}
+.football-goal-3d-net-surface.is-roof {
+  fill:rgba(238,255,250,.045);
+}
+.football-goal-3d-net-line {
+  fill:none;
+  stroke:rgba(224,255,246,.23);
+  stroke-width:.72;
+  stroke-dasharray:2.2 2.3;
+  vector-effect:non-scaling-stroke;
+}
+.football-goal-3d-frame {
+  fill:none;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;
+}
+.football-goal-3d-frame.is-back {
+  stroke:rgba(225,252,245,.58);
+  stroke-width:2;
+}
+.football-goal-3d-frame.is-depth {
+  stroke:rgba(239,255,251,.78);
+  stroke-width:2.25;
+}
+.football-goal-3d-frame.is-front {
+  stroke:#f4fffb;
+  stroke-width:3;
+}
+.football-goal-3d-left .football-goal-3d-frame.is-front,
+.football-goal-3d-right .football-goal-3d-frame.is-front {
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.32));
+}
