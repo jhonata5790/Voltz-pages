@@ -75,6 +75,47 @@
     event.returnValue = "";
   });
 
+  const DODGEBALL_PRELOAD_SOURCES = Object.freeze([
+    "assets/images/realms/physical-education/dodgeball/arena-bg.webp",
+    "assets/images/realms/physical-education/dodgeball/arena-stands.webp",
+    "assets/images/realms/physical-education/dodgeball/arena-floor.webp",
+    "assets/images/realms/physical-education/dodgeball/arena-overlay.webp",
+    "assets/images/realms/physical-education/dodgeball/ball-straight.webp",
+    "assets/images/realms/physical-education/dodgeball/ball-curve.webp",
+    "assets/images/realms/physical-education/dodgeball/ball-power.webp",
+    "assets/images/realms/physical-education/dodgeball/ball-catch.webp",
+    "assets/images/realms/physical-education/dodgeball/ball-bomb.webp",
+    "assets/images/realms/physical-education/dodgeball/ball-trail.webp",
+    "assets/images/realms/physical-education/dodgeball/impact-light.webp",
+    "assets/images/realms/physical-education/dodgeball/impact-power.webp",
+    "assets/images/realms/physical-education/dodgeball/soul-1.webp",
+    "assets/images/realms/physical-education/dodgeball/soul-2.webp",
+    "assets/images/realms/physical-education/dodgeball/soul-3.webp",
+    "assets/images/rivals/capitao-rubro.png",
+    "assets/images/rivals/capitao-rubro-ataque.png",
+    "assets/images/rivals/capitao-rubro-fase2.png"
+  ]);
+  const dodgeballPreloadedImages = [];
+
+  async function preloadDodgeballSprites() {
+    setStatus("CARREGANDO ARENA · preparando sprites para evitar travadas...");
+    const jobs = DODGEBALL_PRELOAD_SOURCES.map((src) => new Promise((resolve) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = async () => {
+        try { await image.decode?.(); } catch {}
+        resolve();
+      };
+      image.onerror = resolve;
+      image.src = src;
+      dodgeballPreloadedImages.push(image);
+    }));
+    await Promise.race([
+      Promise.allSettled(jobs),
+      new Promise((resolve) => global.setTimeout(resolve, 3500))
+    ]);
+  }
+
   async function boot() {
     if (!hasReturnPoint()) {
       setStatus("MODO DE TESTE · duelo standalone sem ponto de retorno salvo");
@@ -90,6 +131,7 @@
     }
 
     try { await global.VoltzProfile?.ready; } catch {}
+    await preloadDodgeballSprites();
     document.getElementById("authGate")?.classList.add("hidden");
     global.VoltzSports.onSceneChanged?.("reino-educacao-fisica");
     global.VoltzSports.open("dodgeball");

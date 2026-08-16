@@ -3203,7 +3203,12 @@ ${playerMarkup}
         const el = document.getElementById("dodgeAttackCursor");
         if (el) el.style.left = `${g.cursor}%`;
       } else if (g.phase === "defense") {
-        updateDodgeDefense(now, dt / 1000);
+        const previousDefenseFrame = Number(g.lastDefenseFrameAt || now);
+        const defenseElapsed = now - previousDefenseFrame;
+        if (defenseElapsed >= 14) {
+          g.lastDefenseFrameAt = now;
+          updateDodgeDefense(now, Math.min(32, defenseElapsed) / 1000);
+        }
       }
 
       state.rafId = requestAnimationFrame(tick);
@@ -4077,6 +4082,113 @@ ${playerMarkup}
   }
 
 
+  // Queimada V4.2 · runtime de render otimizado.
+  // A arena e seus elementos quentes ficam cacheados durante o turno de esquiva.
+  function getDodgeDefenseDom(g) {
+    if (!g) return null;
+    if (g.dodgeDom?.arena?.isConnected) return g.dodgeDom;
+    const arena = document.getElementById("dodgeArena");
+    if (!arena) return null;
+    g.dodgeDom = {
+      arena,
+      playerEl: document.getElementById("dodgePlayer"),
+      timer: document.getElementById("dodgeTimer")
+    };
+    return g.dodgeDom;
+  }
+
+  function updateDodgeArenaMetrics(g, width, height) {
+    if (!g || width <= 0 || height <= 0) return null;
+    g.dodgeArenaMetrics = { width:Number(width), height:Number(height) };
+    return g.dodgeArenaMetrics;
+  }
+
+  function getDodgeArenaMetrics(g, arena) {
+    const cached = g?.dodgeArenaMetrics;
+    if (cached?.width > 0 && cached?.height > 0) return cached;
+    if (!arena) return null;
+    const rect = arena.getBoundingClientRect();
+    return updateDodgeArenaMetrics(g, rect.width, rect.height);
+  }
+
+  function prepareDodgeDefenseDom(g) {
+    const dom = getDodgeDefenseDom(g);
+    if (!dom?.arena) return null;
+
+    g.dodgeResizeObserver?.disconnect?.();
+    const rect = dom.arena.getBoundingClientRect();
+    updateDodgeArenaMetrics(g, rect.width, rect.height);
+
+    if (typeof global.ResizeObserver === "function") {
+      const observer = new global.ResizeObserver((entries) => {
+        const box = entries?.[0]?.contentRect;
+        if (box) updateDodgeArenaMetrics(g, box.width, box.height);
+      });
+      observer.observe(dom.arena);
+      g.dodgeResizeObserver = observer;
+      state.cleanupFns.push(() => {
+        observer.disconnect();
+        if (g.dodgeResizeObserver === observer) g.dodgeResizeObserver = null;
+      });
+    }
+
+    g.lastDefenseFrameAt = performance.now();
+    return dom;
+  }
+
+  function getDodgeEnemyBallSprite(ball) {
+    if (ball.catchable) return DODGEBALL_VISUALS.ballCatch;
+    if (ball.style === "bomb") return DODGEBALL_VISUALS.ballBomb;
+    if (ball.style === "power") return DODGEBALL_VISUALS.ballPower;
+    if (ball.style === "curve") return DODGEBALL_VISUALS.ballCurve;
+    return DODGEBALL_VISUALS.ballStraight;
+  }
+
+  function syncDodgeEnemyBallDom(ball, arena) {
+    if (!ball || !arena) return null;
+    if (!ball.el) {
+      ball.el = document.createElement("div");
+      ball.el.className = `dodge-ball rubro-ball rubro-ball-${ball.style}${ball.catchable ? " is-catchable" : ""}${ball.isRallyFinal ? " is-rally-final" : ""}`;
+      ball.el.setAttribute("aria-hidden", "true");
+      ball.el.style.left = "0px";
+      ball.el.style.top = "0px";
+      ball.domCatchable = Boolean(ball.catchable);
+      ball.domCatchWindow = false;
+      ball.domSprite = "";
+      ball.domX = NaN;
+      ball.domY = NaN;
+      arena.appendChild(ball.el);
+    }
+
+    const catchable = Boolean(ball.catchable);
+    if (ball.domCatchable !== catchable) {
+      ball.el.classList.toggle("is-catchable", catchable);
+      ball.domCatchable = catchable;
+    }
+
+    const sprite = getDodgeEnemyBallSprite(ball);
+    if (ball.domSprite !== sprite) {
+      ball.el.style.backgroundImage = `url("${sprite}")`;
+      ball.domSprite = sprite;
+    }
+
+    // Individual transform property: move a textura na composicao sem disputar
+    // o `transform` usado pelas animacoes de impacto/bomba.
+    const x = Math.round((ball.x - 12) * 10) / 10;
+    const y = Math.round((ball.y - 12) * 10) / 10;
+    if (ball.domX !== x || ball.domY !== y) {
+      if ("translate" in ball.el.style) {
+        ball.el.style.translate = `${x}px ${y}px`;
+      } else {
+        ball.el.style.left = `${x}px`;
+        ball.el.style.top = `${y}px`;
+      }
+      ball.domX = x;
+      ball.domY = y;
+    }
+    return ball.el;
+  }
+
   function renderDodgeDefense() {
     const g = state.current;
     const attack = g.activePattern;
@@ -4126,6 +4238,7 @@ ${playerMarkup}
       });
     }
 
+    prepareDodgeDefenseDom(g);
     updateDodgePlayerDom();
   }
 
@@ -4588,9 +4701,20 @@ ${playerMarkup}
       const scale = .58 + progress * .48;
 
       if (drop.ballEl) {
-        drop.ballEl.style.left = `${drop.x}px`;
-        drop.ballEl.style.top = `${drop.y - height}px`;
-        drop.ballEl.style.transform = `translate(-50%,-50%) scale(${scale})`;
+        const dropY = drop.y - height;
+        if ("translate" in drop.ballEl.style) {
+          if (!drop.translatePrepared) {
+            drop.ballEl.style.left = "0px";
+            drop.ballEl.style.top = "0px";
+            drop.translatePrepared = true;
+          }
+          drop.ballEl.style.translate = `${Math.round(drop.x * 10) / 10}px ${Math.round(dropY * 10) / 10}px`;
+          drop.ballEl.style.transform = `translate(-50%,-50%) scale(${scale})`;
+        } else {
+          drop.ballEl.style.left = `${drop.x}px`;
+          drop.ballEl.style.top = `${dropY}px`;
+          drop.ballEl.style.transform = `translate(-50%,-50%) scale(${scale})`;
+        }
       }
       if (drop.shadowEl) {
         drop.shadowEl.style.transform = `translate(-50%,-50%) scale(${.35 + progress * .95})`;
@@ -4910,9 +5034,11 @@ ${playerMarkup}
 
   function updateDodgeDefense(now, dt) {
     const g = state.current;
-    const arena = document.getElementById("dodgeArena");
+    const dom = getDodgeDefenseDom(g);
+    const arena = dom?.arena;
     if (!arena || g.enemyAttackDone) return;
-    const rect = arena.getBoundingClientRect();
+    const rect = getDodgeArenaMetrics(g, arena);
+    if (!rect) return;
 
     // Mantem X/Y com a mesma velocidade real em pixels; ajuste aqui para balancear.
     const boost = g.moveBoost || 1;
@@ -5029,32 +5155,14 @@ ${playerMarkup}
         return false;
       }
 
-      if (!ball.el) {
-        ball.el = document.createElement("div");
-        ball.el.className = `dodge-ball rubro-ball rubro-ball-${ball.style}${ball.catchable ? " is-catchable" : ""}${ball.isRallyFinal ? " is-rally-final" : ""}`;
-        const enemySprite = ball.catchable
-          ? DODGEBALL_VISUALS.ballCatch
-          : ball.style === "bomb"
-            ? DODGEBALL_VISUALS.ballBomb
-            : ball.style === "power"
-              ? DODGEBALL_VISUALS.ballPower
-              : ball.style === "curve"
-                ? DODGEBALL_VISUALS.ballCurve
-                : DODGEBALL_VISUALS.ballStraight;
-        ball.el.style.backgroundImage = `url("${enemySprite}")`;
-        arena.appendChild(ball.el);
-      }
-
-      if (ball.catchable) {
-        ball.el.classList.add("is-catchable");
-        ball.el.style.backgroundImage = `url("${DODGEBALL_VISUALS.ballCatch}")`;
-      }
-      ball.el.style.left = `${ball.x - 12}px`;
-      ball.el.style.top = `${ball.y - 12}px`;
+      syncDodgeEnemyBallDom(ball, arena);
 
       const catchDistance = Math.hypot(ball.x - playerX, ball.y - playerY);
       const catchWindowActive = ball.catchable && catchDistance <= DODGE_CATCH_DISTANCE && catchDistance > 22;
-      ball.el.classList.toggle("catch-window", catchWindowActive);
+      if (ball.domCatchWindow !== catchWindowActive) {
+        ball.el.classList.toggle("catch-window", catchWindowActive);
+        ball.domCatchWindow = catchWindowActive;
+      }
 
       if (ball.catchable && now <= g.catchBufferedUntil && catchDistance <= DODGE_CATCH_DISTANCE) {
         completeDodgeballCatch(ball, catchDistance);
@@ -5089,21 +5197,30 @@ ${playerMarkup}
 
     if (state.current !== g || g.playerHp <= 0) return;
 
-    const playerEl = document.getElementById("dodgePlayer");
-    if (playerEl) playerEl.classList.toggle("invulnerable", now < g.player.invulnerableUntil);
+    const playerEl = dom?.playerEl;
+    const invulnerable = now < g.player.invulnerableUntil;
+    if (playerEl && g.dodgeDomInvulnerable !== invulnerable) {
+      playerEl.classList.toggle("invulnerable", invulnerable);
+      g.dodgeDomInvulnerable = invulnerable;
+    }
 
-    const timer = document.getElementById("dodgeTimer");
+    const timer = dom?.timer;
     const catchableInRange = g.balls.some((ball) => {
       if (!ball.catchable) return false;
       const distance = Math.hypot(ball.x - playerX, ball.y - playerY);
       return distance <= DODGE_CATCH_DISTANCE;
     });
 
-    playerEl?.classList.toggle("dodge-catch-ready", catchableInRange || now <= g.catchBufferedUntil);
+    const catchReady = catchableInRange || now <= g.catchBufferedUntil;
+    if (playerEl && g.dodgeDomCatchReady !== catchReady) {
+      playerEl.classList.toggle("dodge-catch-ready", catchReady);
+      g.dodgeDomCatchReady = catchReady;
+    }
     if (timer && !timer.textContent.includes("AGARROU") && !timer.textContent.includes("PERFECT")) {
-      timer.textContent = catchableInRange
+      const nextTimerText = catchableInRange
         ? (g.rallyActive ? "ÚLTIMA BOLA · AGARRA! [ESPAÇO]" : "AGARRA! [ESPAÇO]")
         : `${g.activePattern?.label || "Esquiva"} · padrão em andamento`;
+      if (timer.textContent !== nextTimerText) timer.textContent = nextTimerText;
     }
 
     if (isRubroPatternResolved(g, now)) finishRubroDefenseTurn(false);
@@ -5111,10 +5228,30 @@ ${playerMarkup}
 
   function updateDodgePlayerDom() {
     const g = state.current;
-    const el = document.getElementById("dodgePlayer");
-    if (!g || !el) return;
-    el.style.left = `calc(${g.player.x}% - 15px)`;
-    el.style.top = `calc(${g.player.y}% - 15px)`;
+    const dom = getDodgeDefenseDom(g);
+    const el = dom?.playerEl;
+    const arena = dom?.arena;
+    if (!g || !el || !arena) return;
+    const rect = getDodgeArenaMetrics(g, arena);
+    if (!rect) return;
+
+    const x = Math.round((rect.width * g.player.x / 100 - 15) * 10) / 10;
+    const y = Math.round((rect.height * g.player.y / 100 - 15) * 10) / 10;
+    if (g.dodgePlayerDomX === x && g.dodgePlayerDomY === y) return;
+
+    if ("translate" in el.style) {
+      if (!g.dodgePlayerTranslatePrepared) {
+        el.style.left = "0px";
+        el.style.top = "0px";
+        g.dodgePlayerTranslatePrepared = true;
+      }
+      el.style.translate = `${x}px ${y}px`;
+    } else {
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    }
+    g.dodgePlayerDomX = x;
+    g.dodgePlayerDomY = y;
   }
 
   function devTriggerRally() {

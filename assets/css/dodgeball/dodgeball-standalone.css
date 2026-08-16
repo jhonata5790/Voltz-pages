@@ -57,3 +57,25 @@ body.standalone-dodgeball-page {
   .dodgeball-standalone-panel .sports-game-card { padding:12px; }
   .dodgeball-standalone-status { white-space:normal; }
 }
+
+
+/* Queimada V4.2 · caminho de render leve para a pagina standalone. */
+.dodgeball-standalone-panel .dodgeball-arena {
+  contain: paint style;
+  isolation: isolate;
+}
+.dodgeball-standalone-panel .dodge-player,
+.dodgeball-standalone-panel .dodge-ball,
+.dodgeball-standalone-panel .dodge-falling-ball {
+  will-change: translate;
+}
+.dodgeball-standalone-panel .dodgeball-rival-image {
+  will-change: transform, filter;
+}
+/* O pulso continua nos menus. Durante a chuva de projeteis, a camada fica no
+   ponto medio visual para nao aplicar brightness a uma textura grande por frame. */
+.dodgeball-standalone-panel .dodgeball-shell-v3.phase-defense .dodgeball-scene-layer.layer-overlay {
+  animation: none !important;
+  opacity: .42 !important;
+  filter: brightness(.98) !important;
+}
