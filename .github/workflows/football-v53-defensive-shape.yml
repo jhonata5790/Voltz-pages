@@ -1,0 +1,32 @@
+name: Football V5.3 Defensive Shape
+
+on:
+  push:
+    paths:
+      - '.github/workflows/football-v53-defensive-shape.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply Football V5.3 defensive shape
+        run: |
+          python .github/scripts/football_v53_defensive_shape.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          git diff --check
+          grep -q "getFootballRivalCoverAssignments" assets/js/realms/physical-education/sports-minigames.js
+          grep -q 'role:"return-guard"' assets/js/realms/physical-education/sports-minigames.js
+          grep -q 'role:"weak-side-guard"' assets/js/realms/physical-education/sports-minigames.js
+          grep -q "oneTwoAlertUntil" assets/js/realms/physical-education/sports-minigames.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js
+          git commit -m "Futebol V5.3: corrigir pressão e proteger lado fraco"
+          git push
