@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voltz Education — Arena da Esquiva</title>
+  <link rel="stylesheet" href="assets/css/sports-minigames.css" />
+  <link rel="stylesheet" href="assets/css/dodgeball/dodgeball-standalone.css" />
+</head>
+<body class="standalone-dodgeball-page">
+  <div id="authGate" class="dodgeball-auth-gate" role="status" aria-live="polite">
+    <div class="dodgeball-auth-card">
+      <strong>🔴 ARENA DA ESQUIVA</strong>
+      <span id="authGateText">Preparando duelo com o Capitão Rubro...</span>
+    </div>
+  </div>
+
+  <div id="dodgeballStandaloneStatus" class="dodgeball-standalone-status" aria-live="polite">
+    DUELO EM ANDAMENTO · finalize a partida para retornar ao reino
+  </div>
+
+  <div id="sportsProgressHud" hidden></div>
+  <div id="interactionText" hidden></div>
+
+  <main id="sportsMinigamePanel" class="sports-minigame-panel dodgeball-standalone-panel" aria-hidden="true">
+    <div id="sportsMinigameContent"></div>
+  </main>
+
+  <script type="module" src="assets/js/core/game-profile.js"></script>
+  <script src="assets/js/core/audio-manager.js" defer></script>
+  <script src="assets/js/realms/physical-education/sports-minigames.js" defer></script>
+  <script src="assets/js/dodgeball/dodgeball-standalone.js" defer></script>
+</body>
+</html>
