@@ -292,6 +292,14 @@
       global.VoltzStandaloneFootball?.returnToWorld?.();
       return;
     }
+    if (state.activeId === "volleyball" && global.VoltzStandaloneVolleyball?.isStandalone?.()) {
+      if (state.current?.type === "volleyball") {
+        global.VoltzStandaloneVolleyball?.onExitBlocked?.();
+        return;
+      }
+      global.VoltzStandaloneVolleyball?.returnToWorld?.();
+      return;
+    }
     if (state.activeId === "dodgeball" && global.VoltzStandaloneDodgeball?.isStandalone?.()) {
       if (state.current?.type === "dodgeball") {
         global.VoltzStandaloneDodgeball?.onExitBlocked?.();
@@ -336,6 +344,9 @@
   async function finishSport(id, success, message) {
     if (id === "football" && global.VoltzStandaloneFootball?.isStandalone?.()) {
       global.VoltzStandaloneFootball?.onMatchFinished?.({ success:Boolean(success) });
+    }
+    if (id === "volleyball" && global.VoltzStandaloneVolleyball?.isStandalone?.()) {
+      global.VoltzStandaloneVolleyball?.onMatchFinished?.({ success:Boolean(success) });
     }
     if (id === "dodgeball") {
       if (global.VoltzStandaloneDodgeball?.isStandalone?.()) {
@@ -2788,6 +2799,9 @@ ${playerMarkup}
   // Vôlei
   // -------------------------------------------------------
   function startVolleyball() {
+    if (global.VoltzStandaloneVolleyball?.isStandalone?.()) {
+      global.VoltzStandaloneVolleyball?.onMatchStarted?.();
+    }
     const length = state.mode === "championship" ? 4 : 8;
     const keys = ["A","S","D"];
     const sequence = Array.from({ length }, () => keys[Math.floor(Math.random() * keys.length)]);

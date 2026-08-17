@@ -2613,6 +2613,8 @@ const viewport = document.getElementById("gameViewport");
           window.VoltzStandaloneSportBridge.enterFootball();
         } else if (sportsMinigameId === "dodgeball" && window.VoltzStandaloneSportBridge?.enterDodgeball) {
           window.VoltzStandaloneSportBridge.enterDodgeball();
+        } else if (sportsMinigameId === "volleyball" && window.VoltzStandaloneSportBridge?.enterVolleyball) {
+          window.VoltzStandaloneSportBridge.enterVolleyball();
         } else {
           window.VoltzSports?.open?.(sportsMinigameId);
         }
@@ -4084,10 +4086,15 @@ function enterStandaloneDodgeball() {
   window.location.href = "dodgeball.html";
 }
 
+function enterStandaloneVolleyball() {
+  saveStandaloneSportReturnPoint("volleyball");
+  window.location.href = "volleyball.html";
+}
+
 function restoreStandaloneSportReturnPoint() {
   const url = new URL(window.location.href);
   const returnFrom = url.searchParams.get("returnFrom");
-  if (!["football", "dodgeball"].includes(returnFrom)) return false;
+  if (!["football", "dodgeball", "volleyball"].includes(returnFrom)) return false;
 
   let point = null;
   try {
@@ -4141,15 +4148,19 @@ function restoreStandaloneSportReturnPoint() {
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   interactionText.textContent = returnFrom === "dodgeball"
     ? "Você voltou à Arena da Esquiva exatamente de onde entrou."
-    : "Você voltou ao Campo das Decisões exatamente de onde entrou.";
+    : returnFrom === "volleyball"
+      ? "Você voltou à Quadra da Sequência exatamente de onde entrou."
+      : "Você voltou ao Campo das Decisões exatamente de onde entrou.";
   return true;
 }
 
 window.VoltzStandaloneSportBridge = Object.freeze({
   enterFootball: enterStandaloneFootball,
   enterDodgeball: enterStandaloneDodgeball,
+  enterVolleyball: enterStandaloneVolleyball,
   captureReturnPoint: () => saveStandaloneSportReturnPoint("football"),
-  captureDodgeballReturnPoint: () => saveStandaloneSportReturnPoint("dodgeball")
+  captureDodgeballReturnPoint: () => saveStandaloneSportReturnPoint("dodgeball"),
+  captureVolleyballReturnPoint: () => saveStandaloneSportReturnPoint("volleyball")
 });
 
 window.addEventListener("load", () => {
