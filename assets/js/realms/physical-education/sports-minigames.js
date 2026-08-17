@@ -221,7 +221,7 @@
       football: "Partida 3v3 com goleiros. WASD move; J chuta com a bola e dá o bote sem ela; K toca, L cruza e I ativa a Voltz Vision.",
       basketball: "O marcador se move pela barra. Pressione Espaço dentro da zona central para acertar o tempo do arremesso.",
       athletics: "Não queime a largada. Quando aparecer JÁ!, pressione Espaço e depois alterne A e D para construir velocidade.",
-      volleyball: "Construa a jogada em três toques: mova a recepção com WASD, use J no contato, escolha o levantamento com A/S/D e ataque no tempo certo.",
+      volleyball: "Partida contínua em tempo real. WASD move o atleta ativo e J executa o toque contextual: recepção, levantamento, ataque ou saque.",
       dodgeball: "Seu turno usa uma barra de precisão para arremessar. No turno adversário, mova o Núcleo Voltz e sobreviva à chuva de bolas."
     };
 
@@ -2806,331 +2806,596 @@ ${playerMarkup}
   // -------------------------------------------------------
   // Vôlei
   // -------------------------------------------------------
-  // Volei V0.2 · primeiro prototipo jogavel real.
-  // O modo normal standalone usa Recepcao -> Levantamento -> Ataque.
-  // O Pentatlo continua no minigame curto legado por enquanto.
-  const VOLLEY_LANES = Object.freeze({
-    a: { id:"left", label:"ESQUERDA", x:27 },
-    s: { id:"middle", label:"MEIO", x:50 },
-    d: { id:"right", label:"DIREITA", x:73 }
-  });
+  // Volei V0.3 · rally continuo em tempo real.
+  // WASD nunca vira menu: sempre movimenta o atleta ativo.
+  // J executa o toque contextual: recepcao -> levantamento -> ataque.
+  const VOLLEY_GRAVITY = 78;
+  const VOLLEY_PLAYER_SPEED = 39;
+  const VOLLEY_TARGET_POINTS = 5;
 
-  function volleyballLaneFromKey(key) {
-    return VOLLEY_LANES[String(key || "").toLowerCase()] || null;
+  function volleyballDynamicPlayers() {
+    return [
+      { id:"v1", team:"voltz", x:28, y:80, homeX:28, homeY:80, role:"PONTA" },
+      { id:"v2", team:"voltz", x:50, y:70, homeX:50, homeY:70, role:"LEV" },
+      { id:"v3", team:"voltz", x:72, y:80, homeX:72, homeY:80, role:"PONTA" },
+      { id:"r1", team:"rival", x:28, y:20, homeX:28, homeY:20, role:"PONTA" },
+      { id:"r2", team:"rival", x:50, y:30, homeX:50, homeY:30, role:"LEV" },
+      { id:"r3", team:"rival", x:72, y:20, homeX:72, homeY:20, role:"PONTA" }
+    ];
   }
 
-  function getVolleyballPrototypeDom() {
+  function volleyballPlayer(g, id) {
+    return g?.players?.find((player) => player.id === id) || null;
+  }
+
+  function volleyballTeamPlayers(g, team) {
+    return (g?.players || []).filter((player) => player.team === team);
+  }
+
+  function volleyballDistance(a, b) {
+    return Math.hypot(Number(a?.x || 0) - Number(b?.x || 0), Number(a?.y || 0) - Number(b?.y || 0));
+  }
+
+  function volleyballInputVector() {
+    let x = 0;
+    let y = 0;
+    if (state.pressed.has("a") || state.pressed.has("arrowleft")) x -= 1;
+    if (state.pressed.has("d") || state.pressed.has("arrowright")) x += 1;
+    if (state.pressed.has("w") || state.pressed.has("arrowup")) y -= 1;
+    if (state.pressed.has("s") || state.pressed.has("arrowdown")) y += 1;
+    const length = Math.hypot(x, y) || 1;
+    return { x:x / length, y:y / length, moving:Boolean(x || y) };
+  }
+
+  function volleyballMoveToward(player, targetX, targetY, speed, dt, minY, maxY) {
+    const dx = targetX - player.x;
+    const dy = targetY - player.y;
+    const length = Math.hypot(dx, dy);
+    if (length > .05) {
+      const step = Math.min(length, speed * dt);
+      player.x += dx / length * step;
+      player.y += dy / length * step;
+    }
+    player.x = clamp(player.x, 8, 92);
+    player.y = clamp(player.y, minY, maxY);
+  }
+
+  function volleyballLanding(ball) {
+    if (!ball?.inPlay) return null;
+    const disc = ball.vz * ball.vz + 2 * VOLLEY_GRAVITY * Math.max(0, ball.z);
+    const t = (ball.vz + Math.sqrt(Math.max(0, disc))) / VOLLEY_GRAVITY;
+    if (!Number.isFinite(t) || t < 0) return null;
     return {
-      court: document.getElementById("volleyballPrototypeCourt"),
-      receiver: document.getElementById("volleyballReceiver"),
-      ball: document.getElementById("volleyballPrototypeBall"),
-      target: document.getElementById("volleyballReceiveTarget"),
-      blocker: document.getElementById("volleyballBlocker"),
-      phase: document.getElementById("volleyballPrototypePhase"),
-      instruction: document.getElementById("volleyballPrototypeInstruction"),
-      feedback: document.getElementById("volleyballPrototypeFeedback"),
-      score: document.getElementById("volleyballPrototypeScore"),
-      setLane: document.getElementById("volleyballSetLane"),
-      attackLane: document.getElementById("volleyballAttackLane"),
-      meter: document.getElementById("volleyballAttackCursor")
+      x: ball.x + ball.vx * t,
+      y: ball.y + ball.vy * t,
+      t
     };
   }
 
-  function volleyballPhaseCopy(g) {
-    if (g.phase === "reception") return {
-      label:"1º TOQUE · RECEPÇÃO",
-      instruction:"WASD / Setas para chegar sob a bola · J para fazer a manchete no contato."
-    };
-    if (g.phase === "set") return {
-      label:"2º TOQUE · LEVANTAMENTO",
-      instruction:"Escolha rápido: A = esquerda · S = meio · D = direita."
-    };
-    if (g.phase === "attack") return {
-      label:"3º TOQUE · ATAQUE",
-      instruction:"A/S/D escolhe a direção · J corta perto do topo do salto. Leia o bloqueio."
-    };
-    return { label:"RALLY", instruction:"Prepare a próxima bola." };
+  function volleyballLaunch(g, targetX, targetY, duration, targetZ = 0) {
+    const ball = g.ball;
+    const t = Math.max(.18, Number(duration) || .6);
+    ball.vx = (targetX - ball.x) / t;
+    ball.vy = (targetY - ball.y) / t;
+    ball.vz = (targetZ - ball.z + .5 * VOLLEY_GRAVITY * t * t) / t;
+    ball.inPlay = true;
   }
 
-  function renderVolleyballPrototype() {
+  function volleyballTouchesFor(g, team) {
+    return g.lastTouchTeam === team ? Number(g.teamTouches || 0) : 0;
+  }
+
+  function volleyballRegisterTouch(g, team, playerId) {
+    if (g.lastTouchTeam !== team) g.teamTouches = 0;
+    g.lastTouchTeam = team;
+    g.teamTouches += 1;
+    g.lastTouchPlayerId = playerId;
+    if (team === "voltz") {
+      g.rivalReceiverId = null;
+      g.rivalSetterId = null;
+      g.rivalAttackerId = null;
+    }
+    return g.teamTouches;
+  }
+
+  function volleyballSetActive(g, playerId, reason = "") {
+    if (!volleyballPlayer(g, playerId)) return;
+    g.activePlayerId = playerId;
+    if (reason) g.controlReason = reason;
+  }
+
+  function volleyballOpenTarget(g, team, candidateTargets) {
+    const defenders = volleyballTeamPlayers(g, team === "voltz" ? "rival" : "voltz");
+    let best = candidateTargets[0];
+    let bestScore = -Infinity;
+    candidateTargets.forEach((target) => {
+      const nearest = Math.min(...defenders.map((player) => volleyballDistance(player, target)));
+      const score = nearest + Math.random() * 3.5;
+      if (score > bestScore) {
+        bestScore = score;
+        best = target;
+      }
+    });
+    return best;
+  }
+
+  function volleyballChooseVoltzReceiver(g, target) {
+    const player = volleyballTeamPlayers(g, "voltz")
+      .slice()
+      .sort((a, b) => volleyballDistance(a, target) - volleyballDistance(b, target))[0];
+    if (player) volleyballSetActive(g, player.id, "RECEPÇÃO");
+    return player;
+  }
+
+  function volleyballChooseSetter(g, team, excludeId) {
+    const center = team === "voltz" ? { x:50, y:66 } : { x:50, y:34 };
+    return volleyballTeamPlayers(g, team)
+      .filter((player) => player.id !== excludeId)
+      .sort((a, b) => volleyballDistance(a, center) - volleyballDistance(b, center))[0] || null;
+  }
+
+  function volleyballChooseAttacker(g, team, setterId, input = null) {
+    const candidates = volleyballTeamPlayers(g, team).filter((player) => player.id !== setterId);
+    if (!candidates.length) return null;
+    if (input?.moving && Math.abs(input.x) > .2) {
+      return candidates.slice().sort((a, b) => input.x < 0 ? a.x - b.x : b.x - a.x)[0];
+    }
+    const defenders = volleyballTeamPlayers(g, team === "voltz" ? "rival" : "voltz");
+    return candidates.slice().sort((a, b) => {
+      const aSpace = Math.min(...defenders.map((defender) => Math.abs(defender.x - a.x)));
+      const bSpace = Math.min(...defenders.map((defender) => Math.abs(defender.x - b.x)));
+      return bSpace - aSpace;
+    })[0];
+  }
+
+  function volleyballResetPlayers(g) {
+    g.players.forEach((player) => {
+      player.x = player.homeX;
+      player.y = player.homeY;
+    });
+  }
+
+  function volleyballPrepareServe(g, team = g.servingTeam || "rival") {
+    const now = performance.now();
+    volleyballResetPlayers(g);
+    g.servingTeam = team;
+    g.lastTouchTeam = team;
+    g.teamTouches = 0;
+    g.lastTouchPlayerId = null;
+    g.rivalReceiverId = null;
+    g.rivalSetterId = null;
+    g.rivalAttackerId = null;
+    g.ball = { x:50, y:team === "voltz" ? 87 : 13, z:2, vx:0, vy:0, vz:0, inPlay:false };
+    g.phase = team === "voltz" ? "serve-voltz" : "serve-rival";
+    g.nextServeAt = now + (team === "rival" ? 650 : 0);
+    g.message = team === "voltz"
+      ? "SEU SAQUE · mova para ajustar o ângulo e aperte J."
+      : "SAQUE VISITANTE · se posiciona, a bola já vem.";
+    if (team === "voltz") {
+      const server = volleyballPlayer(g, "v2");
+      server.x = 50;
+      server.y = 88;
+      volleyballSetActive(g, server.id, "SAQUE");
+      g.ball.x = server.x;
+      g.ball.y = server.y - 2;
+    }
+    syncVolleyballDynamicDom(now);
+  }
+
+  function volleyballPoint(g, team, message) {
+    if (!g?.dynamic || g.phase === "point") return;
+    if (team === "voltz") g.score += 1;
+    else g.rivalScore += 1;
+    g.phase = "point";
+    g.ball.inPlay = false;
+    g.pointResumeAt = performance.now() + 900;
+    g.servingTeam = team;
+    g.message = message;
+    sportSfx(team === "voltz" ? "success" : "failure");
+    syncVolleyballDynamicDom(performance.now());
+  }
+
+  function volleyballRivalServe(g) {
+    const server = volleyballPlayer(g, "r2");
+    g.ball.x = server?.x ?? 50;
+    g.ball.y = 13;
+    g.ball.z = 3;
+    const target = {
+      x: 18 + Math.random() * 64,
+      y: 73 + Math.random() * 17
+    };
+    volleyballLaunch(g, target.x, target.y, 1.28, 0);
+    g.phase = "rally";
+    g.message = "A bola está viva. Corre pra recepção!";
+    volleyballChooseVoltzReceiver(g, target);
+    sportSfx("whistle");
+  }
+
+  function volleyballVoltzServe(g) {
+    if (g.phase !== "serve-voltz") return;
+    const server = volleyballPlayer(g, g.activePlayerId) || volleyballPlayer(g, "v2");
+    const input = volleyballInputVector();
+    g.ball.x = server.x;
+    g.ball.y = server.y - 3;
+    g.ball.z = 3;
+    let target;
+    if (input.moving) {
+      target = {
+        x: clamp(50 + input.x * 34 + (server.x - 50) * .25, 12, 88),
+        y: clamp(25 + input.y * 12, 10, 43)
+      };
+    } else {
+      target = volleyballOpenTarget(g, "voltz", [
+        { x:20, y:22 }, { x:50, y:18 }, { x:80, y:22 }, { x:32, y:38 }, { x:68, y:38 }
+      ]);
+    }
+    g.lastTouchTeam = "voltz";
+    g.teamTouches = 0;
+    volleyballLaunch(g, target.x, target.y, 1.15, 0);
+    g.phase = "rally";
+    g.message = "Saque em jogo! Prepara a cobertura.";
+    g.rivalReceiverId = null;
+    sportSfx("hit");
+  }
+
+  function volleyballVoltzReceive(g, player) {
+    const touches = volleyballRegisterTouch(g, "voltz", player.id);
+    if (touches !== 1) return;
+    const setter = volleyballChooseSetter(g, "voltz", player.id);
+    if (!setter) return volleyballPoint(g, "rival", "A jogada desmontou antes do levantamento.");
+    const distance = volleyballDistance(player, g.ball);
+    const contactHeight = g.ball.z;
+    const quality = clamp(1 - distance / 10, 0, 1) * .55 + clamp(1 - Math.abs(contactHeight - 5.5) / 8, 0, 1) * .45;
+    const targetX = clamp(setter.x + (quality < .45 ? (Math.random() - .5) * 8 : 0), 20, 80);
+    const targetY = clamp(setter.y + (quality < .45 ? (Math.random() - .5) * 5 : 0), 58, 74);
+    volleyballLaunch(g, targetX, targetY, quality > .72 ? .68 : .78, 7);
+    volleyballSetActive(g, setter.id, "LEVANTAMENTO");
+    g.message = quality > .76 ? "RECEPÇÃO NA MÃO! Corre pro segundo toque." : "Bola viva! Busca o levantamento.";
+    sportSfx("hit");
+  }
+
+  function volleyballVoltzSet(g, player) {
+    const touches = volleyballRegisterTouch(g, "voltz", player.id);
+    if (touches !== 2) return;
+    const input = volleyballInputVector();
+    const attacker = volleyballChooseAttacker(g, "voltz", player.id, input);
+    if (!attacker) return volleyballPoint(g, "rival", "Sem opção de ataque.");
+    const targetX = clamp(attacker.x + (input.moving ? input.x * 5 : 0), 16, 84);
+    const targetY = 56.5;
+    volleyballLaunch(g, targetX, targetY, .78, 19);
+    volleyballSetActive(g, attacker.id, "ATAQUE");
+    g.message = "LEVANTOU! Continua correndo e encontra a bola no alto.";
+    sportSfx("hit");
+  }
+
+  function volleyballVoltzAttack(g, player) {
+    const input = volleyballInputVector();
+    const touches = volleyballRegisterTouch(g, "voltz", player.id);
+    if (touches !== 3) return;
+    let target;
+    if (input.moving) {
+      target = {
+        x: clamp(50 + input.x * 34 + (player.x - 50) * .18, 10, 90),
+        y: clamp(27 + input.y * 13, 10, 44)
+      };
+    } else {
+      target = volleyballOpenTarget(g, "voltz", [
+        { x:18, y:18 }, { x:50, y:16 }, { x:82, y:18 },
+        { x:28, y:39 }, { x:72, y:39 }
+      ]);
+    }
+    const timing = clamp(1 - Math.abs(g.ball.z - 18) / 15, .35, 1);
+    const duration = .66 - timing * .12;
+    volleyballLaunch(g, target.x, target.y, duration, 0);
+    g.message = timing > .82 ? "CRAVOU NO ALTO! Fecha a quadra pra defesa." : "Ataque em jogo. Recompõe!";
+    g.rivalReceiverId = null;
+    g.rivalSetterId = null;
+    g.rivalAttackerId = null;
+    sportSfx("hit");
+  }
+
+  function volleyballDynamicAction() {
     const g = state.current;
-    if (!g?.prototype) return;
+    if (!g?.dynamic) return;
+    if (g.phase === "serve-voltz") {
+      volleyballVoltzServe(g);
+      return;
+    }
+    if (g.phase !== "rally" || !g.ball.inPlay) return;
+    const player = volleyballPlayer(g, g.activePlayerId);
+    if (!player || player.team !== "voltz") return;
+    const touches = volleyballTouchesFor(g, "voltz");
+    const distance = volleyballDistance(player, g.ball);
+    const maxDistance = touches === 2 ? 10.2 : 9.2;
+    const maxHeight = touches === 2 ? 27 : touches === 1 ? 15 : 12;
+    if (distance > maxDistance || g.ball.z > maxHeight) {
+      g.message = g.ball.z > maxHeight ? "Ainda está alta demais. Continua acompanhando a bola!" : "Chega mais perto da bola!";
+      return;
+    }
+    if (touches === 0) volleyballVoltzReceive(g, player);
+    else if (touches === 1) volleyballVoltzSet(g, player);
+    else if (touches === 2) volleyballVoltzAttack(g, player);
+  }
+
+  function volleyballRivalReceive(g, player) {
+    volleyballRegisterTouch(g, "rival", player.id);
+    const setter = volleyballChooseSetter(g, "rival", player.id);
+    if (!setter) return;
+    g.rivalSetterId = setter.id;
+    volleyballLaunch(g, setter.x, clamp(setter.y, 26, 42), .7, 7);
+  }
+
+  function volleyballRivalSet(g, player) {
+    volleyballRegisterTouch(g, "rival", player.id);
+    const attacker = volleyballChooseAttacker(g, "rival", player.id);
+    if (!attacker) return;
+    g.rivalAttackerId = attacker.id;
+    volleyballLaunch(g, attacker.x, 43.5, .76, 19);
+  }
+
+  function volleyballRivalAttack(g, player) {
+    volleyballRegisterTouch(g, "rival", player.id);
+    const target = volleyballOpenTarget(g, "rival", [
+      { x:18, y:82 }, { x:50, y:86 }, { x:82, y:82 },
+      { x:30, y:62 }, { x:70, y:62 }
+    ]);
+    volleyballLaunch(g, target.x, target.y, .6, 0);
+    volleyballChooseVoltzReceiver(g, target);
+    g.message = "ATAQUE VISITANTE! Lê a queda e corre.";
+    sportSfx("hit");
+  }
+
+  function volleyballUpdateRivalAI(g, dt) {
+    if (g.phase !== "rally" || !g.ball.inPlay) return;
+    const touches = volleyballTouchesFor(g, "rival");
+    const landing = volleyballLanding(g.ball) || { x:g.ball.x, y:g.ball.y };
+
+    if (touches === 0 && (g.lastTouchTeam !== "rival" || g.teamTouches === 0)) {
+      if (!g.rivalReceiverId) {
+        const receiver = volleyballTeamPlayers(g, "rival")
+          .slice()
+          .sort((a, b) => volleyballDistance(a, landing) - volleyballDistance(b, landing))[0];
+        g.rivalReceiverId = receiver?.id || null;
+      }
+      const receiver = volleyballPlayer(g, g.rivalReceiverId);
+      if (receiver) {
+        volleyballMoveToward(receiver, clamp(landing.x, 10, 90), clamp(landing.y, 8, 46), 34, dt, 7, 46);
+        if (g.ball.y < 51 && g.ball.vz < 4 && g.ball.z <= 11 && volleyballDistance(receiver, g.ball) <= 10.5) {
+          volleyballRivalReceive(g, receiver);
+        }
+      }
+      return;
+    }
+
+    if (touches === 1) {
+      const setter = volleyballPlayer(g, g.rivalSetterId);
+      if (setter) {
+        volleyballMoveToward(setter, clamp(landing.x, 18, 82), clamp(landing.y, 22, 44), 35, dt, 7, 46);
+        if (g.ball.y < 50 && g.ball.vz < 5 && g.ball.z <= 15 && volleyballDistance(setter, g.ball) <= 9.5) {
+          volleyballRivalSet(g, setter);
+        }
+      }
+      return;
+    }
+
+    if (touches === 2) {
+      const attacker = volleyballPlayer(g, g.rivalAttackerId);
+      if (attacker) {
+        volleyballMoveToward(attacker, clamp(landing.x, 10, 90), clamp(landing.y, 37, 46), 38, dt, 7, 46);
+        if (g.ball.y < 51 && g.ball.vz < 7 && g.ball.z <= 27 && volleyballDistance(attacker, g.ball) <= 10.5) {
+          volleyballRivalAttack(g, attacker);
+        }
+      }
+    }
+  }
+
+  function volleyballUpdatePlayers(g, dt) {
+    const active = volleyballPlayer(g, g.activePlayerId);
+    if (active?.team === "voltz") {
+      const input = volleyballInputVector();
+      if (input.moving) {
+        active.x += input.x * VOLLEY_PLAYER_SPEED * dt;
+        active.y += input.y * VOLLEY_PLAYER_SPEED * dt;
+        active.x = clamp(active.x, 8, 92);
+        active.y = clamp(active.y, 53.5, 94);
+      }
+      if (g.phase === "serve-voltz") {
+        g.ball.x = active.x;
+        g.ball.y = active.y - 3;
+      }
+    }
+
+    volleyballTeamPlayers(g, "voltz").forEach((player) => {
+      if (player.id === g.activePlayerId) return;
+      let tx = player.homeX;
+      let ty = player.homeY;
+      const touches = volleyballTouchesFor(g, "voltz");
+      if (g.phase === "rally" && touches === 1) {
+        if (player.role === "PONTA") ty = 58;
+        if (player.role === "LEV") ty = 66;
+      } else if (g.phase === "rally" && touches === 2) {
+        ty = player.role === "PONTA" ? 59 : 70;
+      }
+      volleyballMoveToward(player, tx, ty, 21, dt, 54, 94);
+    });
+
+    volleyballTeamPlayers(g, "rival").forEach((player) => {
+      if ([g.rivalReceiverId, g.rivalSetterId, g.rivalAttackerId].includes(player.id)) return;
+      let ty = player.homeY;
+      if (volleyballTouchesFor(g, "rival") >= 1 && player.role === "PONTA") ty = 42;
+      volleyballMoveToward(player, player.homeX, ty, 18, dt, 7, 46);
+    });
+  }
+
+  function volleyballUpdateBall(g, dt) {
+    const ball = g.ball;
+    if (!ball?.inPlay) return;
+    const previousY = ball.y;
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    ball.z += ball.vz * dt;
+    ball.vz -= VOLLEY_GRAVITY * dt;
+
+    const crossedNet = (previousY - 50) * (ball.y - 50) <= 0 && Math.abs(previousY - ball.y) > .01;
+    if (crossedNet && ball.z < 4.2) {
+      ball.vy *= -.18;
+      ball.vx *= .72;
+      ball.vz = Math.max(ball.vz, 1.5);
+      g.message = "NA REDE! A bola perdeu toda a força.";
+    }
+
+    if (ball.z > 0) return;
+    ball.z = 0;
+    ball.inPlay = false;
+
+    const out = ball.x < 5 || ball.x > 95 || ball.y < 4 || ball.y > 96;
+    if (out) {
+      const winner = g.lastTouchTeam === "voltz" ? "rival" : "voltz";
+      volleyballPoint(g, winner, winner === "voltz" ? "FORA! Ponto Voltz." : "Ataque pra fora. Ponto visitante.");
+      return;
+    }
+
+    if (ball.y > 50) volleyballPoint(g, "rival", "A bola caiu na quadra Voltz. Ponto visitante.");
+    else volleyballPoint(g, "voltz", "A bola tocou o chão do outro lado. PONTO VOLTZ!");
+  }
+
+  function getVolleyballDynamicDom() {
+    return {
+      court: document.getElementById("volleyballDynamicCourt"),
+      ball: document.getElementById("volleyballDynamicBall"),
+      shadow: document.getElementById("volleyballBallShadow"),
+      landing: document.getElementById("volleyballLandingMarker"),
+      feedback: document.getElementById("volleyballDynamicFeedback"),
+      status: document.getElementById("volleyballDynamicStatus"),
+      scoreV: document.getElementById("volleyballScoreVoltz"),
+      scoreR: document.getElementById("volleyballScoreRival"),
+      touches: document.getElementById("volleyballTouchCount")
+    };
+  }
+
+  function renderVolleyballDynamic() {
+    const g = state.current;
+    if (!g?.dynamic) return;
+    const playerMarkup = g.players.map((player) => `
+      <div id="volleyballPlayer-${player.id}" class="volleyball-dynamic-player team-${player.team} ${player.id === g.activePlayerId ? "is-active" : ""}" data-id="${player.id}">
+        <span>${player.role}</span>
+      </div>`).join("");
+
     openPanelShell(
-      "🏐 Vôlei · Três Toques",
+      "🏐 Vôlei · Rally Voltz",
       "Quadra da Sequência",
-      "Receba, construa e finalize. Cada toque muda as opções do próximo.",
-      `<div class="sports-game-card volleyball-prototype-card">
-        <div class="volleyball-prototype-score" id="volleyballPrototypeScore">
-          <span>VOLTZ <b>${g.score}</b></span>
-          <strong>PRIMEIRO A 3</strong>
-          <span>VISITANTE <b>${g.rivalScore}</b></span>
-        </div>
-        <div class="volleyball-prototype-phase" id="volleyballPrototypePhase"></div>
-        <div class="volleyball-prototype-court" id="volleyballPrototypeCourt">
-          <div class="volleyball-court-line line-center"></div>
-          <div class="volleyball-net"></div>
-          <div class="volleyball-team-label rival">VISITANTE</div>
-          <div class="volleyball-team-label voltz">VOLTZ</div>
-
-          <div class="volleyball-player rival-player rival-left" aria-hidden="true"></div>
-          <div class="volleyball-player rival-player rival-right" aria-hidden="true"></div>
-          <div class="volleyball-player rival-player rival-blocker" id="volleyballBlocker" aria-label="Bloqueador adversário"></div>
-
-          <div class="volleyball-player teammate-player mate-left" aria-hidden="true"></div>
-          <div class="volleyball-player teammate-player mate-right" aria-hidden="true"></div>
-          <div class="volleyball-player teammate-player active" id="volleyballReceiver" aria-label="Jogador controlado"></div>
-
-          <div class="volleyball-receive-target" id="volleyballReceiveTarget"></div>
-          <div class="volleyball-prototype-ball" id="volleyballPrototypeBall">🏐</div>
+      "Sem turnos: corre, lê a bola e mantém o rally vivo.",
+      `<div class="sports-game-card volleyball-dynamic-card">
+        <div class="volleyball-dynamic-scoreboard">
+          <div><small>VOLTZ</small><strong id="volleyballScoreVoltz">${g.score}</strong></div>
+          <div class="volleyball-dynamic-center"><b>PRIMEIRO A ${g.targetPoints}</b><span id="volleyballDynamicStatus">RALLY</span></div>
+          <div><small>VISITANTE</small><strong id="volleyballScoreRival">${g.rivalScore}</strong></div>
         </div>
 
-        <div class="volleyball-prototype-controls">
-          <div class="volleyball-control-copy" id="volleyballPrototypeInstruction"></div>
-          <div class="volleyball-lane-readout">
-            <span>LEVANTAMENTO <b id="volleyballSetLane">—</b></span>
-            <span>ATAQUE <b id="volleyballAttackLane">—</b></span>
-          </div>
-          <div class="volleyball-attack-meter" aria-label="Tempo do ataque">
-            <div class="volleyball-attack-perfect"></div>
-            <div class="volleyball-attack-cursor" id="volleyballAttackCursor"></div>
-          </div>
-          <div class="sports-feedback" id="volleyballPrototypeFeedback">${escapeHtml(g.message || "Prepare a recepção.")}</div>
-          <div class="sports-help">Protótipo V0.2 · habilidades especiais entram depois que o toque básico estiver gostoso.</div>
+        <div id="volleyballDynamicCourt" class="volleyball-dynamic-court">
+          <div class="volleyball-dynamic-net"><i></i></div>
+          <div class="volleyball-attack-line line-rival"></div>
+          <div class="volleyball-attack-line line-voltz"></div>
+          <div class="volleyball-side-label rival">VISITANTE</div>
+          <div class="volleyball-side-label voltz">VOLTZ</div>
+          ${playerMarkup}
+          <div id="volleyballLandingMarker" class="volleyball-landing-marker"></div>
+          <div id="volleyballBallShadow" class="volleyball-ball-shadow"></div>
+          <div id="volleyballDynamicBall" class="volleyball-dynamic-ball">🏐</div>
+        </div>
+
+        <div class="volleyball-dynamic-hud">
+          <div class="volleyball-control-strip"><span><b>WASD</b> MOVER</span><span><b>J</b> TOCAR / SACAR</span><span>TOQUES <b id="volleyballTouchCount">0/3</b></span></div>
+          <div id="volleyballDynamicFeedback" class="sports-feedback">${escapeHtml(g.message)}</div>
+          <div class="sports-help">O controle troca automaticamente para quem entra na jogada. A bola não espera você.</div>
         </div>
       </div>`
     );
-    syncVolleyballPrototypeDom(performance.now());
+    syncVolleyballDynamicDom(performance.now());
   }
 
-  function beginVolleyballReception(g, message = "Leia a trajetória e chegue embaixo da bola.") {
-    const now = performance.now();
-    g.phase = "reception";
-    g.phaseStartedAt = now;
-    g.phaseDuration = 1850;
-    g.receiver.x = 50;
-    g.receiver.y = 82;
-    g.receiveTarget = {
-      x: 22 + Math.random() * 56,
-      y: 72 + Math.random() * 14
-    };
-    g.ball = {
-      startX: 26 + Math.random() * 48,
-      startY: 10,
-      x: 50,
-      y: 10
-    };
-    g.receptionQuality = 0;
-    g.setLane = null;
-    g.attackLane = null;
-    g.blockLane = null;
-    g.attackCursor = 0;
-    g.message = message;
-    renderVolleyballPrototype();
-  }
-
-  function volleyballPrototypePoint(g, team, message) {
-    if (!g?.prototype || g.phase === "rally-result") return;
-    if (team === "voltz") g.score += 1;
-    else g.rivalScore += 1;
-    g.phase = "rally-result";
-    g.phaseStartedAt = performance.now();
-    g.lockUntil = g.phaseStartedAt + 780;
-    g.message = message;
-    sportSfx(team === "voltz" ? "success" : "failure");
-    syncVolleyballPrototypeDom(g.phaseStartedAt);
-  }
-
-  function volleyballReceptionAction() {
+  function syncVolleyballDynamicDom(now) {
     const g = state.current;
-    if (!g?.prototype || g.phase !== "reception") return;
-    const now = performance.now();
-    const progress = clamp((now - g.phaseStartedAt) / g.phaseDuration, 0, 1.2);
-    const distance = Math.hypot(g.receiver.x - g.receiveTarget.x, g.receiver.y - g.receiveTarget.y);
-    const timingQuality = clamp(1 - Math.abs(progress - .92) / .28, 0, 1);
-    const positionQuality = clamp(1 - distance / 19, 0, 1);
-    const quality = timingQuality * .52 + positionQuality * .48;
-
-    if (progress < .60 || quality < .34) {
-      volleyballPrototypePoint(g, "rival", distance > 16
-        ? "Você não chegou embaixo da bola. Ponto visitante."
-        : "Contato fora do tempo. Ponto visitante.");
-      return;
-    }
-
-    g.receptionQuality = quality;
-    g.phase = "set";
-    g.phaseStartedAt = now;
-    g.phaseDuration = 1800;
-    g.ball.x = g.receiver.x;
-    g.ball.y = g.receiver.y - 4;
-    g.message = quality >= .82
-      ? "Recepção perfeita! O levantador tem todas as opções."
-      : quality >= .58
-        ? "Boa recepção. Escolha onde montar o ataque."
-        : "Recepção quebrada, mas a bola ficou viva. Decida rápido.";
-    syncVolleyballPrototypeDom(now);
-  }
-
-  function volleyballPrototypeDirection(key) {
-    const g = state.current;
-    if (!g?.prototype) return;
-    const lane = volleyballLaneFromKey(key);
-    if (!lane) return;
-
-    if (g.phase === "set") {
-      g.setLane = lane;
-      g.phase = "attack";
-      g.phaseStartedAt = performance.now();
-      g.phaseDuration = 1450;
-      g.attackLane = lane;
-      const blockOptions = Object.values(VOLLEY_LANES);
-      const readChance = g.receptionQuality >= .78 ? .56 : .40;
-      g.blockLane = Math.random() < readChance
-        ? lane
-        : blockOptions[Math.floor(Math.random() * blockOptions.length)];
-      g.message = `Levantamento para ${lane.label.toLowerCase()}. Leia o bloqueio e escolha onde bater.`;
-      syncVolleyballPrototypeDom(g.phaseStartedAt);
-      return;
-    }
-
-    if (g.phase === "attack") {
-      g.attackLane = lane;
-      g.message = `Ataque mirando ${lane.label.toLowerCase()}. Agora acerte o tempo com J.`;
-      syncVolleyballPrototypeDom(performance.now());
-    }
-  }
-
-  function volleyballAttackAction() {
-    const g = state.current;
-    if (!g?.prototype || g.phase !== "attack") return;
-    const lane = g.attackLane || g.setLane || VOLLEY_LANES.s;
-    const cursor = Number(g.attackCursor || 0);
-    const timingQuality = clamp(1 - Math.abs(cursor - 82) / 42, 0, 1);
-    const blockMatched = g.blockLane?.id === lane.id;
-    const receptionBonus = g.receptionQuality * .18;
-    const attackPower = timingQuality + receptionBonus;
-
-    if (timingQuality < .28) {
-      volleyballPrototypePoint(g, "rival", "Você pegou a bola fora do topo do salto. Ponto visitante.");
-      return;
-    }
-
-    if (blockMatched && attackPower < 1.02) {
-      volleyballPrototypePoint(g, "rival", `O bloqueio fechou ${lane.label.toLowerCase()}. Sua cortada voltou.`);
-      return;
-    }
-
-    const perfect = timingQuality >= .86;
-    volleyballPrototypePoint(
-      g,
-      "voltz",
-      blockMatched
-        ? "NO TOPO! Você explorou o bloqueio mesmo com a linha fechada."
-        : perfect
-          ? "Cortada limpa no ponto mais alto. PONTO VOLTZ!"
-          : `Você encontrou o espaço em ${lane.label.toLowerCase()}. PONTO VOLTZ!`
-    );
-  }
-
-  function volleyballPrototypeAction() {
-    const g = state.current;
-    if (!g?.prototype) return;
-    if (g.phase === "reception") volleyballReceptionAction();
-    else if (g.phase === "attack") volleyballAttackAction();
-  }
-
-  function syncVolleyballPrototypeDom(now) {
-    const g = state.current;
-    if (!g?.prototype) return;
-    const dom = getVolleyballPrototypeDom();
+    if (!g?.dynamic) return;
+    const dom = getVolleyballDynamicDom();
     if (!dom.court) return;
-    const copy = volleyballPhaseCopy(g);
-    if (dom.phase) dom.phase.textContent = copy.label;
-    if (dom.instruction) dom.instruction.textContent = copy.instruction;
-    if (dom.feedback && dom.feedback.textContent !== g.message) dom.feedback.textContent = g.message || "";
-    if (dom.score) dom.score.innerHTML = `<span>VOLTZ <b>${g.score}</b></span><strong>PRIMEIRO A 3</strong><span>VISITANTE <b>${g.rivalScore}</b></span>`;
-    if (dom.setLane) dom.setLane.textContent = g.setLane?.label || "—";
-    if (dom.attackLane) dom.attackLane.textContent = g.attackLane?.label || "—";
+    g.players.forEach((player) => {
+      const el = document.getElementById(`volleyballPlayer-${player.id}`);
+      if (!el) return;
+      el.style.left = `${player.x}%`;
+      el.style.top = `${player.y}%`;
+      const active = player.id === g.activePlayerId;
+      el.classList.toggle("is-active", active);
+      el.classList.toggle("can-touch", active && g.phase === "rally" && g.ball.inPlay && volleyballDistance(player, g.ball) <= 10.5 && g.ball.z <= 27);
+    });
 
-    if (dom.receiver) {
-      dom.receiver.style.left = `${g.receiver.x}%`;
-      dom.receiver.style.top = `${g.receiver.y}%`;
-      dom.receiver.classList.toggle("is-setting", g.phase === "set");
-      dom.receiver.classList.toggle("is-attacking", g.phase === "attack");
+    const ball = g.ball;
+    if (dom.ball && ball) {
+      const visualY = ball.y - Math.max(0, ball.z) * .30;
+      const scale = 1 + Math.min(1.15, Math.max(0, ball.z) * .024);
+      dom.ball.style.left = `${ball.x}%`;
+      dom.ball.style.top = `${visualY}%`;
+      dom.ball.style.transform = `translate(-50%,-50%) scale(${scale.toFixed(3)})`;
+      dom.ball.classList.toggle("in-play", Boolean(ball.inPlay));
     }
-    if (dom.target) {
-      dom.target.style.left = `${g.receiveTarget?.x ?? 50}%`;
-      dom.target.style.top = `${g.receiveTarget?.y ?? 80}%`;
-      dom.target.classList.toggle("visible", g.phase === "reception");
+    if (dom.shadow && ball) {
+      dom.shadow.style.left = `${ball.x}%`;
+      dom.shadow.style.top = `${ball.y}%`;
+      const shadowScale = clamp(1 - ball.z / 45, .28, 1);
+      dom.shadow.style.transform = `translate(-50%,-50%) scale(${shadowScale.toFixed(3)})`;
+      dom.shadow.style.opacity = ball.inPlay ? String(clamp(.78 - ball.z / 58, .18, .72)) : "0";
     }
-    if (dom.ball) {
-      dom.ball.style.left = `${g.ball?.x ?? 50}%`;
-      dom.ball.style.top = `${g.ball?.y ?? 50}%`;
-      dom.ball.classList.toggle("is-attack", g.phase === "attack");
+
+    const landing = volleyballLanding(ball);
+    const incomingVoltz = ball?.inPlay && landing && landing.y > 50 && g.lastTouchTeam !== "voltz";
+    if (dom.landing) {
+      dom.landing.classList.toggle("visible", Boolean(incomingVoltz));
+      if (incomingVoltz) {
+        dom.landing.style.left = `${clamp(landing.x, 7, 93)}%`;
+        dom.landing.style.top = `${clamp(landing.y, 53, 94)}%`;
+      }
     }
-    if (dom.blocker) {
-      const blockX = g.blockLane?.x ?? 50;
-      dom.blocker.style.left = `${blockX}%`;
-      dom.blocker.classList.toggle("reading", g.phase === "attack");
-    }
-    if (dom.meter) {
-      dom.meter.style.left = `${clamp(Number(g.attackCursor || 0), 0, 100)}%`;
-      dom.meter.parentElement?.classList.toggle("visible", g.phase === "attack");
+
+    if (dom.feedback && dom.feedback.textContent !== g.message) dom.feedback.textContent = g.message || "";
+    if (dom.scoreV) dom.scoreV.textContent = String(g.score);
+    if (dom.scoreR) dom.scoreR.textContent = String(g.rivalScore);
+    if (dom.touches) dom.touches.textContent = `${volleyballTouchesFor(g, "voltz")}/3`;
+    if (dom.status) {
+      const active = volleyballPlayer(g, g.activePlayerId);
+      const status = g.phase === "serve-voltz" ? "SEU SAQUE"
+        : g.phase === "serve-rival" ? "SAQUE VISITANTE"
+          : g.phase === "point" ? "PONTO"
+            : `${g.controlReason || "RALLY"}${active ? ` · ${active.role}` : ""}`;
+      dom.status.textContent = status;
     }
   }
 
-  function updateVolleyballPrototype(now, dt) {
+  function updateVolleyballDynamic(now, dt) {
     const g = state.current;
-    if (!g?.prototype) return;
+    if (!g?.dynamic) return;
 
-    if (g.phase === "rally-result") {
-      if (now >= g.lockUntil) {
-        if (g.score >= g.targetScore) {
-          finishSport("volleyball", true, `Vitória ${g.score}x${g.rivalScore}. Você conectou recepção, levantamento e ataque.`);
+    if (g.phase === "point") {
+      if (now >= g.pointResumeAt) {
+        if (g.score >= g.targetPoints || g.rivalScore >= g.targetPoints) {
+          finishSport("volleyball", g.score > g.rivalScore, g.score > g.rivalScore
+            ? "Você venceu mantendo o rally vivo e conectando os três toques em movimento."
+            : "O visitante fechou a partida. Reposicione mais cedo e mantenha a bola viva.");
           return;
         }
-        if (g.rivalScore >= g.targetScore) {
-          finishSport("volleyball", false, `Derrota ${g.score}x${g.rivalScore}. A sequência quebrou antes do ataque.`);
-          return;
-        }
-        beginVolleyballReception(g, "Nova bola. Leia primeiro, corra depois.");
+        volleyballPrepareServe(g, g.servingTeam);
       }
+      syncVolleyballDynamicDom(now);
       return;
     }
 
-    if (g.phase === "reception") {
-      const speed = 38;
-      let dx = 0, dy = 0;
-      if (state.pressed.has("a") || state.pressed.has("arrowleft")) dx -= 1;
-      if (state.pressed.has("d") || state.pressed.has("arrowright")) dx += 1;
-      if (state.pressed.has("w") || state.pressed.has("arrowup")) dy -= 1;
-      if (state.pressed.has("s") || state.pressed.has("arrowdown")) dy += 1;
-      if (dx && dy) { dx *= .70710678; dy *= .70710678; }
-      g.receiver.x = clamp(g.receiver.x + dx * speed * dt, 10, 90);
-      g.receiver.y = clamp(g.receiver.y + dy * speed * dt, 58, 91);
+    if (g.phase === "serve-rival" && now >= g.nextServeAt) volleyballRivalServe(g);
 
-      const progress = clamp((now - g.phaseStartedAt) / g.phaseDuration, 0, 1.15);
-      const eased = 1 - Math.pow(1 - clamp(progress, 0, 1), 2);
-      g.ball.x = g.ball.startX + (g.receiveTarget.x - g.ball.startX) * eased;
-      g.ball.y = g.ball.startY + (g.receiveTarget.y - g.ball.startY) * eased;
-      if (progress >= 1.04) {
-        volleyballPrototypePoint(g, "rival", "A bola caiu sem recepção. Ponto visitante.");
-      }
-    } else if (g.phase === "set") {
-      const elapsed = now - g.phaseStartedAt;
-      g.ball.x += (50 - g.ball.x) * Math.min(1, dt * 5.4);
-      g.ball.y += (54 - g.ball.y) * Math.min(1, dt * 5.4);
-      if (elapsed >= g.phaseDuration) volleyballPrototypePoint(g, "rival", "A jogada morreu sem levantamento. Ponto visitante.");
-    } else if (g.phase === "attack") {
-      const progress = clamp((now - g.phaseStartedAt) / g.phaseDuration, 0, 1.15);
-      g.attackCursor = clamp(progress * 100, 0, 100);
-      const targetX = g.setLane?.x ?? 50;
-      g.ball.x += (targetX - g.ball.x) * Math.min(1, dt * 7.2);
-      g.ball.y += (48 - g.ball.y) * Math.min(1, dt * 7.2);
-      if (progress >= 1.04) volleyballPrototypePoint(g, "rival", "Você deixou o levantamento cair. Ponto visitante.");
+    volleyballUpdatePlayers(g, dt);
+    if (g.phase === "rally") {
+      volleyballUpdateRivalAI(g, dt);
+      volleyballUpdateBall(g, dt);
     }
-
-    syncVolleyballPrototypeDom(now);
+    syncVolleyballDynamicDom(now);
   }
 
   function startVolleyballPrototype() {
@@ -3139,31 +3404,34 @@ ${playerMarkup}
     state.current = {
       type:"volleyball",
       prototype:true,
-      phase:"reception",
+      dynamic:true,
       score:0,
       rivalScore:0,
-      targetScore:3,
-      receiver:{ x:50, y:82 },
-      receiveTarget:{ x:50, y:80 },
-      ball:{ startX:50, startY:10, x:50, y:10 },
-      receptionQuality:0,
-      setLane:null,
-      attackLane:null,
-      blockLane:null,
-      attackCursor:0,
-      phaseStartedAt:performance.now(),
-      phaseDuration:1850,
-      lockUntil:0,
-      message:"Prepare a recepção."
+      targetPoints:VOLLEY_TARGET_POINTS,
+      players:volleyballDynamicPlayers(),
+      activePlayerId:"v1",
+      controlReason:"RECEPÇÃO",
+      phase:"serve-rival",
+      servingTeam:"rival",
+      nextServeAt:performance.now() + 650,
+      pointResumeAt:0,
+      lastTouchTeam:"rival",
+      teamTouches:0,
+      lastTouchPlayerId:null,
+      rivalReceiverId:null,
+      rivalSetterId:null,
+      rivalAttackerId:null,
+      ball:{ x:50, y:13, z:2, vx:0, vy:0, vz:0, inPlay:false },
+      message:"SAQUE VISITANTE · se posiciona, a bola já vem."
     };
-    beginVolleyballReception(state.current);
+    renderVolleyballDynamic();
 
     let last = performance.now();
     const tick = (now) => {
-      if (!state.open || !state.current?.prototype || state.current?.type !== "volleyball") return;
-      const dt = Math.min(32, now - last) / 1000;
+      if (!state.open || state.current?.type !== "volleyball" || !state.current?.dynamic) return;
+      const dt = Math.min(.034, Math.max(0, (now - last) / 1000));
       last = now;
-      updateVolleyballPrototype(now, dt);
+      updateVolleyballDynamic(now, dt);
       state.rafId = requestAnimationFrame(tick);
     };
     state.rafId = requestAnimationFrame(tick);
@@ -5900,9 +6168,8 @@ ${playerMarkup}
 
     if (game.type === "athletics" && ["a","d"].includes(key)) athleticsStep(key);
     if (game.type === "volleyball") {
-      if (game.prototype) {
-        if (["a","s","d"].includes(key) && !event.repeat && game.phase !== "reception") volleyballPrototypeDirection(key);
-        if (key === "j" && !event.repeat) volleyballPrototypeAction();
+      if (game.dynamic) {
+        if (key === "j" && !event.repeat) volleyballDynamicAction();
       } else if (["a","s","d"].includes(key)) {
         volleyballInput(key);
       }
