@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voltz Education — Quadra da Sequência</title>
+  <link rel="stylesheet" href="assets/css/sports-minigames.css" />
+  <link rel="stylesheet" href="assets/css/volleyball/volleyball-standalone.css" />
+</head>
+<body class="standalone-volleyball-page">
+  <div id="authGate" class="volleyball-auth-gate" role="status" aria-live="polite">
+    <div class="volleyball-auth-card">
+      <strong>🏐 QUADRA DA SEQUÊNCIA</strong>
+      <span>Preparando a partida de vôlei...</span>
+    </div>
+  </div>
+
+  <div id="volleyballStandaloneStatus" class="volleyball-standalone-status" aria-live="polite">
+    PARTIDA EM ANDAMENTO · finalize o desafio para retornar ao reino
+  </div>
+
+  <div id="sportsProgressHud" hidden></div>
+  <div id="interactionText" hidden></div>
+
+  <main id="sportsMinigamePanel" class="sports-minigame-panel volleyball-standalone-panel" aria-hidden="true">
+    <div id="sportsMinigameContent"></div>
+  </main>
+
+  <script type="module" src="assets/js/core/game-profile.js"></script>
+  <script src="assets/js/core/audio-manager.js" defer></script>
+  <script src="assets/js/realms/physical-education/sports-minigames.js" defer></script>
+  <script src="assets/js/volleyball/volleyball-standalone.js" defer></script>
+</body>
+</html>
