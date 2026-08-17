@@ -1,0 +1,36 @@
+name: Volleyball V0.3 Dynamic
+
+on:
+  push:
+    paths:
+      - '.github/workflows/volleyball-v03-dynamic.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply volleyball V0.3 dynamic gameplay
+        run: |
+          python .github/scripts/volleyball_v03_dynamic.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          node --check assets/js/openworld.js
+          node --check assets/js/volleyball/volleyball-standalone.js
+          git diff --check
+          grep -q 'Volei V0.3' assets/js/realms/physical-education/sports-minigames.js
+          grep -q 'volleyballDynamicAction' assets/js/realms/physical-education/sports-minigames.js
+          grep -q 'updateVolleyballDynamic' assets/js/realms/physical-education/sports-minigames.js
+          grep -q 'volleyball-dynamic-court' assets/css/volleyball/volleyball-standalone.css
+          grep -q 'volleyball-v03' volleyball.html
+          grep -q 'volleyball-v03' game.html
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js assets/css/volleyball/volleyball-standalone.css volleyball.html game.html
+          git commit -m "Volei V0.3: transformar prototipo em rally dinamico"
+          git push
