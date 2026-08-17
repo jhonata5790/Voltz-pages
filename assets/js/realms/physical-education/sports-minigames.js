@@ -221,7 +221,7 @@
       football: "Partida 3v3 com goleiros. WASD move; J chuta com a bola e dá o bote sem ela; K toca, L cruza e I ativa a Voltz Vision.",
       basketball: "O marcador se move pela barra. Pressione Espaço dentro da zona central para acertar o tempo do arremesso.",
       athletics: "Não queime a largada. Quando aparecer JÁ!, pressione Espaço e depois alterne A e D para construir velocidade.",
-      volleyball: "Uma sequência de comandos representa recepção, levantamento e ataque. Pressione cada tecla antes do tempo acabar.",
+      volleyball: "Construa a jogada em três toques: mova a recepção com WASD, use J no contato, escolha o levantamento com A/S/D e ataque no tempo certo.",
       dodgeball: "Seu turno usa uma barra de precisão para arremessar. No turno adversário, mova o Núcleo Voltz e sobreviva à chuva de bolas."
     };
 
@@ -266,6 +266,14 @@
 
   function open(id) {
     if (!panel || !content) return;
+    if (
+      id === "volleyball" &&
+      !global.VoltzStandaloneVolleyball?.isStandalone?.() &&
+      global.VoltzStandaloneSportBridge?.enterVolleyball
+    ) {
+      global.VoltzStandaloneSportBridge.enterVolleyball();
+      return;
+    }
     clearRuntime();
     state.open = true;
     state.activeId = id;
@@ -2798,7 +2806,374 @@ ${playerMarkup}
   // -------------------------------------------------------
   // Vôlei
   // -------------------------------------------------------
+  // Volei V0.2 · primeiro prototipo jogavel real.
+  // O modo normal standalone usa Recepcao -> Levantamento -> Ataque.
+  // O Pentatlo continua no minigame curto legado por enquanto.
+  const VOLLEY_LANES = Object.freeze({
+    a: { id:"left", label:"ESQUERDA", x:27 },
+    s: { id:"middle", label:"MEIO", x:50 },
+    d: { id:"right", label:"DIREITA", x:73 }
+  });
+
+  function volleyballLaneFromKey(key) {
+    return VOLLEY_LANES[String(key || "").toLowerCase()] || null;
+  }
+
+  function getVolleyballPrototypeDom() {
+    return {
+      court: document.getElementById("volleyballPrototypeCourt"),
+      receiver: document.getElementById("volleyballReceiver"),
+      ball: document.getElementById("volleyballPrototypeBall"),
+      target: document.getElementById("volleyballReceiveTarget"),
+      blocker: document.getElementById("volleyballBlocker"),
+      phase: document.getElementById("volleyballPrototypePhase"),
+      instruction: document.getElementById("volleyballPrototypeInstruction"),
+      feedback: document.getElementById("volleyballPrototypeFeedback"),
+      score: document.getElementById("volleyballPrototypeScore"),
+      setLane: document.getElementById("volleyballSetLane"),
+      attackLane: document.getElementById("volleyballAttackLane"),
+      meter: document.getElementById("volleyballAttackCursor")
+    };
+  }
+
+  function volleyballPhaseCopy(g) {
+    if (g.phase === "reception") return {
+      label:"1º TOQUE · RECEPÇÃO",
+      instruction:"WASD / Setas para chegar sob a bola · J para fazer a manchete no contato."
+    };
+    if (g.phase === "set") return {
+      label:"2º TOQUE · LEVANTAMENTO",
+      instruction:"Escolha rápido: A = esquerda · S = meio · D = direita."
+    };
+    if (g.phase === "attack") return {
+      label:"3º TOQUE · ATAQUE",
+      instruction:"A/S/D escolhe a direção · J corta perto do topo do salto. Leia o bloqueio."
+    };
+    return { label:"RALLY", instruction:"Prepare a próxima bola." };
+  }
+
+  function renderVolleyballPrototype() {
+    const g = state.current;
+    if (!g?.prototype) return;
+    openPanelShell(
+      "🏐 Vôlei · Três Toques",
+      "Quadra da Sequência",
+      "Receba, construa e finalize. Cada toque muda as opções do próximo.",
+      `<div class="sports-game-card volleyball-prototype-card">
+        <div class="volleyball-prototype-score" id="volleyballPrototypeScore">
+          <span>VOLTZ <b>${g.score}</b></span>
+          <strong>PRIMEIRO A 3</strong>
+          <span>VISITANTE <b>${g.rivalScore}</b></span>
+        </div>
+        <div class="volleyball-prototype-phase" id="volleyballPrototypePhase"></div>
+        <div class="volleyball-prototype-court" id="volleyballPrototypeCourt">
+          <div class="volleyball-court-line line-center"></div>
+          <div class="volleyball-net"></div>
+          <div class="volleyball-team-label rival">VISITANTE</div>
+          <div class="volleyball-team-label voltz">VOLTZ</div>
+
+          <div class="volleyball-player rival-player rival-left" aria-hidden="true"></div>
+          <div class="volleyball-player rival-player rival-right" aria-hidden="true"></div>
+          <div class="volleyball-player rival-player rival-blocker" id="volleyballBlocker" aria-label="Bloqueador adversário"></div>
+
+          <div class="volleyball-player teammate-player mate-left" aria-hidden="true"></div>
+          <div class="volleyball-player teammate-player mate-right" aria-hidden="true"></div>
+          <div class="volleyball-player teammate-player active" id="volleyballReceiver" aria-label="Jogador controlado"></div>
+
+          <div class="volleyball-receive-target" id="volleyballReceiveTarget"></div>
+          <div class="volleyball-prototype-ball" id="volleyballPrototypeBall">🏐</div>
+        </div>
+
+        <div class="volleyball-prototype-controls">
+          <div class="volleyball-control-copy" id="volleyballPrototypeInstruction"></div>
+          <div class="volleyball-lane-readout">
+            <span>LEVANTAMENTO <b id="volleyballSetLane">—</b></span>
+            <span>ATAQUE <b id="volleyballAttackLane">—</b></span>
+          </div>
+          <div class="volleyball-attack-meter" aria-label="Tempo do ataque">
+            <div class="volleyball-attack-perfect"></div>
+            <div class="volleyball-attack-cursor" id="volleyballAttackCursor"></div>
+          </div>
+          <div class="sports-feedback" id="volleyballPrototypeFeedback">${escapeHtml(g.message || "Prepare a recepção.")}</div>
+          <div class="sports-help">Protótipo V0.2 · habilidades especiais entram depois que o toque básico estiver gostoso.</div>
+        </div>
+      </div>`
+    );
+    syncVolleyballPrototypeDom(performance.now());
+  }
+
+  function beginVolleyballReception(g, message = "Leia a trajetória e chegue embaixo da bola.") {
+    const now = performance.now();
+    g.phase = "reception";
+    g.phaseStartedAt = now;
+    g.phaseDuration = 1850;
+    g.receiver.x = 50;
+    g.receiver.y = 82;
+    g.receiveTarget = {
+      x: 22 + Math.random() * 56,
+      y: 72 + Math.random() * 14
+    };
+    g.ball = {
+      startX: 26 + Math.random() * 48,
+      startY: 10,
+      x: 50,
+      y: 10
+    };
+    g.receptionQuality = 0;
+    g.setLane = null;
+    g.attackLane = null;
+    g.blockLane = null;
+    g.attackCursor = 0;
+    g.message = message;
+    renderVolleyballPrototype();
+  }
+
+  function volleyballPrototypePoint(g, team, message) {
+    if (!g?.prototype || g.phase === "rally-result") return;
+    if (team === "voltz") g.score += 1;
+    else g.rivalScore += 1;
+    g.phase = "rally-result";
+    g.phaseStartedAt = performance.now();
+    g.lockUntil = g.phaseStartedAt + 780;
+    g.message = message;
+    sportSfx(team === "voltz" ? "success" : "failure");
+    syncVolleyballPrototypeDom(g.phaseStartedAt);
+  }
+
+  function volleyballReceptionAction() {
+    const g = state.current;
+    if (!g?.prototype || g.phase !== "reception") return;
+    const now = performance.now();
+    const progress = clamp((now - g.phaseStartedAt) / g.phaseDuration, 0, 1.2);
+    const distance = Math.hypot(g.receiver.x - g.receiveTarget.x, g.receiver.y - g.receiveTarget.y);
+    const timingQuality = clamp(1 - Math.abs(progress - .92) / .28, 0, 1);
+    const positionQuality = clamp(1 - distance / 19, 0, 1);
+    const quality = timingQuality * .52 + positionQuality * .48;
+
+    if (progress < .60 || quality < .34) {
+      volleyballPrototypePoint(g, "rival", distance > 16
+        ? "Você não chegou embaixo da bola. Ponto visitante."
+        : "Contato fora do tempo. Ponto visitante.");
+      return;
+    }
+
+    g.receptionQuality = quality;
+    g.phase = "set";
+    g.phaseStartedAt = now;
+    g.phaseDuration = 1800;
+    g.ball.x = g.receiver.x;
+    g.ball.y = g.receiver.y - 4;
+    g.message = quality >= .82
+      ? "Recepção perfeita! O levantador tem todas as opções."
+      : quality >= .58
+        ? "Boa recepção. Escolha onde montar o ataque."
+        : "Recepção quebrada, mas a bola ficou viva. Decida rápido.";
+    syncVolleyballPrototypeDom(now);
+  }
+
+  function volleyballPrototypeDirection(key) {
+    const g = state.current;
+    if (!g?.prototype) return;
+    const lane = volleyballLaneFromKey(key);
+    if (!lane) return;
+
+    if (g.phase === "set") {
+      g.setLane = lane;
+      g.phase = "attack";
+      g.phaseStartedAt = performance.now();
+      g.phaseDuration = 1450;
+      g.attackLane = lane;
+      const blockOptions = Object.values(VOLLEY_LANES);
+      const readChance = g.receptionQuality >= .78 ? .56 : .40;
+      g.blockLane = Math.random() < readChance
+        ? lane
+        : blockOptions[Math.floor(Math.random() * blockOptions.length)];
+      g.message = `Levantamento para ${lane.label.toLowerCase()}. Leia o bloqueio e escolha onde bater.`;
+      syncVolleyballPrototypeDom(g.phaseStartedAt);
+      return;
+    }
+
+    if (g.phase === "attack") {
+      g.attackLane = lane;
+      g.message = `Ataque mirando ${lane.label.toLowerCase()}. Agora acerte o tempo com J.`;
+      syncVolleyballPrototypeDom(performance.now());
+    }
+  }
+
+  function volleyballAttackAction() {
+    const g = state.current;
+    if (!g?.prototype || g.phase !== "attack") return;
+    const lane = g.attackLane || g.setLane || VOLLEY_LANES.s;
+    const cursor = Number(g.attackCursor || 0);
+    const timingQuality = clamp(1 - Math.abs(cursor - 82) / 42, 0, 1);
+    const blockMatched = g.blockLane?.id === lane.id;
+    const receptionBonus = g.receptionQuality * .18;
+    const attackPower = timingQuality + receptionBonus;
+
+    if (timingQuality < .28) {
+      volleyballPrototypePoint(g, "rival", "Você pegou a bola fora do topo do salto. Ponto visitante.");
+      return;
+    }
+
+    if (blockMatched && attackPower < 1.02) {
+      volleyballPrototypePoint(g, "rival", `O bloqueio fechou ${lane.label.toLowerCase()}. Sua cortada voltou.`);
+      return;
+    }
+
+    const perfect = timingQuality >= .86;
+    volleyballPrototypePoint(
+      g,
+      "voltz",
+      blockMatched
+        ? "NO TOPO! Você explorou o bloqueio mesmo com a linha fechada."
+        : perfect
+          ? "Cortada limpa no ponto mais alto. PONTO VOLTZ!"
+          : `Você encontrou o espaço em ${lane.label.toLowerCase()}. PONTO VOLTZ!`
+    );
+  }
+
+  function volleyballPrototypeAction() {
+    const g = state.current;
+    if (!g?.prototype) return;
+    if (g.phase === "reception") volleyballReceptionAction();
+    else if (g.phase === "attack") volleyballAttackAction();
+  }
+
+  function syncVolleyballPrototypeDom(now) {
+    const g = state.current;
+    if (!g?.prototype) return;
+    const dom = getVolleyballPrototypeDom();
+    if (!dom.court) return;
+    const copy = volleyballPhaseCopy(g);
+    if (dom.phase) dom.phase.textContent = copy.label;
+    if (dom.instruction) dom.instruction.textContent = copy.instruction;
+    if (dom.feedback && dom.feedback.textContent !== g.message) dom.feedback.textContent = g.message || "";
+    if (dom.score) dom.score.innerHTML = `<span>VOLTZ <b>${g.score}</b></span><strong>PRIMEIRO A 3</strong><span>VISITANTE <b>${g.rivalScore}</b></span>`;
+    if (dom.setLane) dom.setLane.textContent = g.setLane?.label || "—";
+    if (dom.attackLane) dom.attackLane.textContent = g.attackLane?.label || "—";
+
+    if (dom.receiver) {
+      dom.receiver.style.left = `${g.receiver.x}%`;
+      dom.receiver.style.top = `${g.receiver.y}%`;
+      dom.receiver.classList.toggle("is-setting", g.phase === "set");
+      dom.receiver.classList.toggle("is-attacking", g.phase === "attack");
+    }
+    if (dom.target) {
+      dom.target.style.left = `${g.receiveTarget?.x ?? 50}%`;
+      dom.target.style.top = `${g.receiveTarget?.y ?? 80}%`;
+      dom.target.classList.toggle("visible", g.phase === "reception");
+    }
+    if (dom.ball) {
+      dom.ball.style.left = `${g.ball?.x ?? 50}%`;
+      dom.ball.style.top = `${g.ball?.y ?? 50}%`;
+      dom.ball.classList.toggle("is-attack", g.phase === "attack");
+    }
+    if (dom.blocker) {
+      const blockX = g.blockLane?.x ?? 50;
+      dom.blocker.style.left = `${blockX}%`;
+      dom.blocker.classList.toggle("reading", g.phase === "attack");
+    }
+    if (dom.meter) {
+      dom.meter.style.left = `${clamp(Number(g.attackCursor || 0), 0, 100)}%`;
+      dom.meter.parentElement?.classList.toggle("visible", g.phase === "attack");
+    }
+  }
+
+  function updateVolleyballPrototype(now, dt) {
+    const g = state.current;
+    if (!g?.prototype) return;
+
+    if (g.phase === "rally-result") {
+      if (now >= g.lockUntil) {
+        if (g.score >= g.targetScore) {
+          finishSport("volleyball", true, `Vitória ${g.score}x${g.rivalScore}. Você conectou recepção, levantamento e ataque.`);
+          return;
+        }
+        if (g.rivalScore >= g.targetScore) {
+          finishSport("volleyball", false, `Derrota ${g.score}x${g.rivalScore}. A sequência quebrou antes do ataque.`);
+          return;
+        }
+        beginVolleyballReception(g, "Nova bola. Leia primeiro, corra depois.");
+      }
+      return;
+    }
+
+    if (g.phase === "reception") {
+      const speed = 38;
+      let dx = 0, dy = 0;
+      if (state.pressed.has("a") || state.pressed.has("arrowleft")) dx -= 1;
+      if (state.pressed.has("d") || state.pressed.has("arrowright")) dx += 1;
+      if (state.pressed.has("w") || state.pressed.has("arrowup")) dy -= 1;
+      if (state.pressed.has("s") || state.pressed.has("arrowdown")) dy += 1;
+      if (dx && dy) { dx *= .70710678; dy *= .70710678; }
+      g.receiver.x = clamp(g.receiver.x + dx * speed * dt, 10, 90);
+      g.receiver.y = clamp(g.receiver.y + dy * speed * dt, 58, 91);
+
+      const progress = clamp((now - g.phaseStartedAt) / g.phaseDuration, 0, 1.15);
+      const eased = 1 - Math.pow(1 - clamp(progress, 0, 1), 2);
+      g.ball.x = g.ball.startX + (g.receiveTarget.x - g.ball.startX) * eased;
+      g.ball.y = g.ball.startY + (g.receiveTarget.y - g.ball.startY) * eased;
+      if (progress >= 1.04) {
+        volleyballPrototypePoint(g, "rival", "A bola caiu sem recepção. Ponto visitante.");
+      }
+    } else if (g.phase === "set") {
+      const elapsed = now - g.phaseStartedAt;
+      g.ball.x += (50 - g.ball.x) * Math.min(1, dt * 5.4);
+      g.ball.y += (54 - g.ball.y) * Math.min(1, dt * 5.4);
+      if (elapsed >= g.phaseDuration) volleyballPrototypePoint(g, "rival", "A jogada morreu sem levantamento. Ponto visitante.");
+    } else if (g.phase === "attack") {
+      const progress = clamp((now - g.phaseStartedAt) / g.phaseDuration, 0, 1.15);
+      g.attackCursor = clamp(progress * 100, 0, 100);
+      const targetX = g.setLane?.x ?? 50;
+      g.ball.x += (targetX - g.ball.x) * Math.min(1, dt * 7.2);
+      g.ball.y += (48 - g.ball.y) * Math.min(1, dt * 7.2);
+      if (progress >= 1.04) volleyballPrototypePoint(g, "rival", "Você deixou o levantamento cair. Ponto visitante.");
+    }
+
+    syncVolleyballPrototypeDom(now);
+  }
+
+  function startVolleyballPrototype() {
+    global.VoltzStandaloneVolleyball?.onMatchStarted?.();
+    sportSfx("whistle");
+    state.current = {
+      type:"volleyball",
+      prototype:true,
+      phase:"reception",
+      score:0,
+      rivalScore:0,
+      targetScore:3,
+      receiver:{ x:50, y:82 },
+      receiveTarget:{ x:50, y:80 },
+      ball:{ startX:50, startY:10, x:50, y:10 },
+      receptionQuality:0,
+      setLane:null,
+      attackLane:null,
+      blockLane:null,
+      attackCursor:0,
+      phaseStartedAt:performance.now(),
+      phaseDuration:1850,
+      lockUntil:0,
+      message:"Prepare a recepção."
+    };
+    beginVolleyballReception(state.current);
+
+    let last = performance.now();
+    const tick = (now) => {
+      if (!state.open || !state.current?.prototype || state.current?.type !== "volleyball") return;
+      const dt = Math.min(32, now - last) / 1000;
+      last = now;
+      updateVolleyballPrototype(now, dt);
+      state.rafId = requestAnimationFrame(tick);
+    };
+    state.rafId = requestAnimationFrame(tick);
+  }
+
   function startVolleyball() {
+    if (state.mode !== "championship" && global.VoltzStandaloneVolleyball?.isStandalone?.()) {
+      startVolleyballPrototype();
+      return;
+    }
     if (global.VoltzStandaloneVolleyball?.isStandalone?.()) {
       global.VoltzStandaloneVolleyball?.onMatchStarted?.();
     }
@@ -5524,7 +5899,14 @@ ${playerMarkup}
     }
 
     if (game.type === "athletics" && ["a","d"].includes(key)) athleticsStep(key);
-    if (game.type === "volleyball" && ["a","s","d"].includes(key)) volleyballInput(key);
+    if (game.type === "volleyball") {
+      if (game.prototype) {
+        if (["a","s","d"].includes(key) && !event.repeat && game.phase !== "reception") volleyballPrototypeDirection(key);
+        if (key === "j" && !event.repeat) volleyballPrototypeAction();
+      } else if (["a","s","d"].includes(key)) {
+        volleyballInput(key);
+      }
+    }
   }
 
   function handleKeyUp(event) {
