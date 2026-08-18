@@ -1,0 +1,29 @@
+name: Volleyball V0.3 Initial Serve
+
+on:
+  push:
+    paths:
+      - '.github/workflows/volleyball-v03-initial-serve.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply visible initial rival serve
+        run: |
+          python .github/scripts/volleyball_v03_initial_serve.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          git diff --check
+          grep -q 'volleyballPrepareServe(state.current, "rival")' assets/js/realms/physical-education/sports-minigames.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js
+          git commit -m "Volei V0.3: tornar primeiro saque rival visivel"
+          git push
