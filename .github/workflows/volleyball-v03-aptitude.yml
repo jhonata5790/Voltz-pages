@@ -1,0 +1,30 @@
+name: Volleyball V0.3 Aptitude
+
+on:
+  push:
+    paths:
+      - '.github/workflows/volleyball-v03-aptitude.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply setter intent and attacker aptitude
+        run: |
+          python .github/scripts/volleyball_v03_aptitude.py
+          node --check assets/js/realms/physical-education/sports-minigames.js
+          git diff --check
+          grep -q 'volleyballAttackerRead' assets/js/realms/physical-education/sports-minigames.js
+          grep -q 'O controle ja passou para quem esta mais apto' assets/js/realms/physical-education/sports-minigames.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/realms/physical-education/sports-minigames.js
+          git commit -m "Volei V0.3: escolher atacante por intencao e aptidao"
+          git push
