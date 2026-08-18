@@ -2837,12 +2837,15 @@ ${playerMarkup}
   }
 
   function volleyballInputVector() {
+    // A logica interna continua usando x = largura da quadra e y = profundidade.
+    // A camera horizontal gira essa leitura na tela: esquerda/direita movem na
+    // profundidade e cima/baixo percorrem as faixas laterais da quadra.
     let x = 0;
     let y = 0;
-    if (state.pressed.has("a") || state.pressed.has("arrowleft")) x -= 1;
-    if (state.pressed.has("d") || state.pressed.has("arrowright")) x += 1;
-    if (state.pressed.has("w") || state.pressed.has("arrowup")) y -= 1;
-    if (state.pressed.has("s") || state.pressed.has("arrowdown")) y += 1;
+    if (state.pressed.has("a") || state.pressed.has("arrowleft")) y -= 1;
+    if (state.pressed.has("d") || state.pressed.has("arrowright")) y += 1;
+    if (state.pressed.has("w") || state.pressed.has("arrowup")) x += 1;
+    if (state.pressed.has("s") || state.pressed.has("arrowdown")) x -= 1;
     const length = Math.hypot(x, y) || 1;
     return { x:x / length, y:y / length, moving:Boolean(x || y) };
   }
@@ -3181,7 +3184,7 @@ ${playerMarkup}
     const targetY = 56.5;
     volleyballLaunch(g, targetX, targetY, .78, 19);
     volleyballSetActive(g, attacker.id, "ATAQUE");
-    const attackSide = attacker.x < 42 ? "ESQUERDA" : attacker.x > 58 ? "DIREITA" : "MEIO";
+    const attackSide = attacker.x < 42 ? "FAIXA INFERIOR" : attacker.x > 58 ? "FAIXA SUPERIOR" : "MEIO";
     g.message = `LEVANTOU PARA ${attackSide}! O controle ja passou para quem esta mais apto a atacar.`;
     sportSfx("hit");
   }
@@ -3510,6 +3513,15 @@ ${playerMarkup}
     syncVolleyballDynamicDom(performance.now());
   }
 
+  function volleyballWorldToScreen(point, lift = 0) {
+    // Camera horizontal: rival fica a esquerda, Voltz a direita e a rede vira
+    // uma linha vertical. A fisica permanece no mesmo sistema de coordenadas.
+    return {
+      left: clamp(Number(point?.y || 0), 0, 100),
+      top: clamp(100 - Number(point?.x || 0) - Number(lift || 0), 0, 100)
+    };
+  }
+
   function syncVolleyballDynamicDom(now) {
     const g = state.current;
     if (!g?.dynamic) return;
@@ -3518,8 +3530,9 @@ ${playerMarkup}
     g.players.forEach((player) => {
       const el = document.getElementById(`volleyballPlayer-${player.id}`);
       if (!el) return;
-      el.style.left = `${player.x}%`;
-      el.style.top = `${player.y}%`;
+      const screen = volleyballWorldToScreen(player);
+      el.style.left = `${screen.left}%`;
+      el.style.top = `${screen.top}%`;
       const active = player.id === g.activePlayerId;
       el.classList.toggle("is-active", active);
       el.classList.toggle("can-touch", active && g.phase === "rally" && g.ball.inPlay && volleyballDistance(player, g.ball) <= 10.5 && g.ball.z <= 27);
@@ -3527,16 +3540,17 @@ ${playerMarkup}
 
     const ball = g.ball;
     if (dom.ball && ball) {
-      const visualY = ball.y - Math.max(0, ball.z) * .30;
+      const screen = volleyballWorldToScreen(ball, Math.max(0, ball.z) * .30);
       const scale = 1 + Math.min(1.15, Math.max(0, ball.z) * .024);
-      dom.ball.style.left = `${ball.x}%`;
-      dom.ball.style.top = `${visualY}%`;
+      dom.ball.style.left = `${screen.left}%`;
+      dom.ball.style.top = `${screen.top}%`;
       dom.ball.style.transform = `translate(-50%,-50%) scale(${scale.toFixed(3)})`;
       dom.ball.classList.toggle("in-play", Boolean(ball.inPlay));
     }
     if (dom.shadow && ball) {
-      dom.shadow.style.left = `${ball.x}%`;
-      dom.shadow.style.top = `${ball.y}%`;
+      const screen = volleyballWorldToScreen(ball);
+      dom.shadow.style.left = `${screen.left}%`;
+      dom.shadow.style.top = `${screen.top}%`;
       const shadowScale = clamp(1 - ball.z / 45, .28, 1);
       dom.shadow.style.transform = `translate(-50%,-50%) scale(${shadowScale.toFixed(3)})`;
       dom.shadow.style.opacity = ball.inPlay ? String(clamp(.78 - ball.z / 58, .18, .72)) : "0";
@@ -3547,8 +3561,12 @@ ${playerMarkup}
     if (dom.landing) {
       dom.landing.classList.toggle("visible", Boolean(incomingVoltz));
       if (incomingVoltz) {
-        dom.landing.style.left = `${clamp(landing.x, 7, 93)}%`;
-        dom.landing.style.top = `${clamp(landing.y, 53, 94)}%`;
+        const screen = volleyballWorldToScreen({
+          x:clamp(landing.x, 7, 93),
+          y:clamp(landing.y, 53, 94)
+        });
+        dom.landing.style.left = `${screen.left}%`;
+        dom.landing.style.top = `${screen.top}%`;
       }
     }
 

@@ -163,3 +163,84 @@ body.standalone-volleyball-page {
   .volleyball-dynamic-player { width:27px; height:27px; }
   .volleyball-dynamic-player.is-active { width:34px; height:34px; }
 }
+
+
+/* Volei V0.3 · camera top-down horizontal */
+.volleyball-dynamic-court {
+  width:min(1080px,100%);
+  aspect-ratio:16/8.6;
+  background:
+    linear-gradient(180deg, transparent 49.8%, rgba(255,255,255,.055) 50%, transparent 50.2%),
+    linear-gradient(90deg, rgba(255,107,122,.075) 0 49.5%, rgba(99,245,181,.085) 50.5% 100%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.016) 0 58px, rgba(255,255,255,.034) 59px 60px),
+    #07131a;
+  box-shadow:inset 0 0 70px rgba(0,0,0,.34), 0 18px 55px rgba(0,0,0,.24);
+}
+
+.volleyball-dynamic-net {
+  left:50%; right:auto; top:4%; bottom:4%;
+  width:8px; height:auto;
+  transform:translateX(-50%);
+}
+.volleyball-dynamic-net::before,
+.volleyball-dynamic-net::after {
+  left:-10px; top:auto; width:28px; height:5px;
+}
+.volleyball-dynamic-net::before { top:-3px; }
+.volleyball-dynamic-net::after { bottom:-3px; }
+.volleyball-dynamic-net i {
+  left:8px; right:auto; top:0; bottom:0;
+  width:12px; height:auto;
+  background:repeating-linear-gradient(180deg,#fff 0 1px,transparent 1px 12px);
+}
+
+.volleyball-attack-line {
+  top:5%; bottom:5%; height:auto; width:1px;
+  border-top:0; border-left:1px dashed rgba(255,255,255,.13);
+}
+.volleyball-attack-line.line-rival { left:34%; right:auto; }
+.volleyball-attack-line.line-voltz { left:66%; right:auto; }
+
+.volleyball-side-label { top:10px; bottom:auto; }
+.volleyball-side-label.rival { left:12px; right:auto; top:10px; }
+.volleyball-side-label.voltz { left:auto; right:12px; top:10px; bottom:auto; }
+
+/* Personagens mais proximos de uma leitura top-down de jogo e menos de pecas. */
+.volleyball-dynamic-player {
+  width:24px; height:38px;
+  border-radius:11px 11px 9px 9px;
+  box-shadow:0 8px 10px rgba(0,0,0,.28), 0 0 15px rgba(99,245,181,.12);
+}
+.volleyball-dynamic-player::before {
+  content:"";
+  position:absolute; left:50%; top:-9px;
+  width:15px; height:15px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:inherit;
+  border:2px solid currentColor;
+  box-shadow:0 3px 5px rgba(0,0,0,.24);
+}
+.volleyball-dynamic-player span { top:43px; }
+.volleyball-dynamic-player.is-active {
+  width:30px; height:44px;
+  color:#fff;
+  box-shadow:0 9px 12px rgba(0,0,0,.32), 0 0 0 7px rgba(69,163,255,.12), 0 0 24px rgba(69,163,255,.52);
+}
+.volleyball-dynamic-player.can-touch {
+  box-shadow:0 9px 12px rgba(0,0,0,.3), 0 0 0 9px rgba(255,209,102,.14), 0 0 28px rgba(255,209,102,.62);
+}
+
+.volleyball-ball-shadow {
+  width:18px; height:10px;
+}
+.volleyball-landing-marker {
+  width:30px; height:54px;
+}
+
+@media(max-width:700px){
+  .volleyball-dynamic-court { aspect-ratio:16/10.5; }
+  .volleyball-dynamic-player { width:21px; height:33px; }
+  .volleyball-dynamic-player.is-active { width:27px; height:39px; }
+  .volleyball-dynamic-player span { top:38px; }
+}
