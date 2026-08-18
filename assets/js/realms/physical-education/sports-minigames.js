@@ -2837,9 +2837,9 @@ ${playerMarkup}
   }
 
   function volleyballInputVector() {
-    // A logica interna continua usando x = largura da quadra e y = profundidade.
-    // A camera horizontal gira essa leitura na tela: esquerda/direita movem na
-    // profundidade e cima/baixo percorrem as faixas laterais da quadra.
+    // Camera horizontal: na tela A/D percorrem a quadra da esquerda para a direita,
+    // enquanto W/S percorrem as faixas superior e inferior. A fisica interna
+    // continua intacta e recebe o vetor ja convertido para suas coordenadas.
     let x = 0;
     let y = 0;
     if (state.pressed.has("a") || state.pressed.has("arrowleft")) y -= 1;
@@ -3522,11 +3522,20 @@ ${playerMarkup}
     };
   }
 
+  function volleyballWorldToScreen(point, lift = 0) {
+    // Gira apenas a camera: rival = esquerda, Voltz = direita, rede vertical.
+    return {
+      left: clamp(Number(point?.y || 0), 0, 100),
+      top: clamp(100 - Number(point?.x || 0) - Number(lift || 0), 0, 100)
+    };
+  }
+
   function syncVolleyballDynamicDom(now) {
     const g = state.current;
     if (!g?.dynamic) return;
     const dom = getVolleyballDynamicDom();
     if (!dom.court) return;
+
     g.players.forEach((player) => {
       const el = document.getElementById(`volleyballPlayer-${player.id}`);
       if (!el) return;
@@ -3547,6 +3556,7 @@ ${playerMarkup}
       dom.ball.style.transform = `translate(-50%,-50%) scale(${scale.toFixed(3)})`;
       dom.ball.classList.toggle("in-play", Boolean(ball.inPlay));
     }
+
     if (dom.shadow && ball) {
       const screen = volleyballWorldToScreen(ball);
       dom.shadow.style.left = `${screen.left}%`;
