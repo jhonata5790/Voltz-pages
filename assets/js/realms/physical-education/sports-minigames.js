@@ -2894,6 +2894,7 @@ ${playerMarkup}
       g.rivalReceiverId = null;
       g.rivalSetterId = null;
       g.rivalAttackerId = null;
+      g.voltzReceiverId = null;
     }
     return g.teamTouches;
   }
@@ -2923,8 +2924,66 @@ ${playerMarkup}
     const player = volleyballTeamPlayers(g, "voltz")
       .slice()
       .sort((a, b) => volleyballDistance(a, target) - volleyballDistance(b, target))[0];
-    if (player) volleyballSetActive(g, player.id, "RECEPÇÃO");
+    if (player) {
+      g.voltzReceiverId = player.id;
+      volleyballSetActive(g, player.id, "RECEPÇÃO");
+    }
     return player;
+  }
+
+  function volleyballEnsureVoltzCoverage(g, landing) {
+    if (!g?.ball?.inPlay || g.phase !== "rally" || !landing) return null;
+
+    // Defesa reage a TRAJETORIA. Se o ultimo toque foi rival e a projecao cai
+    // no nosso campo, isso e uma bola defensavel, independentemente de ter sido
+    // saque, ataque, free ball, levantamento passado ou toque quebrado.
+    if (g.lastTouchTeam !== "rival" || landing.y <= 50) {
+      if (g.lastTouchTeam !== "rival") g.voltzReceiverId = null;
+      return null;
+    }
+
+    const rivalTouches = volleyballTouchesFor(g, "rival");
+    const plannedAttacker = volleyballPlayer(g, g.rivalAttackerId);
+    const rivalStillBuildingAttack = Boolean(
+      rivalTouches === 2 &&
+      plannedAttacker &&
+      g.ball.y < 47.5 &&
+      g.ball.z > 7
+    );
+
+    // Enquanto o levantamento rival ainda esta realmente chegando ao atacante,
+    // mantemos a formacao defensiva sem roubar o controle cedo demais. Se ele
+    // perder a bola e ela atravessar a rede, a cobertura assume imediatamente.
+    if (rivalStillBuildingAttack) return null;
+
+    const target = {
+      x: clamp(landing.x, 8, 92),
+      y: clamp(landing.y, 54, 94)
+    };
+    const ranked = volleyballTeamPlayers(g, "voltz")
+      .map((player) => ({ player, distance: volleyballDistance(player, target) }))
+      .sort((a, b) => a.distance - b.distance);
+    const best = ranked[0]?.player || null;
+    let receiver = volleyballPlayer(g, g.voltzReceiverId);
+
+    // Reatribui apenas quando necessario, evitando piscar controle entre atletas
+    // enquanto a mesma bola esta em voo.
+    if (!receiver || receiver.team !== "voltz") receiver = best;
+    else if (best && best.id !== receiver.id) {
+      const currentDistance = volleyballDistance(receiver, target);
+      const bestDistance = volleyballDistance(best, target);
+      if (currentDistance - bestDistance > 8) receiver = best;
+    }
+
+    if (!receiver) return null;
+    const changed = g.voltzReceiverId !== receiver.id;
+    g.voltzReceiverId = receiver.id;
+    if (g.activePlayerId !== receiver.id) volleyballSetActive(g, receiver.id, "DEFESA");
+
+    if (changed && rivalTouches === 2) {
+      g.message = "FREE BALL! O ataque rival nao saiu — a bola vem no nosso campo. Busca a queda!";
+    }
+    return receiver;
   }
 
   function volleyballChooseSetter(g, team, excludeId) {
@@ -3005,6 +3064,9 @@ ${playerMarkup}
     g.rivalSetterId = null;
     g.rivalAttackerId = null;
     g.rivalServerId = null;
+    g.rivalSetContact = null;
+    g.rivalAttackContact = null;
+    g.voltzReceiverId = null;
     g.ball = { x:50, y:team === "voltz" ? 87 : 13, z:2, vx:0, vy:0, vz:0, inPlay:false };
     g.phase = team === "voltz" ? "serve-voltz" : "serve-rival";
     g.nextServeAt = now + (team === "rival" ? 900 : 0);
@@ -3177,20 +3239,28 @@ ${playerMarkup}
     volleyballRegisterTouch(g, "rival", player.id);
     const setter = volleyballChooseSetter(g, "rival", player.id);
     if (!setter) return;
+    const contact = { x:setter.x, y:clamp(setter.y, 26, 42) };
     g.rivalSetterId = setter.id;
-    volleyballLaunch(g, setter.x, clamp(setter.y, 26, 42), .7, 7);
+    g.rivalSetContact = contact;
+    g.rivalAttackContact = null;
+    volleyballLaunch(g, contact.x, contact.y, .7, 7);
   }
 
   function volleyballRivalSet(g, player) {
     volleyballRegisterTouch(g, "rival", player.id);
     const attacker = volleyballChooseAttacker(g, "rival", player.id);
+    g.rivalSetContact = null;
     if (!attacker) return;
+    const contact = { x:attacker.x, y:43.5 };
     g.rivalAttackerId = attacker.id;
-    volleyballLaunch(g, attacker.x, 43.5, .76, 19);
+    g.rivalAttackContact = contact;
+    volleyballLaunch(g, contact.x, contact.y, .76, 19);
   }
 
   function volleyballRivalAttack(g, player) {
     volleyballRegisterTouch(g, "rival", player.id);
+    g.rivalSetContact = null;
+    g.rivalAttackContact = null;
     const target = volleyballOpenTarget(g, "rival", [
       { x:18, y:82 }, { x:50, y:86 }, { x:82, y:82 },
       { x:30, y:62 }, { x:70, y:62 }
@@ -3236,7 +3306,8 @@ ${playerMarkup}
     if (touches === 1) {
       const setter = volleyballPlayer(g, g.rivalSetterId);
       if (setter) {
-        volleyballMoveToward(setter, clamp(landing.x, 18, 82), clamp(landing.y, 22, 44), 35, dt, 7, 46);
+        const contact = g.rivalSetContact || landing;
+        volleyballMoveToward(setter, clamp(contact.x, 18, 82), clamp(contact.y, 22, 44), 35, dt, 7, 46);
         if (volleyballRivalContactReady(setter, g.ball, "set")) volleyballRivalSet(g, setter);
       }
       return;
@@ -3245,15 +3316,17 @@ ${playerMarkup}
     if (touches === 2) {
       const attacker = volleyballPlayer(g, g.rivalAttackerId);
       if (attacker) {
-        volleyballMoveToward(attacker, clamp(landing.x, 10, 90), clamp(landing.y, 37, 46), 38, dt, 7, 46);
+        const contact = g.rivalAttackContact || landing;
+        volleyballMoveToward(attacker, clamp(contact.x, 10, 90), clamp(contact.y, 37, 46), 38, dt, 7, 46);
         if (volleyballRivalContactReady(attacker, g.ball, "attack")) volleyballRivalAttack(g, attacker);
       }
     }
   }
 
   function volleyballUpdatePlayers(g, dt) {
-    const active = volleyballPlayer(g, g.activePlayerId);
     const landing = volleyballLanding(g.ball);
+    const coverageReceiver = volleyballEnsureVoltzCoverage(g, landing);
+    const active = volleyballPlayer(g, g.activePlayerId);
     const voltzTouches = volleyballTouchesFor(g, "voltz");
 
     if (active?.team === "voltz") {
@@ -3279,17 +3352,26 @@ ${playerMarkup}
       let ty = player.homeY;
       let speed = 27;
 
-      const incoming = g.phase === "rally" && g.ball?.inPlay && landing && landing.y > 50 && g.lastTouchTeam !== "voltz";
+      const incoming = Boolean(coverageReceiver && landing);
       if (incoming) {
-        const shift = clamp((landing.x - 50) * .22, -10, 10);
+        // Um jogador recebe controle e os outros DOIS fazem cobertura de verdade
+        // ao redor da queda, preparando imediatamente o segundo toque.
+        const side = player.homeX < 50 ? -1 : 1;
         if (player.role === "LEV") {
-          tx = clamp(50 + shift * .35, 38, 62);
-          ty = 67;
+          tx = clamp(landing.x * .55 + 50 * .45, 30, 70);
+          ty = clamp(landing.y - 13, 62, 75);
         } else {
-          tx = clamp(player.homeX + shift, 14, 86);
-          ty = landing.y > 75 ? 76 : 70;
+          tx = clamp(landing.x + side * 13, 12, 88);
+          ty = clamp(landing.y - 6, 64, 84);
         }
-        speed = 31;
+        speed = 33;
+      } else if (g.phase === "rally" && g.lastTouchTeam === "rival") {
+        // Mesmo enquanto o rival ainda constroi a jogada, o time se desloca com
+        // a bola. Ninguem fica plantado esperando a classificacao "ataque".
+        const shift = clamp((g.ball.x - 50) * .2, -9, 9);
+        tx = clamp(player.homeX + shift, 14, 86);
+        ty = player.role === "LEV" ? 69 : 77;
+        speed = 28;
       } else if (g.phase === "rally" && voltzTouches === 1) {
         // Depois da recepcao: levantador busca o segundo toque e pontas abrem para atacar.
         if (player.role === "LEV") {
@@ -3536,6 +3618,9 @@ ${playerMarkup}
       rivalSetterId:null,
       rivalAttackerId:null,
       rivalServerId:null,
+      rivalSetContact:null,
+      rivalAttackContact:null,
+      voltzReceiverId:null,
       ball:{ x:50, y:13, z:2, vx:0, vy:0, vz:0, inPlay:false },
       message:"SAQUE VISITANTE · se posiciona, a bola já vem."
     };
