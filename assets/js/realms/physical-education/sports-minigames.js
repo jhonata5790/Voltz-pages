@@ -3540,6 +3540,9 @@ ${playerMarkup}
       message:"SAQUE VISITANTE · se posiciona, a bola já vem."
     };
     renderVolleyballDynamic();
+    // A primeira bola da partida tambem passa pela preparacao de saque:
+    // o rival aparece na linha de fundo com a bola antes do contato.
+    volleyballPrepareServe(state.current, "rival");
 
     let last = performance.now();
     const tick = (now) => {
