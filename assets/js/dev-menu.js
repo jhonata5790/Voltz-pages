@@ -83,23 +83,52 @@
 
 
 
-      <section class="dev-section">
-        <div class="dev-section-title">Teleporte Educação Física · sessão</div>
+      <section class="dev-section dev-section-sports">
+        <div class="dev-section-title">Educação Física · teste atual</div>
         <div class="dev-grid dev-grid-3">
-          <button class="dev-btn session" data-action="teleport-sports" data-value="praca">Praça Atletas</button>
-          <button class="dev-btn session" data-action="teleport-sports" data-value="futebol">Futebol</button>
-          <button class="dev-btn session" data-action="teleport-sports" data-value="basquete">Basquete</button>
-          <button class="dev-btn session" data-action="teleport-sports" data-value="atletismo">Atletismo</button>
-          <button class="dev-btn session" data-action="teleport-sports" data-value="volei">Vôlei</button>
-          <button class="dev-btn session" data-action="teleport-sports" data-value="queimada">Queimada</button>
-          <button class="dev-btn session" data-action="teleport-sports" data-value="estadio">Estádio Voltz</button>
+          <button class="dev-btn session" data-action="teleport-sports" data-value="praca">Praça dos Atletas</button>
+          <button class="dev-btn session" data-action="sport-page" data-value="football.html">⚽ Futebol standalone</button>
+          <button class="dev-btn session" data-action="sports-open" data-value="basketball">🏀 Basquete</button>
+          <button class="dev-btn session" data-action="sports-open" data-value="athletics">🏃 Atletismo</button>
+          <button class="dev-btn session" data-action="sport-page" data-value="volleyball.html">🏐 Vôlei V0.3</button>
+          <button class="dev-btn session" data-action="sport-page" data-value="dodgeball.html">🔴 Queimada standalone</button>
+          <button class="dev-btn session" data-action="teleport-sports" data-value="estadio">🏟 Estádio Voltz</button>
+          <button class="dev-btn session" data-action="sports-championship">🏆 Abrir Pentatlo</button>
         </div>
-        <div class="dev-grid dev-grid-3" style="margin-top:8px;">
-          <button class="dev-btn save" data-action="sports-complete-all">Concluir 5 modalidades</button>
+
+        <div class="dev-subtitle">Progresso individual · SAVE</div>
+        <div class="dev-sport-progress-grid">
+          <button class="dev-btn save" data-action="sports-set" data-value="football">✓ Futebol</button>
+          <button class="dev-btn danger" data-action="sports-unset" data-value="football">↺ Futebol</button>
+          <button class="dev-btn save" data-action="sports-set" data-value="basketball">✓ Basquete</button>
+          <button class="dev-btn danger" data-action="sports-unset" data-value="basketball">↺ Basquete</button>
+          <button class="dev-btn save" data-action="sports-set" data-value="athletics">✓ Atletismo</button>
+          <button class="dev-btn danger" data-action="sports-unset" data-value="athletics">↺ Atletismo</button>
+          <button class="dev-btn save" data-action="sports-set" data-value="volleyball">✓ Vôlei</button>
+          <button class="dev-btn danger" data-action="sports-unset" data-value="volleyball">↺ Vôlei</button>
+          <button class="dev-btn save" data-action="sports-set" data-value="dodgeball">✓ Queimada</button>
+          <button class="dev-btn danger" data-action="sports-unset" data-value="dodgeball">↺ Queimada</button>
+        </div>
+
+        <div class="dev-subtitle">Final / ferramentas</div>
+        <div class="dev-grid dev-grid-3">
+          <button class="dev-btn save" data-action="sports-complete-all">✓ Concluir 5 modalidades</button>
+          <button class="dev-btn save" data-action="sports-final" data-value="1">🎓 Dar diploma + final</button>
+          <button class="dev-btn danger" data-action="sports-final" data-value="0">↺ Resetar só final</button>
           <button class="dev-btn session" data-action="sports-rally">🔥 Forçar Rally Rubro</button>
-          <button class="dev-btn session" data-action="sports-perfect-return">⚡ Testar Devolução Perfeita</button>
-          <button class="dev-btn danger" data-action="sports-reset">Resetar Educação Física</button>
+          <button class="dev-btn session" data-action="sports-perfect-return">⚡ Devolução Perfeita</button>
+          <button class="dev-btn danger" data-action="sports-reset">RESET Educação Física</button>
         </div>
+      </section>
+
+      <section class="dev-section">
+        <div class="dev-section-title">Mobile · teste</div>
+        <div class="dev-grid dev-grid-3">
+          <button class="dev-btn session" data-action="mobile-toggle">🎮 Ligar/desligar touch</button>
+          <button class="dev-btn session" data-action="mobile-on">📱 Forçar touch ON</button>
+          <button class="dev-btn session" data-action="reload-page">↻ Recarregar página</button>
+        </div>
+        <div class="dev-section-note">No celular, o botão DEV substitui o atalho P. Para minigames esportivos, a interface troca os botões automaticamente.</div>
       </section>
 
       <section class="dev-section">
@@ -136,7 +165,7 @@
       </section>
 
       <div id="devLog" class="dev-log">Painel pronto.</div>
-      <div class="dev-shortcut">P → código <strong>menu</strong> · Esc → fechar painel</div>
+      <div class="dev-shortcut">PC: P · Mobile: DEV → código <strong>menu</strong> · Esc/× → fechar</div>
     </aside>`;
 
   document.body.append(gate, overlay);
@@ -171,6 +200,13 @@
       <div class="dev-stat"><span>Ritmo</span><strong>${snap.rhythmStacks}/3${snap.rhythmDevOverride ? " DEV" : ""}</strong></div>
       <div class="dev-stat"><span>Velocidade</span><strong>×${snap.speedMultiplier}</strong></div>
       <div class="dev-stat"><span>Colisores</span><strong>${snap.colliders ? "ON" : "OFF"}</strong></div>
+      ${(() => {
+        const sports = window.VoltzSports?.devGetSnapshot?.();
+        return sports
+          ? `<div class="dev-stat"><span>Esportes</span><strong>${sports.completedCount}/${sports.total}${sports.guardianChallengeCompleted ? " · 🎓" : ""}</strong></div>`
+          : `<div class="dev-stat"><span>Esportes</span><strong>—</strong></div>`;
+      })()}
+      <div class="dev-stat"><span>Touch</span><strong>${window.VoltzMobileControls?.isEnabled?.() ? "ON" : "OFF"}</strong></div>
       ${(() => {
         const battle = window.VoltzBattleDev?.getSnapshot?.();
         return battle?.active
@@ -240,6 +276,20 @@
         case "teleport": api.teleportMath(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
         case "teleport-port": api.teleportPortuguese(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
         case "teleport-sports": api.teleportSports(value); setLog(`Teleporte executado: ${button.textContent.trim()}.`); break;
+        case "sport-page": window.location.href = value; return;
+        case "sports-open": { closePanel(); window.VoltzSports?.open?.(value); break; }
+        case "sports-championship": {
+          if (!window.VoltzSports?.allSportsCompleted?.()) throw new Error("Conclua as cinco modalidades ou use o cheat de conclusão antes do Pentatlo.");
+          closePanel();
+          window.VoltzSports?.open?.("championship");
+          break;
+        }
+        case "sports-set": { const result = await window.VoltzSports?.devSetSportCompleted?.(value, true); if (!result?.ok) throw new Error(result?.message || "Falha ao concluir modalidade."); setLog(`✓ ${value} marcado como concluído.`); break; }
+        case "sports-unset": { const result = await window.VoltzSports?.devSetSportCompleted?.(value, false); if (!result?.ok) throw new Error(result?.message || "Falha ao restaurar modalidade."); setLog(`↺ ${value} restaurado.`); break; }
+        case "sports-final": { const result = await window.VoltzSports?.devSetGuardianCompleted?.(value === "1"); if (result?.ok === false) throw new Error(result?.message || "Falha ao alterar o final."); setLog(value === "1" ? "🎓 Final concluído e diploma aplicado." : "↺ Final de Educação Física restaurado."); break; }
+        case "mobile-toggle": { const on = window.VoltzMobileControls?.toggle?.(); setLog(`Controles touch ${on ? "ON" : "OFF"}.`); break; }
+        case "mobile-on": { window.VoltzMobileControls?.setEnabled?.(true); setLog("Controles touch forçados ON."); break; }
+        case "reload-page": window.location.reload(); return;
         case "sports-complete-all": { const result = await window.VoltzSports?.devCompleteAll?.(); setLog(result?.persisted === false ? "⚠ Modalidades alteradas apenas localmente." : "✓ Cinco modalidades concluídas no SAVE."); break; }
         case "sports-rally": { const result = window.VoltzSports?.devTriggerRally?.(); if (!result?.ok) throw new Error(result?.message || "Abra a Queimada primeiro."); setLog("🔥 Rally Rubro forçado para teste."); break; }
         case "sports-perfect-return": { const result = window.VoltzSports?.devTriggerPerfectReturn?.(); if (!result?.ok) throw new Error(result?.message || "Abra a Queimada primeiro."); setLog("⚡ Devolução Perfeita preparada para teste."); break; }

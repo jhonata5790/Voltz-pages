@@ -5,7 +5,16 @@
   const narrow = global.matchMedia?.("(max-width: 900px)")?.matches;
   const forced = params.get("mobile") === "1";
   const disabledByUrl = params.get("mobile") === "0";
-  let enabled = disabledByUrl ? false : forced || coarse || narrow || localStorage.getItem(STORAGE_KEY) === "on";
+  const storedPreference = localStorage.getItem(STORAGE_KEY);
+  let enabled = disabledByUrl
+    ? false
+    : forced
+      ? true
+      : storedPreference === "on"
+        ? true
+        : storedPreference === "off"
+          ? false
+          : Boolean(coarse || narrow);
   const held = new Map();
 
   const KEY_META = {

@@ -6350,6 +6350,74 @@ ${playerMarkup}
     return result || { ok: true };
   }
 
+
+  async function devSetSportCompleted(id, completed = true) {
+    if (!SPORT_IDS.includes(id)) return { ok:false, message:"Modalidade inválida." };
+    const current = getProgress();
+    const ids = new Set(current.completedMinigameIds);
+    if (completed) ids.add(id);
+    else ids.delete(id);
+    const next = {
+      ...current,
+      completedMinigameIds:[...ids],
+      lastSportCompletedAt:new Date().toISOString()
+    };
+    if (!completed) {
+      next.guardianChallengeCompleted = false;
+      next.bossDefeated = false;
+      next.completed = false;
+    }
+    const result = await global.VoltzProfile?.setRealmProgress?.(REALM_ID, next);
+    updateHud();
+    return { ok:result?.ok !== false, persisted:result?.persisted, id, completed, progress:getProgress() };
+  }
+
+  async function devSetGuardianCompleted(completed = true) {
+    if (completed) {
+      await devCompleteAll();
+      const result = await global.VoltzProfile?.completeGuardianChallenge?.(
+        REALM_ID,
+        { id:"campeonato-voltz-dev", enemyRank:"guardian", name:"Pentatlo Voltz · DEV" },
+        { xp:0, coins:0 },
+        {
+          id:"diploma-educacao-fisica",
+          name:"Diploma de Educação Física",
+          abilityId:"reflexos-treinados",
+          abilityName:"Reflexos Treinados",
+          abilityDescription:"Uma vez por batalha, adiciona 6 segundos ao cronômetro da pergunta atual."
+        }
+      );
+      updateHud();
+      return result || { ok:true, persisted:false };
+    }
+
+    const sportsDone = [...getProgress().completedMinigameIds];
+    const reset = await global.VoltzProfile?.resetGuardianChallenge?.(REALM_ID);
+    await global.VoltzProfile?.setRealmProgress?.(REALM_ID, {
+      ...getProgress(),
+      completedMinigameIds:sportsDone,
+      guardianChallengeCompleted:false,
+      bossDefeated:false,
+      completed:false
+    });
+    updateHud();
+    return reset || { ok:true };
+  }
+
+  function devGetSnapshot() {
+    const progress = getProgress();
+    return {
+      completedMinigameIds:[...progress.completedMinigameIds],
+      completedCount:progress.completedMinigameIds.length,
+      total:SPORT_IDS.length,
+      guardianChallengeCompleted:Boolean(progress.guardianChallengeCompleted),
+      open:Boolean(state.open),
+      activeId:state.activeId || "",
+      mode:state.mode || "normal",
+      currentType:state.current?.type || ""
+    };
+  }
+
   function onSceneChanged(sceneId) {
     state.sceneId = sceneId || "";
     if (state.open && state.sceneId !== REALM_ID) close();
@@ -6452,7 +6520,10 @@ ${playerMarkup}
     getProgress,
     allSportsCompleted,
     devCompleteAll,
-    devReset
+    devReset,
+    devSetSportCompleted,
+    devSetGuardianCompleted,
+    devGetSnapshot
   });
 
   if (global.getActiveSceneId) onSceneChanged(global.getActiveSceneId());
