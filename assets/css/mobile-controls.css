@@ -1,0 +1,173 @@
+/* Voltz Education · controles touch compartilhados */
+.voltz-mobile-controls {
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:11000;
+  pointer-events:none;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:none;
+}
+.voltz-mobile-controls.enabled { display:block; }
+.mobile-top-actions {
+  position:absolute;
+  top:max(10px,env(safe-area-inset-top));
+  right:max(10px,env(safe-area-inset-right));
+  display:flex;
+  gap:7px;
+  pointer-events:auto;
+}
+.mobile-mini {
+  min-width:48px;
+  min-height:42px;
+  border:1px solid rgba(120,247,255,.3);
+  border-radius:12px;
+  color:#eefdff;
+  background:rgba(5,13,28,.82);
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+  backdrop-filter:blur(8px);
+  font-weight:900;
+}
+.mobile-mini.dev { color:#ffd166; border-color:rgba(255,209,102,.38); }
+.mobile-dpad {
+  position:absolute;
+  left:max(14px,env(safe-area-inset-left));
+  bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));
+  width:168px;
+  height:168px;
+  display:grid;
+  grid-template-columns:56px 56px 56px;
+  grid-template-rows:56px 56px 56px;
+  pointer-events:auto;
+}
+.mobile-dir,
+.mobile-action,
+.mobile-expand {
+  border:1px solid rgba(120,247,255,.27);
+  color:#eefcff;
+  background:rgba(5,13,28,.72);
+  box-shadow:inset 0 0 20px rgba(0,234,255,.05),0 8px 24px rgba(0,0,0,.2);
+  backdrop-filter:blur(8px);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:none;
+}
+.mobile-dir {
+  width:54px;
+  height:54px;
+  border-radius:17px;
+  font-size:22px;
+  font-weight:1000;
+}
+.mobile-dir.up { grid-column:2;grid-row:1; }
+.mobile-dir.left { grid-column:1;grid-row:2; }
+.mobile-dir.right { grid-column:3;grid-row:2; }
+.mobile-dir.down { grid-column:2;grid-row:3; }
+.mobile-dpad-core {
+  grid-column:2;grid-row:2;
+  display:grid;
+  place-items:center;
+  width:48px;height:48px;
+  align-self:center;justify-self:center;
+  border-radius:50%;
+  color:#78f7ff;
+  background:rgba(0,234,255,.08);
+  border:1px solid rgba(120,247,255,.12);
+  opacity:.72;
+}
+.mobile-actions {
+  position:absolute;
+  right:max(14px,env(safe-area-inset-right));
+  bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));
+  width:min(220px,43vw);
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+  align-content:end;
+  pointer-events:auto;
+}
+.mobile-action {
+  min-height:58px;
+  border-radius:18px;
+  padding:7px 9px;
+  display:grid;
+  place-items:center;
+  line-height:1.05;
+}
+.mobile-action b { color:#78f7ff;font-size:17px; }
+.mobile-action span { color:rgba(238,252,255,.72);font-size:9px;font-weight:900;letter-spacing:.04em; }
+.mobile-action.primary {
+  grid-row:span 2;
+  min-height:125px;
+  border-color:rgba(255,209,102,.42);
+  background:rgba(255,209,102,.12);
+}
+.mobile-action.primary b { color:#ffd166;font-size:28px; }
+.mobile-dir.pressed,
+.mobile-action.pressed {
+  transform:scale(.92);
+  background:rgba(0,234,255,.22);
+  border-color:rgba(120,247,255,.72);
+}
+.mobile-expand {
+  display:none;
+  position:absolute;
+  right:max(12px,env(safe-area-inset-right));
+  bottom:max(12px,calc(env(safe-area-inset-bottom) + 8px));
+  width:54px;height:54px;
+  border-radius:50%;
+  pointer-events:auto;
+  font-size:22px;
+}
+.voltz-mobile-controls.collapsed .mobile-dpad,
+.voltz-mobile-controls.collapsed .mobile-actions { display:none; }
+.voltz-mobile-controls.collapsed .mobile-expand { display:block; }
+.voltz-mobile-controls.collapsed .mobile-top-actions [data-mobile-command="collapse"] { display:none; }
+
+body.voltz-mobile-enabled .hud-controls { display:none !important; }
+body.voltz-mobile-enabled .sports-game-shell { padding-bottom:140px; }
+body.voltz-mobile-enabled { overscroll-behavior:none; }
+
+.mobile-landscape-hint { display:none; }
+@media (orientation:portrait) and (max-width:900px) {
+  body.standalone-volleyball-page::before,
+  body.standalone-football-page::before,
+  body.standalone-dodgeball-page::before {
+    content:"↻ Para jogar melhor, vire o celular na horizontal";
+    position:fixed;
+    z-index:10950;
+    top:max(8px,env(safe-area-inset-top));
+    left:50%;
+    transform:translateX(-50%);
+    width:max-content;
+    max-width:72vw;
+    padding:7px 10px;
+    border-radius:999px;
+    color:rgba(255,255,255,.76);
+    background:rgba(3,8,20,.72);
+    border:1px solid rgba(255,255,255,.1);
+    font:800 10px/1.2 Inter,system-ui,sans-serif;
+    pointer-events:none;
+  }
+}
+
+@media (max-width:700px) {
+  .mobile-dpad { width:150px;height:150px;grid-template-columns:50px 50px 50px;grid-template-rows:50px 50px 50px; }
+  .mobile-dir { width:48px;height:48px;border-radius:15px;font-size:19px; }
+  .mobile-dpad-core { width:42px;height:42px; }
+  .mobile-actions { width:min(198px,45vw);gap:7px; }
+  .mobile-action { min-height:52px;border-radius:16px;padding:6px; }
+  .mobile-action.primary { min-height:111px; }
+  .mobile-action span { font-size:8px; }
+  .profile-hud { gap:5px !important; }
+  .profile-hud span { display:none !important; }
+  .topbar { min-height:auto !important; }
+}
+
+@media (max-height:500px) and (orientation:landscape) {
+  .mobile-dpad { transform:scale(.82);transform-origin:left bottom; }
+  .mobile-actions { transform:scale(.84);transform-origin:right bottom; }
+  .mobile-top-actions { transform:scale(.86);transform-origin:right top; }
+  body.voltz-mobile-enabled .sports-game-shell { padding-bottom:92px; }
+}
