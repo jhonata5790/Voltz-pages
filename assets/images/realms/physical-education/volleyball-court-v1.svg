@@ -1,140 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
-  <title id="title">Quadra da Sequência</title>
-  <desc id="desc">Piso futurista de vôlei em perspectiva, com lado visitante em vermelho e lado Voltz em verde-ciano.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Quadra da Sequência em câmera diagonal</title>
+  <desc id="desc">Quadra futurista de vôlei em perspectiva 2.5D, vista do canto inferior esquerdo.</desc>
   <defs>
     <clipPath id="courtClip">
-      <polygon points="288,0 1312,0 1600,1000 0,1000"/>
+      <polygon points="200,243 1128,63 1552,567 80,792"/>
     </clipPath>
-
-    <linearGradient id="floorBase" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0d2028"/>
-      <stop offset="0.5" stop-color="#0a1820"/>
-      <stop offset="1" stop-color="#061016"/>
+    <linearGradient id="arena" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#07141c"/>
+      <stop offset=".52" stop-color="#09141b"/>
+      <stop offset="1" stop-color="#04090f"/>
     </linearGradient>
-    <linearGradient id="rivalWash" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#4a1823" stop-opacity="0.78"/>
-      <stop offset="0.62" stop-color="#2a1720" stop-opacity="0.5"/>
-      <stop offset="1" stop-color="#15171d" stop-opacity="0.08"/>
+    <linearGradient id="floor" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#102932"/>
+      <stop offset=".5" stop-color="#0a1a22"/>
+      <stop offset="1" stop-color="#0d2028"/>
     </linearGradient>
-    <linearGradient id="voltzWash" x1="1" y1="0" x2="0" y2="0">
-      <stop offset="0" stop-color="#0e453d" stop-opacity="0.82"/>
-      <stop offset="0.58" stop-color="#10332f" stop-opacity="0.48"/>
-      <stop offset="1" stop-color="#121b20" stop-opacity="0.06"/>
+    <linearGradient id="rival" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#5a1c29" stop-opacity=".68"/>
+      <stop offset="1" stop-color="#25151d" stop-opacity=".28"/>
     </linearGradient>
-    <linearGradient id="centerGlow" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#63f5b5" stop-opacity="0"/>
-      <stop offset="0.45" stop-color="#b9fff1" stop-opacity="0.08"/>
-      <stop offset="0.5" stop-color="#e7ffff" stop-opacity="0.28"/>
-      <stop offset="0.55" stop-color="#ff8d9a" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#ff6b7a" stop-opacity="0"/>
+    <linearGradient id="voltz" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0d4c40" stop-opacity=".74"/>
+      <stop offset="1" stop-color="#12332f" stop-opacity=".32"/>
     </linearGradient>
-    <radialGradient id="nearGlow" cx="50%" cy="100%" r="70%">
-      <stop offset="0" stop-color="#d8fff3" stop-opacity="0.10"/>
-      <stop offset="0.55" stop-color="#67d9cb" stop-opacity="0.025"/>
+    <linearGradient id="nearFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#183740"/>
+      <stop offset="1" stop-color="#050b10"/>
+    </linearGradient>
+    <radialGradient id="nearLight" cx="12%" cy="92%" r="86%">
+      <stop offset="0" stop-color="#9dffe0" stop-opacity=".14"/>
+      <stop offset=".55" stop-color="#62d9c3" stop-opacity=".025"/>
       <stop offset="1" stop-color="#000" stop-opacity="0"/>
     </radialGradient>
-
-    <pattern id="microGrid" width="42" height="42" patternUnits="userSpaceOnUse">
-      <path d="M42 0H0V42" fill="none" stroke="#d6fff4" stroke-opacity="0.035" stroke-width="1"/>
-      <circle cx="0" cy="0" r="1.5" fill="#d6fff4" fill-opacity="0.08"/>
-    </pattern>
-
-    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <filter id="lineGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="shadow" x="-20%" y="-20%" width="150%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="16"/>
+      <feOffset dx="12" dy="22" result="o"/>
+      <feColorMatrix in="o" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .58 0"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 
-  <g clip-path="url(#courtClip)">
-    <rect width="1600" height="1000" fill="url(#floorBase)"/>
-    <rect width="800" height="1000" fill="url(#rivalWash)"/>
-    <rect x="800" width="800" height="1000" fill="url(#voltzWash)"/>
-    <rect width="1600" height="1000" fill="url(#microGrid)" opacity="0.65"/>
-    <rect width="1600" height="1000" fill="url(#nearGlow)"/>
-
-    <!-- Faixas de profundidade: o espaçamento aumenta em direção à câmera. -->
-    <g fill="none" stroke="#d9fff5" stroke-opacity="0.07" stroke-width="2">
-      <path d="M245 115 H1355"/>
-      <path d="M205 235 H1395"/>
-      <path d="M155 390 H1445"/>
-      <path d="M92 585 H1508"/>
-      <path d="M20 815 H1580"/>
-    </g>
-
-    <!-- Zonas internas com placas translúcidas. -->
-    <path d="M300 34 L793 34 L793 956 L28 956 Z" fill="#ff6b7a" fill-opacity="0.035"/>
-    <path d="M807 34 L1300 34 L1572 956 L807 956 Z" fill="#63f5b5" fill-opacity="0.045"/>
-
-    <!-- Linha central sob a rede DOM. -->
-    <path d="M800 18 V974" stroke="url(#centerGlow)" stroke-width="34" opacity="0.8"/>
-    <path d="M800 18 V974" stroke="#efffff" stroke-opacity="0.32" stroke-width="2"/>
-
-    <!-- Linhas de ataque já desenhadas com convergência real. -->
-    <g fill="none" stroke-width="3" stroke-dasharray="12 12">
-      <path d="M694 32 L526 958" stroke="#ff9ca7" stroke-opacity="0.48"/>
-      <path d="M906 32 L1074 958" stroke="#8affcf" stroke-opacity="0.52"/>
-    </g>
-
-    <!-- Linhas de serviço / apoio. -->
-    <g fill="none" stroke="#d9fff5" stroke-opacity="0.18" stroke-width="2">
-      <path d="M332 72 L1268 72"/>
-      <path d="M70 924 L1530 924"/>
-    </g>
-
-    <!-- Circuitos do time visitante. -->
-    <g fill="none" stroke="#ff7d8b" stroke-opacity="0.18" stroke-width="3">
-      <path d="M355 170 H470 L505 205 H618"/>
-      <path d="M225 665 H390 L430 625 H548"/>
-      <path d="M410 820 V752 H480"/>
-    </g>
-    <g fill="#ff98a3" fill-opacity="0.35">
-      <circle cx="355" cy="170" r="5"/><circle cx="618" cy="205" r="5"/>
-      <circle cx="225" cy="665" r="5"/><circle cx="548" cy="625" r="5"/>
-      <circle cx="410" cy="820" r="5"/>
-    </g>
-
-    <!-- Circuitos Voltz. -->
-    <g fill="none" stroke="#63f5b5" stroke-opacity="0.2" stroke-width="3">
-      <path d="M1245 170 H1130 L1095 205 H982"/>
-      <path d="M1375 665 H1210 L1170 625 H1052"/>
-      <path d="M1190 820 V752 H1120"/>
-    </g>
-    <g fill="#8affcf" fill-opacity="0.38">
-      <circle cx="1245" cy="170" r="5"/><circle cx="982" cy="205" r="5"/>
-      <circle cx="1375" cy="665" r="5"/><circle cx="1052" cy="625" r="5"/>
-      <circle cx="1190" cy="820" r="5"/>
-    </g>
-
-    <!-- Marca Voltz discreta no primeiro plano. -->
-    <path d="M1180 705 L1090 840 H1165 L1118 930 L1275 770 H1197 L1250 705 Z"
-          fill="#7fffd0" fill-opacity="0.055" stroke="#8affcf" stroke-opacity="0.12" stroke-width="3"/>
-
-    <!-- Marca rival abstrata para equilibrar a composição. -->
-    <g transform="translate(310 760)" opacity="0.07" fill="none" stroke="#ff8694" stroke-width="10">
-      <path d="M0 75 L70 0 L140 75 L70 150 Z"/>
-      <path d="M40 75 H100"/>
-    </g>
-
-    <!-- Luzes laterais em perspectiva. -->
-    <g filter="url(#softGlow)">
-      <path d="M282 18 L10 970" stroke="#ff6b7a" stroke-opacity="0.19" stroke-width="9"/>
-      <path d="M1318 18 L1590 970" stroke="#63f5b5" stroke-opacity="0.22" stroke-width="9"/>
-    </g>
-
-    <!-- Pequenos pads tecnológicos nas bordas. -->
-    <g fill="#f2ffff" fill-opacity="0.34">
-      <rect x="314" y="46" width="38" height="5" rx="2.5"/>
-      <rect x="1248" y="46" width="38" height="5" rx="2.5"/>
-      <rect x="56" y="887" width="70" height="7" rx="3.5"/>
-      <rect x="1474" y="887" width="70" height="7" rx="3.5"/>
-    </g>
+  <rect width="1600" height="900" rx="48" fill="url(#arena)"/>
+  <g opacity=".28" fill="none" stroke="#9fe8df" stroke-width="2">
+    <path d="M0 760L530 675L805 720L1600 594"/>
+    <path d="M0 812L560 720L805 760L1600 632"/>
+    <path d="M95 145L710 28M930 890L1600 785" stroke-opacity=".16"/>
   </g>
 
-  <!-- Contorno principal fica fora do clip para permanecer nítido. -->
-  <polygon points="288,2 1312,2 1597,998 3,998" fill="none" stroke="#c6fff0" stroke-opacity="0.52" stroke-width="5" filter="url(#lineGlow)"/>
-  <polygon points="302,20 1298,20 1567,970 33,970" fill="none" stroke="#eafff8" stroke-opacity="0.16" stroke-width="2"/>
+  <!-- Espessura da plataforma: o piso deixa de parecer pintado na tela. -->
+  <path d="M80 792L1552 567L1552 594L80 822Z" fill="url(#nearFace)" stroke="#78d9ca" stroke-opacity=".22" stroke-width="3"/>
+  <path d="M200 243L80 792L80 822L200 270Z" fill="#071118" stroke="#ff7787" stroke-opacity=".16" stroke-width="3"/>
+  <path d="M1128 63L1552 567L1552 594L1128 90Z" fill="#071218" stroke="#72f2c5" stroke-opacity=".18" stroke-width="3"/>
+
+  <g filter="url(#shadow)">
+    <polygon points="200,243 1128,63 1552,567 80,792" fill="url(#floor)"/>
+    <g clip-path="url(#courtClip)">
+      <polygon points="200,243 664,153 816,680 80,792" fill="url(#rival)"/>
+      <polygon points="664,153 1128,63 1552,567 816,680" fill="url(#voltz)"/>
+      <polygon points="200,243 1128,63 1552,567 80,792" fill="url(#nearLight)"/>
+
+      <!-- Malha do piso seguindo os dois eixos da quadra. -->
+      <g fill="none" stroke="#dcfff7" stroke-opacity=".055" stroke-width="2">
+        <path d="M293 225L227 770"/><path d="M386 207L374 747"/>
+        <path d="M478 189L522 725"/><path d="M571 171L669 702"/>
+        <path d="M757 135L963 657"/><path d="M850 117L1110 635"/>
+        <path d="M942 99L1257 612"/><path d="M1035 81L1405 590"/>
+        <path d="M178 342L1204 154"/><path d="M152 463L1298 265"/>
+        <path d="M122 600L1404 391"/><path d="M99 704L1484 486"/>
+      </g>
+
+      <!-- Faixas de profundidade mais fortes no primeiro plano. -->
+      <g fill="none" stroke="#d9fff5" stroke-width="3">
+        <path d="M178 342L1204 154" stroke-opacity=".08"/>
+        <path d="M152 463L1298 265" stroke-opacity=".09"/>
+        <path d="M122 600L1404 391" stroke-opacity=".11"/>
+        <path d="M99 704L1484 486" stroke-opacity=".14"/>
+      </g>
+
+      <!-- Linhas de ataque e centro na mesma projeção usada pelos jogadores. -->
+      <g fill="none" stroke-width="4" stroke-dasharray="14 13">
+        <path d="M516 182L581 716" stroke="#ff9ca7" stroke-opacity=".55"/>
+        <path d="M813 124L1052 644" stroke="#8affcf" stroke-opacity=".58"/>
+      </g>
+      <path d="M664 153L816 680" stroke="#eaffff" stroke-opacity=".18" stroke-width="32"/>
+      <path d="M664 153L816 680" stroke="#f4ffff" stroke-opacity=".42" stroke-width="3"/>
+
+      <!-- Trilhas tecnológicas laterais. -->
+      <g fill="none" stroke-width="3">
+        <path d="M262 360L388 337L424 360L540 339" stroke="#ff7d8b" stroke-opacity=".22"/>
+        <path d="M215 600L360 575L405 600L540 578" stroke="#ff7d8b" stroke-opacity=".18"/>
+        <path d="M1018 233L1138 211L1190 234L1315 213" stroke="#63f5b5" stroke-opacity=".22"/>
+        <path d="M1112 446L1248 423L1300 444L1413 427" stroke="#63f5b5" stroke-opacity=".2"/>
+      </g>
+      <g fill="#eafff8" fill-opacity=".28">
+        <circle cx="262" cy="360" r="5"/><circle cx="540" cy="339" r="5"/>
+        <circle cx="1018" cy="233" r="5"/><circle cx="1315" cy="213" r="5"/>
+      </g>
+
+      <!-- Marcas de equipe inclinadas junto com o piso. -->
+      <g transform="translate(313 566) rotate(-10) skewX(-9)" opacity=".10" fill="none" stroke="#ff91a0" stroke-width="10">
+        <path d="M0 58L62 0L124 58L62 116Z"/><path d="M34 58H91"/>
+      </g>
+      <path d="M1195 375L1126 464L1180 456L1147 520L1272 411L1215 420L1250 366Z"
+            fill="#8affcf" fill-opacity=".08" stroke="#9affd9" stroke-opacity=".16" stroke-width="4"/>
+    </g>
+
+    <polygon points="200,243 1128,63 1552,567 80,792" fill="none" stroke="#d9fff5" stroke-opacity=".56" stroke-width="6" filter="url(#glow)"/>
+    <polygon points="218,257 1118,82 1520,556 102,774" fill="none" stroke="#effffb" stroke-opacity=".14" stroke-width="2"/>
+  </g>
+
+  <!-- Balizas luminosas ajudam a revelar altura e distância. -->
+  <g filter="url(#glow)">
+    <path d="M200 243L80 792" stroke="#ff6b7a" stroke-opacity=".34" stroke-width="8"/>
+    <path d="M1128 63L1552 567" stroke="#63f5b5" stroke-opacity=".37" stroke-width="8"/>
+    <circle cx="80" cy="792" r="9" fill="#ff8290" fill-opacity=".65"/>
+    <circle cx="1552" cy="567" r="9" fill="#7dffd0" fill-opacity=".7"/>
+  </g>
 </svg>
+
