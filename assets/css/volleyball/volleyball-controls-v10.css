@@ -1,0 +1,190 @@
+/* Voltz Education · Volei V1.0 · K constroi / J corta */
+
+/* O prompt antigo da assistencia continua trabalhando por baixo, mas a linguagem
+   visivel agora pertence ao sistema K/J. */
+.volleyball-action-prompt-assist {
+  display:none !important;
+}
+
+.volleyball-action-prompt-v10 {
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 9px);
+  translate:-50% 0;
+  min-width:max-content;
+  padding:5px 9px;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:999px;
+  background:rgba(2,9,14,.88);
+  color:rgba(240,250,255,.78);
+  font:800 10px/1 system-ui,sans-serif;
+  letter-spacing:.06em;
+  font-style:normal;
+  pointer-events:none;
+  box-shadow:0 7px 18px rgba(0,0,0,.28);
+  z-index:80;
+  white-space:nowrap;
+}
+
+.volleyball-action-prompt-v10.ready {
+  color:#fff;
+  border-color:rgba(255,219,103,.82);
+  box-shadow:0 0 0 2px rgba(255,219,103,.10),0 7px 18px rgba(0,0,0,.32);
+}
+
+.volleyball-spike-focus-v10 {
+  position:fixed;
+  inset:0;
+  z-index:9995;
+  display:grid;
+  place-items:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease;
+}
+
+.volleyball-spike-focus-v10.visible {
+  opacity:1;
+}
+
+.volleyball-spike-vignette-v10 {
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 50% 52%,transparent 0 18%,rgba(1,5,9,.28) 50%,rgba(1,4,8,.82) 100%),
+    linear-gradient(180deg,rgba(4,13,18,.18),rgba(1,5,8,.62));
+  backdrop-filter:blur(1.2px);
+}
+
+.volleyball-spike-panel-v10 {
+  position:relative;
+  width:min(620px,82vw);
+  padding:18px 24px 20px;
+  border:1px solid rgba(160,248,220,.42);
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(7,20,28,.95),rgba(3,10,15,.97));
+  box-shadow:0 24px 70px rgba(0,0,0,.58),0 0 34px rgba(89,244,194,.12);
+  text-align:center;
+  transform:translateY(28px) scale(.95);
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .16s ease,border-color .16s ease;
+}
+
+.volleyball-spike-focus-v10.visible .volleyball-spike-panel-v10 {
+  transform:translateY(0) scale(1);
+}
+
+.volleyball-spike-kicker-v10 {
+  margin-bottom:3px;
+  color:rgba(145,246,213,.72);
+  font:900 10px/1 system-ui,sans-serif;
+  letter-spacing:.22em;
+}
+
+.volleyball-spike-panel-v10 > strong {
+  display:block;
+  margin-bottom:14px;
+  color:#fff;
+  font:1000 clamp(24px,5vw,40px)/1 system-ui,sans-serif;
+  letter-spacing:.12em;
+  text-shadow:0 0 22px rgba(121,255,214,.18);
+}
+
+.volleyball-spike-meter-v10 {
+  position:relative;
+  height:34px;
+  overflow:hidden;
+  border:2px solid rgba(255,255,255,.68);
+  border-radius:10px;
+  background:
+    linear-gradient(90deg,rgba(255,89,104,.34) 0 38%,rgba(255,216,98,.27) 38% 62%,rgba(255,89,104,.34) 62% 100%),
+    rgba(255,255,255,.045);
+  box-shadow:inset 0 0 18px rgba(0,0,0,.36),0 9px 26px rgba(0,0,0,.25);
+}
+
+.volleyball-spike-good-v10 {
+  position:absolute;
+  left:38%;
+  width:24%;
+  top:0;
+  bottom:0;
+  background:rgba(104,239,181,.30);
+  box-shadow:inset 0 0 15px rgba(104,239,181,.28);
+}
+
+.volleyball-spike-perfect-v10 {
+  position:absolute;
+  left:47%;
+  width:6%;
+  top:0;
+  bottom:0;
+  background:rgba(255,246,167,.76);
+  box-shadow:0 0 18px rgba(255,242,126,.78);
+}
+
+#volleyballSpikeCursorV10 {
+  position:absolute;
+  left:0;
+  top:-5px;
+  bottom:-5px;
+  width:4px;
+  translate:-50% 0;
+  border-radius:999px;
+  background:#fff;
+  box-shadow:0 0 8px #fff,0 0 16px rgba(108,247,210,.9);
+}
+
+.volleyball-spike-panel-v10 > span {
+  display:block;
+  margin-top:12px;
+  color:rgba(238,248,255,.65);
+  font:800 11px/1.2 system-ui,sans-serif;
+  letter-spacing:.10em;
+}
+
+.volleyball-spike-panel-v10 > span b {
+  color:#fff;
+  font-size:14px;
+}
+
+.volleyball-spike-focus-v10.resolved-good .volleyball-spike-panel-v10 {
+  border-color:rgba(104,239,181,.96);
+  box-shadow:0 24px 70px rgba(0,0,0,.58),0 0 44px rgba(104,239,181,.40);
+}
+
+.volleyball-spike-focus-v10.resolved-perfect .volleyball-spike-panel-v10 {
+  border-color:rgba(255,244,155,1);
+  box-shadow:0 24px 70px rgba(0,0,0,.58),0 0 58px rgba(255,232,118,.48);
+}
+
+.volleyball-spike-focus-v10.resolved-miss .volleyball-spike-panel-v10 {
+  border-color:rgba(255,95,112,.88);
+  box-shadow:0 24px 70px rgba(0,0,0,.58),0 0 34px rgba(255,76,97,.24);
+}
+
+body.volleyball-spike-slowmo-v10 .volleyball-dynamic-card {
+  isolation:isolate;
+}
+
+body.volleyball-spike-slowmo-v10 .volleyball-dynamic-court {
+  transition:filter .32s ease,box-shadow .32s ease;
+}
+
+body.volleyball-spike-meter-open-v10 .volleyball-dynamic-court {
+  box-shadow:0 34px 70px rgba(0,0,0,.62) !important;
+}
+
+@media (max-width:700px) {
+  .volleyball-action-prompt-v10 {
+    font-size:8px;
+    padding:4px 7px;
+  }
+
+  .volleyball-spike-panel-v10 {
+    width:min(92vw,560px);
+    padding:15px 16px 17px;
+  }
+
+  .volleyball-spike-meter-v10 {
+    height:30px;
+  }
+}
