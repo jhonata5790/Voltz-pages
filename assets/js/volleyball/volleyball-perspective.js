@@ -1,4 +1,5 @@
 (function initializeVolleyballPerspective(global) {
+  const VERSION = "1.2-diagonal";
   let lastFrame = 0;
 
   function clamp(value, min, max) {
@@ -14,59 +15,80 @@
     return Boolean(global.matchMedia?.("(max-width: 700px)")?.matches);
   }
 
-  function farWidthFactor() {
-    return isMobile() ? .74 : .64;
+  function cameraCorners() {
+    // Ordem: rival/fundo, Voltz/fundo, rival/frente, Voltz/frente.
+    // O ponto de fuga fica deslocado para a direita, criando uma câmera 3/4
+    // em vez da antiga perspectiva central e simétrica.
+    return isMobile()
+      ? {
+          farRival:{ x:9, y:24 },
+          farVoltz:{ x:70, y:8 },
+          nearRival:{ x:3, y:86 },
+          nearVoltz:{ x:98, y:66 }
+        }
+      : {
+          farRival:{ x:12.5, y:27 },
+          farVoltz:{ x:70.5, y:7 },
+          nearRival:{ x:5, y:88 },
+          nearVoltz:{ x:97, y:63 }
+        };
   }
 
-  function depth01(screenTop) {
-    return clamp(Number(screenTop || 0) / 100, 0, 1);
+  function mix(a, b, amount) {
+    return a + (b - a) * amount;
   }
 
-  function widthFactor(screenTop) {
-    const t = depth01(screenTop);
-    const far = farWidthFactor();
-    // Curva suave: o fundo fecha mais rápido e o primeiro plano abre bastante.
-    const shaped = Math.pow(t, 1.08);
-    return far + (1 - far) * shaped;
+  function projectPercent(rawLeft, rawTop) {
+    const u = clamp(Number(rawLeft || 0) / 100, 0, 1);
+    const v = clamp(Number(rawTop || 0) / 100, 0, 1);
+    const corners = cameraCorners();
+    const farX = mix(corners.farRival.x, corners.farVoltz.x, u);
+    const farY = mix(corners.farRival.y, corners.farVoltz.y, u);
+    const nearX = mix(corners.nearRival.x, corners.nearVoltz.x, u);
+    const nearY = mix(corners.nearRival.y, corners.nearVoltz.y, u);
+
+    return {
+      x:mix(farX, nearX, v),
+      y:mix(farY, nearY, v),
+      u,
+      v
+    };
   }
 
-  function projectedGroundTop(screenTop) {
-    const t = depth01(screenTop);
-    // Foreshortening vertical: comprime as distâncias no fundo e abre no primeiro plano.
-    // Mantém os extremos 0 e 100 estáveis para não quebrar a borda da quadra.
-    const power = isMobile() ? 1.22 : 1.34;
-    return Math.pow(t, power) * 100;
+  function depthScale(projectedY) {
+    const depth = clamp((projectedY - 5) / 84, 0, 1);
+    return (isMobile() ? .80 : .72) + depth * (isMobile() ? .28 : .44);
   }
 
-  function depthScale(screenTop) {
-    const t = depth01(screenTop);
-    // Diferença agora é perceptível: fundo ~72%, frente ~112%.
-    return (isMobile() ? .78 : .72) + t * (isMobile() ? .28 : .40);
+  function depthShadow(projectedY) {
+    const depth = clamp((projectedY - 5) / 84, 0, 1);
+    return 1 + depth * 5.5;
   }
 
-  function depthShadow(screenTop) {
-    const t = depth01(screenTop);
-    return 1 + t * 4.5;
+  function setProjection(court, element, projected, rawLeft, rawTop, scaleByDepth) {
+    const offsetXPx = ((projected.x - rawLeft) / 100) * court.clientWidth;
+    const offsetYPx = ((projected.y - rawTop) / 100) * court.clientHeight;
+    const scale = scaleByDepth ? depthScale(projected.y) : 1;
+
+    element.style.setProperty("--volley-perspective-x", `${offsetXPx.toFixed(2)}px`);
+    element.style.setProperty("--volley-perspective-y", `${offsetYPx.toFixed(2)}px`);
+    element.style.setProperty("--volley-depth-scale", scale.toFixed(3));
+    element.style.setProperty("--volley-depth-shadow", `${depthShadow(projected.y).toFixed(2)}px`);
+    element.style.setProperty("--volley-projected-y", projected.y.toFixed(2));
   }
 
-  function projectGroundElement(court, element, groundTop = null, scaleByDepth = false) {
+  function projectGroundElement(court, element, groundTop = null, scaleByDepth = false, sortByDepth = false) {
     if (!court || !element) return;
     const rawLeft = rawPercent(element, "left");
     const rawTop = groundTop ?? rawPercent(element, "top");
     if (rawLeft === null || rawTop === null) return;
 
-    const factor = widthFactor(rawTop);
-    const projectedLeft = 50 + (rawLeft - 50) * factor;
-    const projectedTop = projectedGroundTop(rawTop);
-    const offsetXPx = ((projectedLeft - rawLeft) / 100) * court.clientWidth;
-    const offsetYPx = ((projectedTop - rawTop) / 100) * court.clientHeight;
+    const projected = projectPercent(rawLeft, rawTop);
+    setProjection(court, element, projected, rawLeft, rawTop, scaleByDepth);
 
-    element.style.setProperty("--volley-perspective-x", `${offsetXPx.toFixed(2)}px`);
-    element.style.setProperty("--volley-perspective-y", `${offsetYPx.toFixed(2)}px`);
-
-    const scale = scaleByDepth ? depthScale(rawTop) : 1;
-    element.style.setProperty("--volley-depth-scale", scale.toFixed(3));
-    element.style.setProperty("--volley-depth-shadow", `${depthShadow(rawTop).toFixed(2)}px`);
+    if (sortByDepth) {
+      element.style.zIndex = String(30 + Math.round(projected.y));
+    }
   }
 
   function projectBall(court, ball, shadow) {
@@ -76,28 +98,25 @@
     const rawGroundTop = rawPercent(shadow, "top");
     if (rawLeft === null || rawBallTop === null || rawGroundTop === null) return;
 
-    const factor = widthFactor(rawGroundTop);
-    const projectedLeft = 50 + (rawLeft - 50) * factor;
-    const projectedGround = projectedGroundTop(rawGroundTop);
+    const ground = projectPercent(rawLeft, rawGroundTop);
+    const rawLift = rawBallTop - rawGroundTop;
+    const liftScale = .72 + clamp((ground.y - 5) / 84, 0, 1) * .28;
+    const projected = {
+      ...ground,
+      y:ground.y + rawLift * liftScale
+    };
 
-    // Preserva a altura visual da bola, mas reduz levemente o lift no fundo para combinar com a perspectiva.
-    const lift = rawBallTop - rawGroundTop;
-    const liftScale = .72 + depth01(rawGroundTop) * .28;
-    const projectedBallTop = projectedGround + lift * liftScale;
-
-    const offsetXPx = ((projectedLeft - rawLeft) / 100) * court.clientWidth;
-    const offsetYPx = ((projectedBallTop - rawBallTop) / 100) * court.clientHeight;
-    ball.style.setProperty("--volley-perspective-x", `${offsetXPx.toFixed(2)}px`);
-    ball.style.setProperty("--volley-perspective-y", `${offsetYPx.toFixed(2)}px`);
-    ball.style.setProperty("--volley-depth-scale", depthScale(rawGroundTop).toFixed(3));
+    setProjection(court, ball, projected, rawLeft, rawBallTop, true);
+    ball.style.zIndex = String(150 + Math.round(ground.y));
   }
 
   function applyPerspective() {
     const court = document.getElementById("volleyballDynamicCourt");
     if (!court) return;
 
+    court.dataset.camera = VERSION;
     court.querySelectorAll(".volleyball-dynamic-player").forEach((player) => {
-      projectGroundElement(court, player, null, true);
+      projectGroundElement(court, player, null, true, true);
     });
 
     const shadow = document.getElementById("volleyballBallShadow");
@@ -118,6 +137,11 @@
   }
 
   global.addEventListener("resize", applyPerspective);
-  global.VoltzVolleyballPerspective = Object.freeze({ refresh:applyPerspective });
+  global.VoltzVolleyballPerspective = Object.freeze({
+    version:VERSION,
+    refresh:applyPerspective,
+    projectPoint:(left, top) => projectPercent(left, top)
+  });
   requestAnimationFrame(frame);
 })(window);
+
