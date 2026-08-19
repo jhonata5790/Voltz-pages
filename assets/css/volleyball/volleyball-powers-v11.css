@@ -1,0 +1,244 @@
+/* Voltz Education · Volei V1.1 · poderes individuais */
+
+.volleyball-dynamic-player {
+  overflow:visible !important;
+}
+
+.volleyball-power-aura-v11 {
+  position:absolute;
+  inset:-13px;
+  z-index:-1;
+  border-radius:50%;
+  opacity:0;
+  pointer-events:none;
+  transform:scale(.82);
+  transition:opacity .2s ease,transform .2s ease,filter .2s ease;
+}
+
+.volleyball-dynamic-player.power-ready-v11 .volleyball-power-aura-v11 {
+  opacity:.9;
+  transform:scale(1);
+  animation:volleyballPowerAuraPulseV11 1.25s ease-in-out infinite;
+}
+
+.volleyball-dynamic-player.power-armed-v11 .volleyball-power-aura-v11 {
+  opacity:1;
+  transform:scale(1.14);
+  animation-duration:.48s;
+}
+
+.volleyball-dynamic-player.power-fire-v11 .volleyball-power-aura-v11 {
+  border:2px solid rgba(255,132,62,.84);
+  background:radial-gradient(circle,rgba(255,207,98,.16) 0 34%,rgba(255,99,51,.08) 56%,transparent 72%);
+  box-shadow:0 0 14px rgba(255,117,51,.72),0 0 28px rgba(255,74,35,.36),inset 0 0 16px rgba(255,196,77,.24);
+}
+
+.volleyball-dynamic-player.power-energy-v11 .volleyball-power-aura-v11 {
+  border:2px solid rgba(255,241,158,.9);
+  background:radial-gradient(circle,rgba(255,255,226,.18) 0 32%,rgba(255,226,107,.08) 58%,transparent 74%);
+  box-shadow:0 0 14px rgba(255,244,169,.72),0 0 30px rgba(255,217,94,.30),inset 0 0 17px rgba(255,255,235,.30);
+}
+
+.volleyball-dynamic-player.power-lightning-v11 .volleyball-power-aura-v11 {
+  border:2px solid rgba(111,231,255,.92);
+  background:radial-gradient(circle,rgba(180,249,255,.16) 0 30%,rgba(87,129,255,.09) 56%,transparent 74%);
+  box-shadow:0 0 15px rgba(79,224,255,.82),0 0 30px rgba(96,91,255,.38),inset 0 0 17px rgba(174,248,255,.24);
+}
+
+.volleyball-dynamic-player.power-armed-v11.power-fire-v11 .volleyball-power-aura-v11 {
+  filter:brightness(1.35) saturate(1.25);
+  box-shadow:0 0 18px rgba(255,147,61,.95),0 0 42px rgba(255,62,30,.58),0 0 62px rgba(255,174,50,.18);
+}
+
+.volleyball-dynamic-player.power-armed-v11.power-energy-v11 .volleyball-power-aura-v11 {
+  filter:brightness(1.4);
+  box-shadow:0 0 19px rgba(255,250,188,.98),0 0 42px rgba(255,217,92,.48),0 0 62px rgba(255,255,227,.20);
+}
+
+.volleyball-dynamic-player.power-armed-v11.power-lightning-v11 .volleyball-power-aura-v11 {
+  filter:brightness(1.48) saturate(1.3);
+  box-shadow:0 0 19px rgba(114,240,255,.98),0 0 44px rgba(78,91,255,.58),0 0 66px rgba(166,245,255,.24);
+}
+
+.volleyball-player-power-v11 {
+  position:absolute;
+  left:50%;
+  top:calc(100% + 7px);
+  translate:-50% 0;
+  display:grid;
+  grid-template-columns:auto 34px auto;
+  align-items:center;
+  gap:4px;
+  min-width:max-content;
+  padding:3px 5px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:999px;
+  background:rgba(3,10,15,.82);
+  box-shadow:0 5px 13px rgba(0,0,0,.26);
+  pointer-events:none;
+  z-index:83;
+}
+
+.volleyball-power-icon-v11 {
+  font-size:9px;
+  line-height:1;
+}
+
+.volleyball-power-track-v11 {
+  position:relative;
+  width:34px;
+  height:4px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+}
+
+.volleyball-power-track-v11 b {
+  position:absolute;
+  inset:0 auto 0 0;
+  width:0;
+  border-radius:inherit;
+  background:linear-gradient(90deg,rgba(108,226,255,.72),rgba(255,238,132,.96));
+  box-shadow:0 0 8px rgba(147,237,255,.42);
+  transition:width .18s ease;
+}
+
+.volleyball-player-power-v11.ready {
+  border-color:rgba(255,244,166,.62);
+  background:rgba(9,17,18,.9);
+}
+
+.volleyball-player-power-v11.armed {
+  border-color:rgba(255,255,255,.9);
+  box-shadow:0 0 14px rgba(255,255,255,.22),0 5px 13px rgba(0,0,0,.28);
+}
+
+.volleyball-power-readout-v11 {
+  min-width:24px;
+  color:rgba(238,248,255,.62);
+  font:900 7px/1 system-ui,sans-serif;
+  font-style:normal;
+  letter-spacing:.04em;
+  text-align:right;
+}
+
+.volleyball-player-power-v11.ready .volleyball-power-readout-v11 {
+  color:#fff4a6;
+}
+
+.volleyball-player-power-v11.armed .volleyball-power-readout-v11 {
+  color:#fff;
+}
+
+.volleyball-power-prompt-v11 {
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 31px);
+  translate:-50% 0;
+  display:none;
+  min-width:max-content;
+  padding:5px 9px;
+  border:1px solid rgba(255,244,164,.72);
+  border-radius:999px;
+  background:rgba(4,11,16,.94);
+  color:#fff3a7;
+  font:950 9px/1 system-ui,sans-serif;
+  font-style:normal;
+  letter-spacing:.06em;
+  text-shadow:0 0 10px rgba(255,231,120,.26);
+  box-shadow:0 8px 18px rgba(0,0,0,.34),0 0 16px rgba(255,226,104,.13);
+  pointer-events:none;
+  z-index:88;
+}
+
+.volleyball-power-prompt-v11.visible {
+  display:block;
+}
+
+.volleyball-power-prompt-v11.armed {
+  border-color:#fff;
+  color:#fff;
+  animation:volleyballPowerPromptV11 .58s ease-in-out infinite alternate;
+}
+
+.volleyball-dynamic-ball.power-ball-fire-v11 {
+  filter:brightness(1.2) saturate(1.4);
+  text-shadow:0 0 7px #fff1a8,0 0 13px #ff9d42,0 0 26px #ff4d29;
+  animation:volleyballFireBallV11 .12s linear infinite alternate;
+}
+
+.volleyball-dynamic-ball.power-ball-energy-v11 {
+  filter:brightness(1.36);
+  text-shadow:0 0 8px #fff,0 0 16px #fff0a2,0 0 28px rgba(255,217,92,.86);
+}
+
+.volleyball-dynamic-ball.power-ball-lightning-v11,
+.volleyball-dynamic-ball.power-ball-lightning-charge-v11 {
+  filter:brightness(1.55) saturate(1.35);
+  text-shadow:0 0 7px #fff,0 0 15px #7feaff,0 0 29px #665dff,0 0 42px rgba(83,221,255,.72);
+}
+
+.volleyball-dynamic-ball.power-ball-lightning-v11 {
+  animation:volleyballLightningBallV11 .08s steps(2,end) infinite;
+}
+
+.volleyball-dynamic-ball.power-ball-lightning-miss-v11 {
+  filter:brightness(1.08) saturate(.74);
+  text-shadow:0 0 9px rgba(111,224,255,.42);
+}
+
+.volleyball-dynamic-court.power-fx-fire-v11 {
+  box-shadow:inset 0 0 42px rgba(255,91,39,.10) !important;
+}
+
+.volleyball-dynamic-court.power-fx-energy-v11 {
+  box-shadow:inset 0 0 38px rgba(255,232,115,.09) !important;
+}
+
+.volleyball-dynamic-court.power-fx-lightning-v11 {
+  box-shadow:inset 0 0 44px rgba(85,150,255,.12) !important;
+}
+
+.volleyball-spike-focus-v10.power-lightning-v11 .volleyball-spike-panel-v10 {
+  border-color:rgba(107,231,255,.82);
+  box-shadow:0 24px 70px rgba(0,0,0,.58),0 0 52px rgba(78,108,255,.34);
+}
+
+.volleyball-spike-focus-v10.power-lightning-v11 .volleyball-spike-kicker-v10 {
+  color:#84edff;
+}
+
+.volleyball-spike-focus-v10.power-lightning-v11 .volleyball-spike-panel-v10 > strong {
+  text-shadow:0 0 24px rgba(103,229,255,.56),0 0 38px rgba(91,89,255,.30);
+}
+
+@keyframes volleyballPowerAuraPulseV11 {
+  0%,100% { transform:scale(.95); opacity:.72; }
+  50% { transform:scale(1.08); opacity:1; }
+}
+
+@keyframes volleyballPowerPromptV11 {
+  from { transform:scale(.97); filter:brightness(1); }
+  to { transform:scale(1.03); filter:brightness(1.25); }
+}
+
+@keyframes volleyballFireBallV11 {
+  from { filter:brightness(1.12) saturate(1.25) drop-shadow(-3px 1px 1px rgba(255,90,30,.55)); }
+  to { filter:brightness(1.34) saturate(1.55) drop-shadow(4px -1px 2px rgba(255,183,59,.72)); }
+}
+
+@keyframes volleyballLightningBallV11 {
+  0% { filter:brightness(1.35) saturate(1.3) drop-shadow(-4px 0 1px rgba(91,229,255,.7)); }
+  100% { filter:brightness(1.72) saturate(1.55) drop-shadow(5px 0 2px rgba(99,91,255,.82)); }
+}
+
+@media (max-width:700px) {
+  .volleyball-player-power-v11 {
+    grid-template-columns:auto 26px auto;
+    gap:3px;
+    padding:2px 4px;
+  }
+  .volleyball-power-track-v11 { width:26px; }
+  .volleyball-power-readout-v11 { font-size:6px; min-width:20px; }
+  .volleyball-power-prompt-v11 { font-size:7px; bottom:calc(100% + 27px); }
+}
