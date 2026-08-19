@@ -1,0 +1,96 @@
+/* Voltz Education · Vôlei V0.5 · câmera top-down 3/4 */
+
+/*
+ * A quadra deixa de ser um retângulo visto a 90 graus.
+ * O topo representa a parte mais distante da câmera e por isso é mais estreito.
+ * O JS de perspectiva comprime as posições dos objetos usando a mesma regra.
+ */
+.volleyball-dynamic-court {
+  width:min(1080px,96%) !important;
+  aspect-ratio:16/8.9 !important;
+  overflow:hidden !important;
+  border:0 !important;
+  border-radius:10px 10px 24px 24px !important;
+  clip-path:polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.035),transparent 32%,rgba(0,0,0,.08) 100%),
+    linear-gradient(90deg,rgba(255,107,122,.09) 0 49.55%,rgba(99,245,181,.10) 50.45% 100%),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 44px,rgba(255,255,255,.038) 45px 46px),
+    #07131a !important;
+  box-shadow:none !important;
+  filter:drop-shadow(0 18px 26px rgba(0,0,0,.42));
+  transform-origin:50% 100%;
+}
+
+/* Borda interna que acompanha melhor a leitura trapezoidal. */
+.volleyball-dynamic-court::after {
+  content:"";
+  position:absolute;
+  z-index:30;
+  inset:0;
+  pointer-events:none;
+  clip-path:polygon(10% 0%,90% 0%,100% 100%,0% 100%,10% 0%,calc(10% + 3px) 3px,3px calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(90% - 3px) 3px,calc(10% + 3px) 3px);
+  background:rgba(190,255,229,.52);
+  opacity:.72;
+}
+
+/* Rede continua central, mas ganha poste/altura mais legível para a câmera 3/4. */
+.volleyball-dynamic-net {
+  top:3% !important;
+  bottom:3% !important;
+  width:7px !important;
+  box-shadow:0 0 10px rgba(255,255,255,.45),6px 0 14px rgba(0,0,0,.18) !important;
+}
+
+/* Linhas de ataque convergem levemente para o centro no fundo da quadra. */
+.volleyball-attack-line {
+  top:3% !important;
+  bottom:3% !important;
+  transform-origin:50% 100%;
+}
+.volleyball-attack-line.line-rival {
+  left:34% !important;
+  transform:rotate(2.7deg);
+}
+.volleyball-attack-line.line-voltz {
+  left:66% !important;
+  transform:rotate(-2.7deg);
+}
+
+.volleyball-side-label.rival { left:13% !important; top:10px !important; }
+.volleyball-side-label.voltz { right:13% !important; top:10px !important; }
+
+/* translate/scale são propriedades independentes de transform.
+ * Isso deixa o motor continuar controlando transform da bola e dos sprites. */
+.volleyball-dynamic-player,
+.volleyball-dynamic-ball,
+.volleyball-ball-shadow,
+.volleyball-landing-marker {
+  translate:var(--volley-perspective-x,0px) 0;
+}
+
+.volleyball-dynamic-player {
+  scale:var(--volley-depth-scale,1);
+  transform-origin:50% 82%;
+}
+
+/* Quem está perto da câmera ganha sombra um pouco mais presente. */
+.volleyball-dynamic-player.team-voltz,
+.volleyball-dynamic-player.team-rival {
+  filter:drop-shadow(0 5px 4px rgba(0,0,0,.18));
+}
+
+/* O marcador acompanha o piso, não parece um HUD colado na tela. */
+.volleyball-landing-marker {
+  transform-origin:50% 50%;
+}
+
+@media (max-width:700px) {
+  .volleyball-dynamic-court {
+    width:98% !important;
+    aspect-ratio:16/10.2 !important;
+    clip-path:polygon(7% 0%,93% 0%,100% 100%,0% 100%);
+  }
+  .volleyball-side-label.rival { left:10% !important; }
+  .volleyball-side-label.voltz { right:10% !important; }
+}
