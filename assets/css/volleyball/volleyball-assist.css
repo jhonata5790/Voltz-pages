@@ -1,0 +1,73 @@
+/* Voltz Education · Vôlei V0.4 · assistência de leitura */
+.volleyball-landing-marker {
+  z-index:4 !important;
+  width:48px !important;
+  height:78px !important;
+  border:3px dashed rgba(255,209,102,.96) !important;
+  background:radial-gradient(ellipse,rgba(255,209,102,.20),rgba(255,209,102,.055) 62%,transparent 73%) !important;
+  box-shadow:0 0 0 7px rgba(255,209,102,.06),0 0 30px rgba(255,209,102,.38) !important;
+}
+.volleyball-landing-marker::after {
+  content:"CAI AQUI";
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  padding:3px 6px;
+  border-radius:999px;
+  color:#171005;
+  background:#ffd166;
+  border:1px solid rgba(255,255,255,.55);
+  box-shadow:0 4px 14px rgba(0,0,0,.36);
+  font:1000 .43rem/1 Inter,system-ui,sans-serif;
+  letter-spacing:.55px;
+  white-space:nowrap;
+}
+
+.volleyball-action-prompt-assist {
+  display:none;
+  position:absolute;
+  z-index:24;
+  left:50%;
+  bottom:calc(100% + 15px);
+  transform:translateX(-50%);
+  min-width:max-content;
+  padding:4px 8px;
+  border-radius:999px;
+  color:#eefdff;
+  background:rgba(5,18,30,.94);
+  border:1px solid rgba(120,247,255,.48);
+  box-shadow:0 5px 17px rgba(0,0,0,.38),0 0 18px rgba(0,234,255,.15);
+  font:1000 .5rem/1 Inter,system-ui,sans-serif;
+  font-style:normal;
+  letter-spacing:.42px;
+  white-space:nowrap;
+  pointer-events:none;
+}
+.volleyball-dynamic-player.is-active .volleyball-action-prompt-assist:not(:empty) { display:block; }
+.volleyball-action-prompt-assist.ready {
+  color:#171005;
+  background:#ffd166;
+  border-color:rgba(255,255,255,.7);
+  box-shadow:0 5px 17px rgba(0,0,0,.38),0 0 24px rgba(255,209,102,.38);
+  animation:volleyballAssistPrompt .48s ease-in-out infinite alternate;
+}
+@keyframes volleyballAssistPrompt {
+  from { transform:translateX(-50%) scale(.97); }
+  to { transform:translateX(-50%) scale(1.06); }
+}
+
+/* O jogador ativo precisa saltar aos olhos sem virar um elemento gigante. */
+.volleyball-dynamic-player.team-voltz.is-active {
+  outline:2px solid rgba(255,255,255,.74);
+  outline-offset:4px;
+}
+
+@media (max-width:700px) {
+  .volleyball-landing-marker { width:42px !important; height:68px !important; }
+  .volleyball-action-prompt-assist {
+    bottom:calc(100% + 12px);
+    padding:4px 6px;
+    font-size:.44rem;
+  }
+}
