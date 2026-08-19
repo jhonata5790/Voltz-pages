@@ -1,5 +1,5 @@
 (function initializeVolleyballPerspective(global) {
-  const VERSION = "1.2-diagonal";
+  const VERSION = "1.2-horizontal-depth";
   let lastFrame = 0;
 
   function clamp(value, min, max) {
@@ -17,20 +17,20 @@
 
   function cameraCorners() {
     // Ordem: rival/fundo, Voltz/fundo, rival/frente, Voltz/frente.
-    // O ponto de fuga fica deslocado para a direita, criando uma câmera 3/4
-    // em vez da antiga perspectiva central e simétrica.
+    // O eixo principal continua horizontal. A profundidade vem do fundo
+    // comprimido e da frente ampliada, sem girar a quadra inteira.
     return isMobile()
       ? {
-          farRival:{ x:9, y:24 },
-          farVoltz:{ x:70, y:8 },
+          farRival:{ x:14, y:20 },
+          farVoltz:{ x:86, y:20 },
           nearRival:{ x:3, y:86 },
-          nearVoltz:{ x:98, y:66 }
+          nearVoltz:{ x:97, y:86 }
         }
       : {
-          farRival:{ x:12.5, y:27 },
-          farVoltz:{ x:70.5, y:7 },
-          nearRival:{ x:5, y:88 },
-          nearVoltz:{ x:97, y:63 }
+          farRival:{ x:18, y:22 },
+          farVoltz:{ x:82, y:22 },
+          nearRival:{ x:4, y:87 },
+          nearVoltz:{ x:96, y:87 }
         };
   }
 
