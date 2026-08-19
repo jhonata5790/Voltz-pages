@@ -15,7 +15,11 @@
         : storedPreference === "off"
           ? false
           : Boolean(coarse || narrow);
+
   const held = new Map();
+  const joystickHeld = new Set();
+  let joystickPointerId = null;
+  let stickVector = { x:0, y:0, magnitude:0 };
 
   const KEY_META = {
     up: { key:"ArrowUp", code:"ArrowUp" },
@@ -37,14 +41,13 @@
   function keyboardEvent(type, token) {
     const meta = KEY_META[token];
     if (!meta) return;
-    const event = new KeyboardEvent(type, {
+    document.dispatchEvent(new KeyboardEvent(type, {
       key: meta.key,
       code: meta.code,
       bubbles: true,
       cancelable: true,
       repeat: false
-    });
-    document.dispatchEvent(event);
+    }));
   }
 
   function press(token) {
@@ -65,8 +68,20 @@
     keyboardEvent("keyup", token);
   }
 
+  function releaseJoystickKeys() {
+    [...joystickHeld].forEach((token) => keyboardEvent("keyup", token));
+    joystickHeld.clear();
+  }
+
   function releaseAll() {
-    [...held.entries()].forEach(([pointerId]) => release(pointerId));
+    [...held.keys()].forEach(release);
+    releaseJoystickKeys();
+    joystickPointerId = null;
+    stickVector = { x:0, y:0, magnitude:0 };
+    const knob = document.querySelector("#voltzJoystickKnob");
+    knob?.style.setProperty("--stick-x", "0px");
+    knob?.style.setProperty("--stick-y", "0px");
+    document.querySelector("#voltzJoystick")?.classList.remove("active");
   }
 
   function sportsContext() {
@@ -86,39 +101,27 @@
   }
 
   function actionMarkup(context) {
-    if (context === "football") {
-      return `
-        <button class="mobile-action primary" data-key="j"><b>J</b><span>CHUTE / BOTE</span></button>
-        <button class="mobile-action" data-key="k"><b>K</b><span>PASSE</span></button>
-        <button class="mobile-action" data-key="l"><b>L</b><span>CRUZAR</span></button>
-        <button class="mobile-action" data-key="i"><b>I</b><span>VISÃO</span></button>`;
-    }
-    if (context === "volleyball") {
-      return `
-        <button class="mobile-action primary" data-key="j"><b>J</b><span>TOCAR / SACAR</span></button>
-        <button class="mobile-action" data-key="escape"><b>×</b><span>FECHAR</span></button>`;
-    }
-    if (context === "dodgeball") {
-      return `
-        <button class="mobile-action primary" data-key="space"><b>●</b><span>AÇÃO / AGARRAR</span></button>
-        <button class="mobile-action" data-key="escape"><b>×</b><span>VOLTAR</span></button>`;
-    }
-    if (context === "athletics") {
-      return `
-        <button class="mobile-action primary" data-key="space"><b>●</b><span>LARGADA</span></button>
-        <button class="mobile-action" data-key="a"><b>A</b><span>PASSO</span></button>
-        <button class="mobile-action" data-key="d"><b>D</b><span>PASSO</span></button>`;
-    }
-    if (context === "basketball") {
-      return `
-        <button class="mobile-action primary" data-key="space"><b>●</b><span>ARREMESSAR</span></button>
-        <button class="mobile-action" data-key="escape"><b>×</b><span>VOLTAR</span></button>`;
-    }
-    if (context === "sports") {
-      return `
-        <button class="mobile-action primary" data-key="space"><b>●</b><span>AÇÃO</span></button>
-        <button class="mobile-action" data-key="escape"><b>×</b><span>VOLTAR</span></button>`;
-    }
+    if (context === "football") return `
+      <button class="mobile-action primary" data-key="j"><b>J</b><span>CHUTE / BOTE</span></button>
+      <button class="mobile-action" data-key="k"><b>K</b><span>PASSE</span></button>
+      <button class="mobile-action" data-key="l"><b>L</b><span>CRUZAR</span></button>
+      <button class="mobile-action" data-key="i"><b>I</b><span>VISÃO</span></button>`;
+    if (context === "volleyball") return `
+      <button class="mobile-action primary" data-key="j"><b>J</b><span>TOCAR / SACAR</span></button>
+      <button class="mobile-action" data-key="escape"><b>×</b><span>FECHAR</span></button>`;
+    if (context === "dodgeball") return `
+      <button class="mobile-action primary" data-key="space"><b>●</b><span>AÇÃO / AGARRAR</span></button>
+      <button class="mobile-action" data-key="escape"><b>×</b><span>VOLTAR</span></button>`;
+    if (context === "athletics") return `
+      <button class="mobile-action primary" data-key="space"><b>●</b><span>LARGADA</span></button>
+      <button class="mobile-action" data-key="a"><b>A</b><span>PASSO</span></button>
+      <button class="mobile-action" data-key="d"><b>D</b><span>PASSO</span></button>`;
+    if (context === "basketball") return `
+      <button class="mobile-action primary" data-key="space"><b>●</b><span>ARREMESSAR</span></button>
+      <button class="mobile-action" data-key="escape"><b>×</b><span>VOLTAR</span></button>`;
+    if (context === "sports") return `
+      <button class="mobile-action primary" data-key="space"><b>●</b><span>AÇÃO</span></button>
+      <button class="mobile-action" data-key="escape"><b>×</b><span>VOLTAR</span></button>`;
     return `
       <button class="mobile-action primary" data-key="e"><b>E</b><span>INTERAGIR</span></button>
       <button class="mobile-action hold" data-key="shift"><b>⇧</b><span>CORRER</span></button>
@@ -134,12 +137,9 @@
       <button class="mobile-mini dev" data-mobile-command="dev" type="button">DEV</button>
       <button class="mobile-mini" data-mobile-command="collapse" type="button" aria-label="Ocultar controles">⌄</button>
     </div>
-    <div class="mobile-dpad" aria-label="Movimento">
-      <button class="mobile-dir up hold" data-key="up" type="button">▲</button>
-      <button class="mobile-dir left hold" data-key="left" type="button">◀</button>
-      <div class="mobile-dpad-core">⚡</div>
-      <button class="mobile-dir right hold" data-key="right" type="button">▶</button>
-      <button class="mobile-dir down hold" data-key="down" type="button">▼</button>
+    <div id="voltzJoystick" class="mobile-joystick" aria-label="Analógico de movimento">
+      <div class="mobile-joystick-ring"></div>
+      <div id="voltzJoystickKnob" class="mobile-joystick-knob"><span>⚡</span></div>
     </div>
     <div class="mobile-actions" id="voltzMobileActions"></div>
     <button class="mobile-expand" data-mobile-command="collapse" type="button">🎮</button>
@@ -147,8 +147,69 @@
   document.body.appendChild(root);
 
   const actions = root.querySelector("#voltzMobileActions");
+  const joystick = root.querySelector("#voltzJoystick");
+  const joystickKnob = root.querySelector("#voltzJoystickKnob");
   let lastContext = "";
   let collapsed = false;
+
+  function syncJoystickKeys(next) {
+    const wanted = new Set();
+    const threshold = 0.32;
+    if (next.y < -threshold) wanted.add("up");
+    if (next.y > threshold) wanted.add("down");
+    if (next.x < -threshold) wanted.add("left");
+    if (next.x > threshold) wanted.add("right");
+
+    [...joystickHeld].forEach((token) => {
+      if (!wanted.has(token)) {
+        keyboardEvent("keyup", token);
+        joystickHeld.delete(token);
+      }
+    });
+    [...wanted].forEach((token) => {
+      if (!joystickHeld.has(token)) {
+        joystickHeld.add(token);
+        keyboardEvent("keydown", token);
+      }
+    });
+  }
+
+  function updateJoystick(clientX, clientY) {
+    const rect = joystick.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const radius = rect.width * 0.34;
+    let dx = clientX - cx;
+    let dy = clientY - cy;
+    const distance = Math.hypot(dx, dy);
+    const clamped = Math.min(distance, radius);
+    const angle = Math.atan2(dy, dx);
+    const knobX = Math.cos(angle) * clamped;
+    const knobY = Math.sin(angle) * clamped;
+    const rawMagnitude = radius ? Math.min(1, distance / radius) : 0;
+    const deadzone = 0.18;
+    const magnitude = rawMagnitude <= deadzone
+      ? 0
+      : Math.min(1, (rawMagnitude - deadzone) / (1 - deadzone));
+    const nx = magnitude ? (dx / Math.max(distance, 1)) * magnitude : 0;
+    const ny = magnitude ? (dy / Math.max(distance, 1)) * magnitude : 0;
+
+    stickVector = { x:nx, y:ny, magnitude };
+    joystickKnob.style.setProperty("--stick-x", `${knobX}px`);
+    joystickKnob.style.setProperty("--stick-y", `${knobY}px`);
+    joystick.classList.toggle("deadzone", magnitude === 0);
+    syncJoystickKeys(stickVector);
+  }
+
+  function resetJoystick(pointerId = joystickPointerId) {
+    if (pointerId !== joystickPointerId && joystickPointerId !== null) return;
+    releaseJoystickKeys();
+    joystickPointerId = null;
+    stickVector = { x:0, y:0, magnitude:0 };
+    joystickKnob.style.setProperty("--stick-x", "0px");
+    joystickKnob.style.setProperty("--stick-y", "0px");
+    joystick.classList.remove("active", "deadzone");
+  }
 
   function refresh() {
     const context = sportsContext();
@@ -176,7 +237,29 @@
     refresh();
   }
 
+  joystick.addEventListener("pointerdown", (event) => {
+    if (!enabled || joystickPointerId !== null) return;
+    event.preventDefault();
+    joystickPointerId = event.pointerId;
+    joystick.setPointerCapture?.(event.pointerId);
+    joystick.classList.add("active");
+    updateJoystick(event.clientX, event.clientY);
+  });
+
+  joystick.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== joystickPointerId) return;
+    event.preventDefault();
+    updateJoystick(event.clientX, event.clientY);
+  });
+
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach((type) => {
+    joystick.addEventListener(type, (event) => {
+      if (event.pointerId === joystickPointerId) resetJoystick(event.pointerId);
+    });
+  });
+
   root.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("#voltzJoystick")) return;
     const command = event.target.closest("[data-mobile-command]")?.dataset.mobileCommand;
     if (command === "dev") {
       event.preventDefault();
@@ -201,8 +284,8 @@
 
   ["pointerup", "pointercancel", "lostpointercapture"].forEach((type) => {
     root.addEventListener(type, (event) => {
-      const button = event.target.closest?.("[data-key]");
-      button?.classList.remove("pressed");
+      if (event.target.closest?.("#voltzJoystick")) return;
+      event.target.closest?.("[data-key]")?.classList.remove("pressed");
       release(event.pointerId);
     });
   });
@@ -211,14 +294,15 @@
   global.addEventListener("blur", releaseAll);
   document.addEventListener("visibilitychange", () => { if (document.hidden) releaseAll(); });
   new MutationObserver(refresh).observe(document.body, { subtree:true, childList:true, attributes:true, attributeFilter:["class"] });
-  global.addEventListener("resize", refresh);
+  global.addEventListener("resize", () => { resetJoystick(); refresh(); });
 
   global.VoltzMobileControls = Object.freeze({
     isEnabled: () => enabled,
     setEnabled,
     toggle: () => setEnabled(!enabled),
     refresh,
-    press
+    press,
+    getStickVector: () => ({ ...stickVector })
   });
 
   refresh();
