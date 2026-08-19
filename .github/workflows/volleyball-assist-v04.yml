@@ -34,35 +34,24 @@ jobs:
                   raise SystemExit(f'Bloco JS não encontrado:\n{old[:320]}')
               s = s.replace(old, new, count)
 
-          # 1) Contato mais generoso: continua exigindo posicionamento, mas sem precisão microscópica.
           rep('''    const maxDistance = touches === 2 ? 10.2 : 9.2;\n    const maxHeight = touches === 2 ? 27 : touches === 1 ? 15 : 12;''', '''    const maxDistance = touches === 2 ? 12.8 : touches === 1 ? 12.4 : 13.2;\n    const maxHeight = touches === 2 ? 29 : touches === 1 ? 18 : 14.5;''')
-
           rep('''    const quality = clamp(1 - distance / 10, 0, 1) * .55 + clamp(1 - Math.abs(contactHeight - 5.5) / 8, 0, 1) * .45;''', '''    const quality = clamp(1 - distance / 13.5, 0, 1) * .55 + clamp(1 - Math.abs(contactHeight - 5.5) / 9.5, 0, 1) * .45;''')
-
           rep('''      el.classList.toggle("can-touch", active && g.phase === "rally" && g.ball.inPlay && volleyballDistance(player, g.ball) <= 10.5 && g.ball.z <= 27);''', '''      el.classList.toggle("can-touch", active && g.phase === "rally" && g.ball.inPlay && volleyballDistance(player, g.ball) <= 13.4 && g.ball.z <= 29);''')
 
-          # 2) Assistencia discreta de posicionamento para o atleta controlado.
           old_active = '''    if (active?.team === "voltz") {\n      const input = volleyballInputVector();\n      if (input.moving) {\n        active.x += input.x * VOLLEY_PLAYER_SPEED * dt;\n        active.y += input.y * VOLLEY_PLAYER_SPEED * dt;\n        active.x = clamp(active.x, 8, 92);\n        active.y = clamp(active.y, 53.5, 94);\n      }\n      if (g.phase === "serve-voltz") {\n        g.ball.x = active.x;\n        g.ball.y = active.y - 3;\n        g.ball.z = 3;\n      }\n    }'''
-
           new_active = '''    if (active?.team === "voltz") {\n      const input = volleyballInputVector();\n      if (input.moving) {\n        active.x += input.x * VOLLEY_PLAYER_SPEED * dt;\n        active.y += input.y * VOLLEY_PLAYER_SPEED * dt;\n        active.x = clamp(active.x, 8, 92);\n        active.y = clamp(active.y, 53.5, 94);\n      }\n\n      // Assistencia invisivel: quando a trajetoria rival cai no nosso campo,\n      // o atleta ativo deriva levemente para a zona de contato. O input do\n      // jogador continua dominante; sem input a ajuda e um pouco mais forte.\n      if (coverageReceiver?.id === active.id && landing && g.phase === "rally" && g.lastTouchTeam === "rival") {\n        const assistTargetX = clamp(landing.x, 9, 91);\n        const assistTargetY = clamp(landing.y, 54, 93);\n        const assistDistance = volleyballDistance(active, { x:assistTargetX, y:assistTargetY });\n        if (assistDistance > 1.8) {\n          volleyballMoveToward(active, assistTargetX, assistTargetY, input.moving ? 10.5 : 19, dt, 53.5, 94);\n        }\n      }\n\n      if (g.phase === "serve-voltz") {\n        g.ball.x = active.x;\n        g.ball.y = active.y - 3;\n        g.ball.z = 3;\n      }\n    }'''
           rep(old_active, new_active)
 
-          # 3) Companheiro salva automaticamente apenas bolas realmente faceis.
-          auto_save = '''  function volleyballTryAutoSave(g) {\n    if (!g?.dynamic || g.phase !== "rally" || !g.ball?.inPlay) return false;\n    if (g.lastTouchTeam !== "rival" || volleyballTouchesFor(g, "voltz") !== 0) return false;\n    if (g.ball.y <= 51 || g.ball.vz > 1.5 || g.ball.z < .8 || g.ball.z > 8.8) return false;\n\n    const active = volleyballPlayer(g, g.activePlayerId);\n    const candidates = volleyballTeamPlayers(g, "voltz")\n      .filter((player) => player.id !== g.activePlayerId && player.id !== g.lastTouchPlayerId)\n      .map((player) => ({ player, distance:volleyballDistance(player, g.ball) }))\n      .sort((a, b) => a.distance - b.distance);\n    const best = candidates[0];\n    if (!best || best.distance > 6.2) return false;\n\n    const activeDistance = active ? volleyballDistance(active, g.ball) : Infinity;\n    // So ajuda se o companheiro estiver claramente melhor posicionado.\n    if (activeDistance <= 8.2 && best.distance + 2.4 >= activeDistance) return false;\n\n    volleyballVoltzReceive(g, best.player);\n    g.message = `COBERTURA! ${best.player.role} salvou a bola facil. O controle ja passou para o levantamento.`;\n    return true;\n  }\n\n'''
+          auto_save = '''  function volleyballTryAutoSave(g) {\n    if (!g?.dynamic || g.phase !== "rally" || !g.ball?.inPlay) return false;\n    if (g.lastTouchTeam !== "rival" || volleyballTouchesFor(g, "voltz") !== 0) return false;\n    if (g.ball.y <= 51 || g.ball.vz > 1.5 || g.ball.z < .8 || g.ball.z > 8.8) return false;\n\n    const active = volleyballPlayer(g, g.activePlayerId);\n    const candidates = volleyballTeamPlayers(g, "voltz")\n      .filter((player) => player.id !== g.activePlayerId && player.id !== g.lastTouchPlayerId)\n      .map((player) => ({ player, distance:volleyballDistance(player, g.ball) }))\n      .sort((a, b) => a.distance - b.distance);\n    const best = candidates[0];\n    if (!best || best.distance > 6.2) return false;\n\n    const activeDistance = active ? volleyballDistance(active, g.ball) : Infinity;\n    if (activeDistance <= 8.2 && best.distance + 2.4 >= activeDistance) return false;\n\n    volleyballVoltzReceive(g, best.player);\n    g.message = `COBERTURA! ${best.player.role} salvou a bola facil. O controle ja passou para o levantamento.`;\n    return true;\n  }\n\n'''
           anchor = '  function volleyballUpdatePlayers(g, dt) {'
           if 'function volleyballTryAutoSave(g)' not in s:
               if anchor not in s:
                   raise SystemExit('Anchor volleyballUpdatePlayers não encontrado')
               s = s.replace(anchor, auto_save + anchor, 1)
 
-          old_loop = '''    volleyballUpdatePlayers(g, dt);\n    if (g.phase === "rally") {\n      volleyballUpdateRivalAI(g, dt);\n      volleyballUpdateBall(g, dt);\n    }'''
-          new_loop = '''    volleyballUpdatePlayers(g, dt);\n    if (g.phase === "rally") {\n      volleyballTryAutoSave(g);\n      volleyballUpdateRivalAI(g, dt);\n      volleyballUpdateBall(g, dt);\n    }'''
-          rep(old_loop, new_loop)
+          rep('''    volleyballUpdatePlayers(g, dt);\n    if (g.phase === "rally") {\n      volleyballUpdateRivalAI(g, dt);\n      volleyballUpdateBall(g, dt);\n    }''', '''    volleyballUpdatePlayers(g, dt);\n    if (g.phase === "rally") {\n      volleyballTryAutoSave(g);\n      volleyballUpdateRivalAI(g, dt);\n      volleyballUpdateBall(g, dt);\n    }''')
 
-          # 4) Prompt contextual de J acima do atleta ativo.
-          old_markup = '''      <div id="volleyballPlayer-${player.id}" class="volleyball-dynamic-player team-${player.team} ${player.id === g.activePlayerId ? "is-active" : ""}" data-id="${player.id}">\n        <span>${player.role}</span>\n      </div>`).join("");'''
-          new_markup = '''      <div id="volleyballPlayer-${player.id}" class="volleyball-dynamic-player team-${player.team} ${player.id === g.activePlayerId ? "is-active" : ""}" data-id="${player.id}">\n        <em class="volleyball-action-prompt"></em>\n        <span>${player.role}</span>\n      </div>`).join("");'''
-          rep(old_markup, new_markup)
+          rep('''      <div id="volleyballPlayer-${player.id}" class="volleyball-dynamic-player team-${player.team} ${player.id === g.activePlayerId ? "is-active" : ""}" data-id="${player.id}">\n        <span>${player.role}</span>\n      </div>`).join("");''', '''      <div id="volleyballPlayer-${player.id}" class="volleyball-dynamic-player team-${player.team} ${player.id === g.activePlayerId ? "is-active" : ""}" data-id="${player.id}">\n        <em class="volleyball-action-prompt"></em>\n        <span>${player.role}</span>\n      </div>`).join("");''')
 
           prompt_fn = '''  function volleyballActionPrompt(g) {\n    if (!g?.dynamic) return "";\n    if (g.phase === "serve-voltz") return "J · SACAR";\n    if (g.phase !== "rally" || !g.ball?.inPlay) return "";\n    const touches = volleyballTouchesFor(g, "voltz");\n    if (touches === 0) return "J · RECEBER";\n    if (touches === 1) return "J · LEVANTAR";\n    if (touches === 2) return "J · CORTAR";\n    return "J · TOCAR";\n  }\n\n'''
           sync_anchor = '  function syncVolleyballDynamicDom(now) {'
@@ -71,14 +60,10 @@ jobs:
                   raise SystemExit('Anchor syncVolleyballDynamicDom não encontrado')
               s = s.replace(sync_anchor, prompt_fn + sync_anchor, 1)
 
-          old_touch = '''      el.classList.toggle("can-touch", active && g.phase === "rally" && g.ball.inPlay && volleyballDistance(player, g.ball) <= 13.4 && g.ball.z <= 29);'''
-          new_touch = '''      el.classList.toggle("can-touch", active && g.phase === "rally" && g.ball.inPlay && volleyballDistance(player, g.ball) <= 13.4 && g.ball.z <= 29);\n      const prompt = el.querySelector(".volleyball-action-prompt");\n      if (prompt) prompt.textContent = active && player.team === "voltz" ? volleyballActionPrompt(g) : "";'''
-          rep(old_touch, new_touch)
+          rep('''      el.classList.toggle("can-touch", active && g.phase === "rally" && g.ball.inPlay && volleyballDistance(player, g.ball) <= 13.4 && g.ball.z <= 29);''', '''      el.classList.toggle("can-touch", active && g.phase === "rally" && g.ball.inPlay && volleyballDistance(player, g.ball) <= 13.4 && g.ball.z <= 29);\n      const prompt = el.querySelector(".volleyball-action-prompt");\n      if (prompt) prompt.textContent = active && player.team === "voltz" ? volleyballActionPrompt(g) : "";''')
 
-          # 5) HUD explica a nova assistencia.
           rep('''          <div class="sports-help">O controle troca automaticamente para quem entra na jogada. No 2º toque, sua direção de movimento indica o setor e o jogo escolhe o atacante mais apto dentro dele.</div>''', '''          <div class="sports-help">Siga o marcador CAI AQUI. O atleta ativo recebe uma leve assistência de posicionamento e o J mostra a ação contextual. Companheiros só salvam automaticamente bolas fáceis quando estiverem claramente melhor posicionados.</div>''')
 
-          # 6) Visual V0.4: marcador de queda e prompt contextual muito mais legiveis.
           marker_css = r'''
 
 /* Volei V0.4 · assistencia de leitura e contato */
@@ -160,3 +145,5 @@ jobs:
           git add assets/js/realms/physical-education/sports-minigames.js assets/css/volleyball/volleyball-standalone.css
           git commit -m "Volei V0.4: adicionar assistencia de jogabilidade" || exit 0
           git push origin main
+
+# retrigger
