@@ -1,85 +1,125 @@
-/* Voltz Education · Vôlei V0.7 · quadra SVG em perspectiva */
+/* Voltz Education · Vôlei V1.2 · câmera diagonal 2.5D */
 
-/*
- * A geometria da câmera continua sendo aplicada pelo volleyball-perspective.js.
- * O piso agora vem de um SVG próprio, com todas as linhas e detalhes já desenhados
- * em perspectiva. CSS fica responsável apenas por recorte, profundidade e elementos vivos.
- */
 .volleyball-dynamic-court {
-  width:min(1100px,97%) !important;
-  aspect-ratio:16/9.9 !important;
+  width:min(1120px,99%) !important;
+  aspect-ratio:16/9.25 !important;
   overflow:hidden !important;
   border:0 !important;
-  border-radius:8px 8px 28px 28px !important;
-  clip-path:polygon(18% 0%,82% 0%,100% 100%,0% 100%);
+  border-radius:26px !important;
+  clip-path:none !important;
   background:
-    url("../../images/realms/physical-education/volleyball-court-v1.svg") center/100% 100% no-repeat,
-    #061016 !important;
+    radial-gradient(circle at 12% 86%, rgba(99,245,181,.09), transparent 27%),
+    radial-gradient(circle at 82% 12%, rgba(255,107,122,.07), transparent 28%),
+    url("../../images/realms/physical-education/volleyball-court-v1.svg?v=volleyball-v12-diagonal") center/100% 100% no-repeat,
+    linear-gradient(155deg,#07131b,#03070d 72%) !important;
   box-shadow:
-    inset 0 -55px 70px rgba(0,0,0,.08),
-    0 28px 48px rgba(0,0,0,.32) !important;
-  filter:drop-shadow(0 25px 30px rgba(0,0,0,.48));
-  transform-origin:50% 100%;
+    inset 0 0 80px rgba(0,0,0,.22),
+    0 30px 58px rgba(0,0,0,.42) !important;
+  filter:none !important;
   isolation:isolate;
 }
 
-/* O SVG já possui borda, linhas de profundidade e zonas de ataque. */
-.volleyball-dynamic-court::before,
-.volleyball-dynamic-court::after {
-  content:none !important;
+.volleyball-dynamic-court::before {
+  content:"" !important;
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    linear-gradient(108deg, transparent 0 49%, rgba(193,255,238,.025) 49.2% 49.6%, transparent 50%),
+    radial-gradient(ellipse at 48% 60%, transparent 35%, rgba(0,0,0,.28) 100%);
 }
+.volleyball-dynamic-court::after { content:none !important; }
 
-/* As linhas antigas em CSS são desligadas para não duplicar o desenho do SVG. */
 .volleyball-attack-line {
   opacity:0 !important;
   pointer-events:none !important;
 }
 
-/* Rede central continua como elemento de gameplay e ganha presença tridimensional. */
+/*
+ * A rede agora é um plano vertical, não uma faixa desenhada no chão.
+ * O topo inclinado e os postes com alturas diferentes vendem a câmera 3/4.
+ */
 .volleyball-dynamic-net {
-  top:1.3% !important;
-  bottom:1.3% !important;
-  width:10px !important;
-  border-radius:6px;
-  clip-path:polygon(29% 0%,71% 0%,100% 100%,0% 100%);
-  background:linear-gradient(90deg,#d7fbff 0%,#ffffff 44%,#c7f8ff 58%,#8ecbd4 100%) !important;
-  box-shadow:
-    0 0 10px rgba(255,255,255,.55),
-    8px 0 18px rgba(0,0,0,.22) !important;
-}
-.volleyball-dynamic-net::before {
-  transform:scale(.72);
-  transform-origin:50% 50%;
-  box-shadow:0 0 9px rgba(224,255,255,.55);
-}
-.volleyball-dynamic-net::after {
-  transform:scale(1.14);
-  transform-origin:50% 50%;
-  box-shadow:0 0 12px rgba(224,255,255,.7);
+  left:40.5% !important;
+  right:auto !important;
+  top:8.5% !important;
+  bottom:auto !important;
+  width:12.5% !important;
+  height:68% !important;
+  z-index:80 !important;
+  transform:none !important;
+  clip-path:none !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  filter:drop-shadow(8px 8px 9px rgba(0,0,0,.38));
+  pointer-events:none;
 }
 .volleyball-dynamic-net i {
-  opacity:.42 !important;
+  position:absolute !important;
+  inset:0 !important;
+  width:auto !important;
+  height:auto !important;
+  opacity:.78 !important;
+  clip-path:polygon(3% 3%,90% 82%,90% 100%,3% 13%);
   background:
-    repeating-linear-gradient(180deg,rgba(255,255,255,.72) 0 1px,transparent 1px 12px),
-    repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 1px,transparent 1px 6px) !important;
+    linear-gradient(133deg, rgba(239,255,255,.95) 0 2px, transparent 2px calc(100% - 3px), rgba(218,252,255,.92) calc(100% - 2px)),
+    repeating-linear-gradient(132deg, rgba(226,254,255,.48) 0 1px, transparent 1px 13px),
+    repeating-linear-gradient(42deg, rgba(226,254,255,.34) 0 1px, transparent 1px 13px),
+    rgba(181,241,248,.10) !important;
+  box-shadow:inset 0 0 12px rgba(225,255,255,.12);
+}
+.volleyball-dynamic-net::before,
+.volleyball-dynamic-net::after {
+  content:"" !important;
+  position:absolute !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg,#8fbcc4,#f4ffff 46%,#a4d4da) !important;
+  box-shadow:0 0 9px rgba(220,255,255,.66),0 5px 8px rgba(0,0,0,.34) !important;
+}
+.volleyball-dynamic-net::before {
+  left:2.2% !important;
+  top:0 !important;
+  bottom:auto !important;
+  width:5px !important;
+  height:16% !important;
+  transform:none !important;
+}
+.volleyball-dynamic-net::after {
+  left:87.5% !important;
+  right:auto !important;
+  top:76% !important;
+  bottom:auto !important;
+  width:7px !important;
+  height:27% !important;
+  transform:none !important;
 }
 
-/* Labels pequenos, como placas de quadra, sem competir com os jogadores. */
 .volleyball-side-label {
-  z-index:3 !important;
-  top:11px !important;
-  padding:4px 8px;
+  z-index:6 !important;
+  top:auto !important;
+  right:auto !important;
+  padding:5px 9px;
   border-radius:999px;
-  background:rgba(3,12,17,.48);
-  border:1px solid rgba(255,255,255,.08);
-  backdrop-filter:blur(3px);
-  opacity:.72 !important;
-  text-shadow:0 2px 7px rgba(0,0,0,.5);
+  background:rgba(3,12,17,.58);
+  border:1px solid rgba(255,255,255,.09);
+  backdrop-filter:blur(4px);
+  opacity:.78 !important;
+  text-shadow:0 2px 7px rgba(0,0,0,.55);
+  transform:rotate(-12deg);
 }
-.volleyball-side-label.rival { left:20% !important; color:#ffadb7 !important; }
-.volleyball-side-label.voltz { right:20% !important; color:#a6ffdc !important; }
+.volleyball-side-label.rival {
+  left:16% !important;
+  top:51% !important;
+  color:#ffadb7 !important;
+}
+.volleyball-side-label.voltz {
+  left:76% !important;
+  top:35% !important;
+  color:#a6ffdc !important;
+}
 
-/* translate/scale são independentes do transform usado pelo motor para bola/sprites. */
 .volleyball-dynamic-player,
 .volleyball-dynamic-ball,
 .volleyball-ball-shadow,
@@ -89,12 +129,24 @@
 }
 
 .volleyball-dynamic-player {
-  transform-origin:50% 88%;
+  transform-origin:50% 92%;
 }
-
 .volleyball-dynamic-player.team-voltz,
 .volleyball-dynamic-player.team-rival {
-  filter:drop-shadow(0 calc(3px + var(--volley-depth-shadow, 2px)) 5px rgba(0,0,0,.25));
+  filter:drop-shadow(3px calc(4px + var(--volley-depth-shadow,2px)) 5px rgba(0,0,0,.34));
+}
+.volleyball-dynamic-player::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:50%;
+  bottom:-8px;
+  width:30px;
+  height:10px;
+  transform:translateX(-50%) rotate(-12deg);
+  border-radius:50%;
+  background:rgba(0,0,0,.32);
+  filter:blur(2px);
 }
 
 .volleyball-dynamic-ball,
@@ -102,19 +154,28 @@
 .volleyball-landing-marker {
   transform-origin:50% 50%;
 }
-
-/* O marcador de queda fica integrado ao piso novo. */
 .volleyball-landing-marker {
+  rotate:-12deg;
   backdrop-filter:blur(1px);
 }
+.volleyball-ball-shadow { rotate:-12deg; }
+
+.volleyball-ball-guide-svg { z-index:145 !important; }
 
 @media (max-width:700px) {
   .volleyball-dynamic-court {
-    width:99% !important;
-    aspect-ratio:16/11.1 !important;
-    clip-path:polygon(13% 0%,87% 0%,100% 100%,0% 100%);
+    width:100% !important;
+    aspect-ratio:16/10.65 !important;
+    border-radius:18px !important;
   }
-  .volleyball-side-label.rival { left:15% !important; }
-  .volleyball-side-label.voltz { right:15% !important; }
-  .volleyball-dynamic-net { width:8px !important; }
+  .volleyball-dynamic-net {
+    left:39% !important;
+    top:8% !important;
+    width:13.5% !important;
+    height:66% !important;
+  }
+  .volleyball-side-label { font-size:.45rem !important; }
+  .volleyball-side-label.rival { left:12% !important; top:50% !important; }
+  .volleyball-side-label.voltz { left:76% !important; top:37% !important; }
 }
+
