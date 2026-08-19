@@ -7,6 +7,7 @@
   let easyCoverUsed = false;
   let bufferedJUntil = 0;
   let bufferedJActiveId = "";
+  let bufferedJTouch = -1;
   let lastFrame = 0;
 
   const KEY_META = {
@@ -60,6 +61,12 @@
     syncAssistDirections(new Set());
   }
 
+  function clearBufferedJ() {
+    bufferedJUntil = 0;
+    bufferedJActiveId = "";
+    bufferedJTouch = -1;
+  }
+
   function getDom() {
     const court = document.getElementById("volleyballDynamicCourt");
     const active = court?.querySelector(".volleyball-dynamic-player.team-voltz.is-active") || null;
@@ -88,7 +95,7 @@
     const shadowCenter = center(dom.shadow.getBoundingClientRect());
     const ballCenter = center(dom.ball.getBoundingClientRect());
 
-    // A câmera horizontal mapeia Y interno no eixo X da tela e X interno no eixo Y.
+    // A camera horizontal mapeia Y interno no eixo X da tela e X interno no eixo Y.
     const internalDx = (playerCenter.y - shadowCenter.y) / courtRect.height * 100;
     const internalDy = (playerCenter.x - shadowCenter.x) / courtRect.width * 100;
     const distance = Math.hypot(internalDx, internalDy);
@@ -107,12 +114,7 @@
     return Math.hypot(dx, dy);
   }
 
-  function thresholds(touches, forgiving = false) {
-    if (forgiving) {
-      if (touches === 2) return { distance:13.4, height:29 };
-      if (touches === 1) return { distance:12.8, height:18 };
-      return { distance:13.2, height:14.5 };
-    }
+  function thresholds(touches) {
     if (touches === 2) return { distance:10.2, height:27 };
     if (touches === 1) return { distance:9.2, height:15 };
     return { distance:9.2, height:12 };
@@ -121,15 +123,23 @@
   function actualTouchReady(dom) {
     const metrics = ballMetrics(dom);
     if (!metrics) return false;
-    const limit = thresholds(touchCount(dom), false);
+    const limit = thresholds(touchCount(dom));
     return metrics.distance <= limit.distance && metrics.height <= limit.height;
   }
 
-  function forgivingTouchReady(dom) {
+  function positionReadyToArm(dom, touches) {
     const metrics = ballMetrics(dom);
     if (!metrics) return false;
-    const limit = thresholds(touchCount(dom), true);
-    return metrics.distance <= limit.distance && metrics.height <= limit.height;
+
+    // Recepcao e levantamento nao cobram mais o instante exato. Basta chegar
+    // na zona correta e apertar J; o toque fica armado ate a bola chegar.
+    if (touches === 0) {
+      return landingDistance(dom) <= 14.5 || metrics.distance <= 14.5;
+    }
+    if (touches === 1) {
+      return metrics.distance <= 13.8;
+    }
+    return false;
   }
 
   function manualMovementActive() {
@@ -146,7 +156,7 @@
       return;
     }
 
-    // Aproximadamente 53% de duty-cycle: ajuda perceptível sem assumir o controle.
+    // Aproximadamente 53% de duty-cycle: ajuda perceptivel sem assumir o controle.
     if (now % 180 >= 95) {
       releaseAssistDirections();
       return;
@@ -181,23 +191,21 @@
     const status = String(dom.status?.textContent || "").toUpperCase();
     const inPlay = Boolean(dom.ball?.classList.contains("in-play"));
     const touches = touchCount(dom);
+    const armed = bufferedJUntil > now && bufferedJActiveId === dom.active.dataset.id && bufferedJTouch === touches;
     let text = "";
 
     if (status.includes("SEU SAQUE")) {
       text = "J · SACAR";
     } else if (inPlay && !status.includes("PONTO") && !status.includes("SAQUE VISITANTE")) {
-      if (touches === 0 && (dom.landing?.classList.contains("visible") || status.includes("RECEP") || status.includes("DEFESA"))) {
-        text = "J · RECEBER";
-      } else if (touches === 1 && status.includes("LEVANT")) {
-        text = "J · LEVANTAR";
-      } else if (touches === 2 && status.includes("ATAQUE")) {
-        text = "J · CORTAR";
-      }
+      if (armed && touches === 0) text = "J ✓ RECEPCAO PRONTA";
+      else if (armed && touches === 1) text = "J ✓ LEVANTAMENTO PRONTO";
+      else if (touches === 0 && (dom.landing?.classList.contains("visible") || status.includes("RECEP") || status.includes("DEFESA"))) text = "J · RECEBER";
+      else if (touches === 1 && status.includes("LEVANT")) text = "J · LEVANTAR";
+      else if (touches === 2 && status.includes("ATAQUE")) text = actualTouchReady(dom) ? "J · CORTA AGORA!" : "PREPARA O CORTE";
     }
 
-    if (bufferedJUntil > now && bufferedJActiveId === dom.active.dataset.id) text = "J ✓ AJUSTANDO";
     prompt.textContent = text;
-    prompt.classList.toggle("ready", Boolean(text && (actualTouchReady(dom) || status.includes("SEU SAQUE"))));
+    prompt.classList.toggle("ready", Boolean(text && (actualTouchReady(dom) || armed || status.includes("SEU SAQUE"))));
   }
 
   function armEasyCoverOnSwitch(dom) {
@@ -206,10 +214,10 @@
     lastActiveId = id;
     easyCoverUsed = false;
     easyCoverActiveId = "";
+    clearBufferedJ();
 
     const status = String(dom.status?.textContent || "").toUpperCase();
     if (touchCount(dom) !== 0 || !dom.landing?.classList.contains("visible") || status.includes("SEU SAQUE")) return;
-    // Só automatiza se o novo receptor JÁ recebeu a bola praticamente em cima dele.
     if (!manualMovementActive() && landingDistance(dom) <= 6.2) easyCoverActiveId = id;
   }
 
@@ -224,14 +232,19 @@
 
   function tryBufferedJ(dom, now) {
     if (!bufferedJUntil) return;
-    if (now > bufferedJUntil || !dom.active || dom.active.dataset.id !== bufferedJActiveId) {
-      bufferedJUntil = 0;
-      bufferedJActiveId = "";
+    const touches = touchCount(dom);
+    if (
+      now > bufferedJUntil ||
+      !dom.active ||
+      dom.active.dataset.id !== bufferedJActiveId ||
+      touches !== bufferedJTouch ||
+      touches > 1
+    ) {
+      clearBufferedJ();
       return;
     }
     if (actualTouchReady(dom)) {
-      bufferedJUntil = 0;
-      bufferedJActiveId = "";
+      clearBufferedJ();
       tapAssistJ();
     }
   }
@@ -268,15 +281,21 @@
     if (key !== "j" || event.repeat) return;
 
     const dom = getDom();
-    if (!dom.court || !dom.active || !dom.ball?.classList.contains("in-play")) return;
-    if (actualTouchReady(dom) || !forgivingTouchReady(dom)) return;
+    if (!dom.court || !dom.active) return;
+    const status = String(dom.status?.textContent || "").toUpperCase();
+    if (status.includes("SEU SAQUE") || !dom.ball?.classList.contains("in-play")) return;
 
-    // Pequeno buffer: apertou J quase certo, o toque sai quando a bola entra
-    // na janela real do motor em vez de punir alguns pixels/milissegundos.
+    const touches = touchCount(dom);
+    // Corte continua sendo o unico toque que exige timing real.
+    if (touches >= 2 || actualTouchReady(dom)) return;
+
+    if (!positionReadyToArm(dom, touches)) return;
+
     event.preventDefault();
     event.stopImmediatePropagation();
-    bufferedJUntil = performance.now() + 480;
+    bufferedJUntil = performance.now() + 1800;
     bufferedJActiveId = dom.active.dataset.id || "";
+    bufferedJTouch = touches;
   }, true);
 
   document.addEventListener("keyup", (event) => {
@@ -288,8 +307,7 @@
   global.addEventListener("blur", () => {
     manualHeld.clear();
     releaseAssistDirections();
-    bufferedJUntil = 0;
-    bufferedJActiveId = "";
+    clearBufferedJ();
   });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) return;
@@ -301,6 +319,7 @@
     getState: () => ({
       manualMovement:manualMovementActive(),
       buffered:Boolean(bufferedJUntil > performance.now()),
+      bufferedTouch:bufferedJTouch,
       easyCoverActiveId,
       assistDirections:[...assistHeld]
     })
