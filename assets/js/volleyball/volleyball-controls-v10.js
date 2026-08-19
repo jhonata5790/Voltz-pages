@@ -20,6 +20,10 @@
     return global.VoltzVolleyballCoreV10 || null;
   }
 
+  function powerCore() {
+    return global.VoltzVolleyballPowerCoreV11 || null;
+  }
+
   function isDynamicVolleyball() {
     const state = core()?.getState?.();
     return Boolean(state?.type === "volleyball" && state?.dynamic);
@@ -87,7 +91,7 @@
     core()?.setTimeScale?.(1);
     document.body.classList.remove("volleyball-spike-slowmo-v10", "volleyball-spike-meter-open-v10");
     const overlay = document.getElementById("volleyballSpikeFocusV10");
-    overlay?.classList.remove("visible", "resolved-good", "resolved-miss", "resolved-perfect");
+    overlay?.classList.remove("visible", "resolved-good", "resolved-miss", "resolved-perfect", "power-lightning-v11");
     overlay?.setAttribute("aria-hidden", "true");
   }
 
@@ -120,6 +124,10 @@
 
     if (api.getTouchCount?.() !== 2) return;
 
+    const powerSnap = powerCore()?.getSnapshot?.();
+    const lightningArmed = powerSnap?.armed?.powerId === "lightning-cut" && powerSnap?.armed?.playerId === powerSnap?.activePlayerId;
+    ensureMeterDom().classList.toggle("power-lightning-v11", Boolean(lightningArmed));
+
     stopMeterLoops();
     document.body.classList.add("volleyball-spike-slowmo-v10");
     slowmoStartedAt = performance.now();
@@ -148,21 +156,25 @@
     stopMeterLoops();
 
     const api = core();
+    const pCore = powerCore();
     const good = meterCursor >= GOOD_MIN && meterCursor <= GOOD_MAX;
     const perfect = meterCursor >= PERFECT_MIN && meterCursor <= PERFECT_MAX;
     const overlay = ensureMeterDom();
+    const lightning = Boolean(pCore?.beginLightning?.());
+    let attackResult = null;
 
     overlay.classList.add(perfect ? "resolved-perfect" : good ? "resolved-good" : "resolved-miss");
+    overlay.classList.toggle("power-lightning-v11", lightning || overlay.classList.contains("power-lightning-v11"));
 
     if (good) {
-      api?.directAttack?.({
+      attackResult = api?.directAttack?.({
         quality:perfect ? 1 : .88,
         openSpace:true,
         miss:false,
         soft:false
       });
     } else {
-      api?.directAttack?.({
+      attackResult = api?.directAttack?.({
         quality:.18,
         openSpace:false,
         miss:true,
@@ -170,12 +182,14 @@
       });
     }
 
+    if (lightning) pCore?.finishLightning?.({ good, perfect, attackResult });
+
     // O impacto devolve o jogo imediatamente para 100%, criando o contraste do corte.
     api?.setTimeScale?.(1);
     document.body.classList.remove("volleyball-spike-slowmo-v10", "volleyball-spike-meter-open-v10");
 
     global.setTimeout(() => {
-      overlay.classList.remove("visible", "resolved-good", "resolved-miss", "resolved-perfect");
+      overlay.classList.remove("visible", "resolved-good", "resolved-miss", "resolved-perfect", "power-lightning-v11");
       overlay.setAttribute("aria-hidden", "true");
     }, perfect ? 420 : good ? 330 : 260);
   }
@@ -266,7 +280,7 @@
     const strip = document.querySelector(".volleyball-control-strip");
     if (strip && strip.dataset.controlsV10 !== "1") {
       strip.dataset.controlsV10 = "1";
-      strip.innerHTML = "<span><b>WASD</b> MOVER</span><span><b>K</b> TOQUE CONTROLADO</span><span><b>J</b> CORTE / DEVOLVER</span><span>TOQUES <b id=\"volleyballTouchCount\">0/3</b></span>";
+      strip.innerHTML = "<span><b>WASD</b> MOVER</span><span><b>K</b> TOQUE CONTROLADO</span><span><b>J</b> CORTE / DEVOLVER</span><span data-volleyball-power-control=\"1\"><b>L</b> PODER</span><span>TOQUES <b id=\"volleyballTouchCount\">0/3</b></span>";
     }
   }
 
@@ -280,6 +294,7 @@
     actions.innerHTML = `
       <button class="mobile-action primary" data-key="k"><b>K</b><span>TOQUE</span></button>
       <button class="mobile-action" data-key="j"><b>J</b><span>CORTE</span></button>
+      <button class="mobile-action volleyball-power-mobile-v11" data-key="l"><b>L</b><span>PODER</span></button>
       <button class="mobile-action" data-key="escape"><b>×</b><span>FECHAR</span></button>`;
   }
 
@@ -321,9 +336,10 @@
   }
 
   global.VoltzVolleyballControlsV10 = Object.freeze({
-    version:"1.0",
+    version:"1.1",
     isMeterActive:() => meterActive,
     getMeterCursor:() => meterCursor,
+    startSpikeFocus,
     reset:resetSpikeFocus
   });
 
